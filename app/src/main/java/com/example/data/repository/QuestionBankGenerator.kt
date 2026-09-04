@@ -91,6 +91,14 @@ object QuestionBankGenerator {
         // Authentic JAMB Chemistry Master Revision Table (1983 - 2004 Series)
         questions.addAll(JambChemistryMasterRevisionTableBank.getQuestions())
 
+        // Authentic Verified JAMB Chemistry Mega Revision Series (300 Syllabus-Verified Questions)
+        questions.addAll(JambChemistryMegaRevisionPart1Bank.getQuestions())
+        questions.addAll(JambChemistryMegaRevisionPart2Bank.getQuestions())
+        questions.addAll(JambChemistryMegaRevisionPart3Bank.getQuestions())
+        questions.addAll(JambChemistryMegaRevisionPart4Bank.getQuestions())
+        questions.addAll(JambChemistryMegaRevisionPart5Bank.getQuestions())
+        questions.addAll(JambChemistryMegaRevisionPart6Bank.getQuestions())
+
         // Authentic Historical Physics Exam Series (1983 - 2004)
         questions.addAll(JambPhysicsHistoricalQuestionBank.getHistoricalPhysicsQuestions())
 
@@ -106,6 +114,22 @@ object QuestionBankGenerator {
         questions.addAll(JambPhysicsMegaRevisionPart6Bank.getQuestions())
         questions.addAll(JambPhysicsMegaRevisionPart7Bank.getQuestions())
         questions.addAll(JambPhysicsMegaRevisionPart8Bank.getQuestions())
+        questions.addAll(JambPhysicsHistorical1983to1993Bank.getQuestions())
+        questions.addAll(JambPhysicsHistorical1994to2004Bank.getQuestions())
+
+        // Authentic Verified Principles of Accounts Full Exam Bank (1983 - 2004 Series)
+        questions.addAll(JambPrinciplesOfAccountsExamBank.getQuestions())
+
+        // Authentic Verified JAMB Commerce Master Revision Series (1994 - 2002 Complete Series, Parts 1 - 9)
+        questions.addAll(JambCommerceMasterRevisionPart1Bank.getQuestions())
+        questions.addAll(JambCommerceMasterRevisionPart2Bank.getQuestions())
+        questions.addAll(JambCommerceMasterRevisionPart3Bank.getQuestions())
+        questions.addAll(JambCommerceMasterRevisionPart4Bank.getQuestions())
+        questions.addAll(JambCommerceMasterRevisionPart5Bank.getQuestions())
+        questions.addAll(JambCommerceMasterRevisionPart6Bank.getQuestions())
+        questions.addAll(JambCommerceMasterRevisionPart7Bank.getQuestions())
+        questions.addAll(JambCommerceMasterRevisionPart8Bank.getQuestions())
+        questions.addAll(JambCommerceMasterRevisionPart9Bank.getQuestions())
 
         // Authentic Historical Economics Exam Series (1983 - 1985)
         questions.addAll(JambEconomicsHistoricalQuestionBank.getHistoricalEconomicsQuestions())
@@ -150,10 +174,13 @@ object QuestionBankGenerator {
         questions.addAll(JambLiterature2010to2012CompleteExamBank.getQuestions())
         questions.addAll(JambLiterature2013to2015CompleteExamBank.getQuestions())
         questions.addAll(JambLiterature2016to2018CompleteExamBank.getQuestions())
+        questions.addAll(JambLiterature2010to2018ExtendedBank.getQuestions())
         questions.addAll(JambLiteratureLiteraryPrinciplesBank.getQuestions())
 
         // Authentic Historical JAMB Questions with Visual Diagrams & Figures
         questions.addAll(JambDiagramAndImageQuestionBank.getQuestions())
+        questions.addAll(JambMathematicsPastExamMegaBank.getQuestions())
+        questions.addAll(JambAccountsPastExamMegaBank.getQuestions())
 
         // Authentic Historical JAMB Biology Master Series Repositories (1983 - 2024 Exam Archives)
         questions.addAll(JambBiologyMasterSeriesPart1QuestionBank.getQuestions())
@@ -174,6 +201,25 @@ object QuestionBankGenerator {
         // Authentic Historical JAMB Mathematics Master Revision Volume 3 (1983 - 2004 Series)
         questions.addAll(JambMathematicsVolume3Part1QuestionBank.getQuestions())
         questions.addAll(JambMathematicsVolume3Part2QuestionBank.getQuestions())
+
+        // Authentic Verified JAMB Government Mega Revision Series (Parts 1 - 16) & 1978 Complete Exam
+        questions.addAll(JambGovernment1978CompleteExamBank.getQuestions())
+        questions.addAll(JambGovernmentMegaRevisionPart1Bank.getQuestions())
+        questions.addAll(JambGovernmentMegaRevisionPart2Bank.getQuestions())
+        questions.addAll(JambGovernmentMegaRevisionPart3Bank.getQuestions())
+        questions.addAll(JambGovernmentMegaRevisionPart4Bank.getQuestions())
+        questions.addAll(JambGovernmentMegaRevisionPart5Bank.getQuestions())
+        questions.addAll(JambGovernmentMegaRevisionPart6Bank.getQuestions())
+        questions.addAll(JambGovernmentMegaRevisionPart7Bank.getQuestions())
+        questions.addAll(JambGovernmentMegaRevisionPart8Bank.getQuestions())
+        questions.addAll(JambGovernmentMegaRevisionPart9Bank.getQuestions())
+        questions.addAll(JambGovernmentMegaRevisionPart10Bank.getQuestions())
+        questions.addAll(JambGovernmentMegaRevisionPart11Bank.getQuestions())
+        questions.addAll(JambGovernmentMegaRevisionPart12Bank.getQuestions())
+        questions.addAll(JambGovernmentMegaRevisionPart13Bank.getQuestions())
+        questions.addAll(JambGovernmentMegaRevisionPart14Bank.getQuestions())
+        questions.addAll(JambGovernmentMegaRevisionPart15Bank.getQuestions())
+        questions.addAll(JambGovernmentMegaRevisionPart16Bank.getQuestions())
 
         // Authentic Historical JAMB Use of English Historical Series & Master Revision Banks (1983 - 2018)
         questions.addAll(JambEnglishHistoricalVolume1Bank.getQuestions())
@@ -215,6 +261,50 @@ object QuestionBankGenerator {
         questions.addAll(JambEnglish2010CompleteUTMEPart1Bank.getQuestions())
         questions.addAll(JambEnglish2010CompleteUTMEPart2Bank.getQuestions())
 
+        // Newly Scanned Authentic JAMB Use of English Question Banks (1978 - 2020 Complete Series)
+        questions.addAll(JambEnglishMegaBankSeriesPart1.getQuestions())
+        questions.addAll(JambEnglishMegaBankSeriesPart2.getQuestions())
+        questions.addAll(JambEnglishMegaBankSeriesPart3.getQuestions())
+        questions.addAll(JambEnglishMegaBankSeriesPart4.getQuestions())
+        questions.addAll(JambEnglishMegaBankSeriesPart5.getQuestions())
+        questions.addAll(JambEnglishMegaBankSeriesPart6.getQuestions())
+        questions.addAll(JambEnglishMegaBankSeriesPart7.getQuestions())
+        questions.addAll(JambEnglishMegaBankSeriesPart8.getQuestions())
+        questions.addAll(JambEnglishMegaBankSeriesPart9.getQuestions())
+        questions.addAll(JambEnglishMegaBankSeriesPart10.getQuestions())
+        questions.addAll(JambEnglishMegaBankSeriesPart11.getQuestions())
+        questions.addAll(JambEnglishMegaBankSeriesPart12.getQuestions())
+        questions.addAll(JambEnglishMegaBankSeriesPart13.getQuestions())
+
+        // Complete Authentic JAMB Examination Series & Diagram Collections
+        questions.addAll(JambAccountsCompleteSeries2010to2018Bank.getQuestions())
+        questions.addAll(JambBiologyDiagramSeriesPt1to5Bank.getQuestions())
+        questions.addAll(JambChemistryDiagramSeriesPt1to5Bank.getQuestions())
+        questions.addAll(JambLiteratureMegaSeriesPt1to5Bank.getQuestions())
+        questions.addAll(JambCommercePt1to5CompleteBank.getQuestions())
+        questions.addAll(JambGovernmentPt1to5CompleteBank.getQuestions())
+        questions.addAll(JambPhysicsPt1to5CompleteBank.getQuestions())
+        questions.addAll(JambCrkPt1to5CompleteBank.getQuestions())
+
+        // Massive Multi-Year (2000 - 2024) Mega Expansions across all UTME subjects
+        questions.addAll(JambMathematics2000to2024MegaBank.getQuestions())
+        questions.addAll(JambEconomics2000to2024MegaBank.getQuestions())
+        questions.addAll(JambChemistry2000to2024MegaBank.getQuestions())
+        questions.addAll(JambAccountsAndFinanceMegaBank.getQuestions())
+        questions.addAll(JambPhysics2000to2024MegaBank.getQuestions())
+        questions.addAll(JambGrandExpansion2024Bank.getQuestions())
+        questions.addAll(JambMathematicsAdvancedSyllabusBank.getQuestions())
+        questions.addAll(JambEnglishLexisComprehensionMasteryBank.getQuestions())
+        questions.addAll(JambScienceSuperMegaBank.getQuestions())
+        questions.addAll(JambSocialScienceSuperMegaBank.getQuestions())
+        questions.addAll(JambUltimaSeries2024Bank.getQuestions())
+
+        // Extended UTME Subjects: Islamic Religious Studies (IRS), History, Geography, Further Mathematics
+        questions.addAll(JambIrsQuestionBank.getQuestions())
+        questions.addAll(JambHistoryQuestionBank.getQuestions())
+        questions.addAll(JambGeographyQuestionBank.getQuestions())
+        questions.addAll(JambFurtherMathematicsQuestionBank.getQuestions())
+
         val result = com.example.data.engine.QuestionSanitizer.cleanAndDeduplicateQuestions(questions)
             cachedSeedQuestions = result
             return result
@@ -225,20 +315,7 @@ object QuestionBankGenerator {
      * Normalizes different variations of subject titles to their standard UTME name.
      */
     fun normalizeSubjectName(name: String): String {
-        return when (name.trim().lowercase()) {
-            "use of english", "english", "english language", "eng" -> "English Language"
-            "math", "mathematics", "general mathematics" -> "Mathematics"
-            "physics", "phy" -> "Physics"
-            "chemistry", "chem" -> "Chemistry"
-            "biology", "bio" -> "Biology"
-            "economics", "econs" -> "Economics"
-            "government", "govt" -> "Government"
-            "literature", "literature in english", "lit" -> "Literature in English"
-            "crs", "crk", "christian religious studies", "christian religious knowledge" -> "CRS"
-            "commerce", "comm" -> "Commerce"
-            "financial accounting", "principles of accounts", "principles of account", "accounting", "accounts" -> "Principles of Accounts"
-            else -> name.trim()
-        }
+        return com.example.data.engine.SubjectRegistry.normalizeSubjectName(name)
     }
 
     /**

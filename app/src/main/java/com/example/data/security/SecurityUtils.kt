@@ -114,7 +114,9 @@ object SecurityUtils {
     val ALLOWED_JAMB_SUBJECTS = setOf(
         "Use of English", "English Language", "Mathematics", "Physics", "Chemistry",
         "Biology", "Economics", "Government", "Literature in English", "Literature",
-        "CRS", "Commerce", "Principles of Accounts", "Principles of Account", "Financial Accounting"
+        "CRS", "Commerce", "Principles of Accounts", "Principles of Account", "Financial Accounting",
+        "Geography", "History", "Islamic Religious Studies (IRS)", "IRS", "Islamic Studies", "IRK",
+        "Further Mathematics"
     )
 
     fun validateSubjects(csv: String): ValidationResult {
@@ -273,3 +275,128 @@ object LoginRateLimiter {
         trackers.remove(key.lowercase().trim())
     }
 }
+
+// =============================================================================
+// Device Protection & Anti-Abuse Manager
+// =============================================================================
+
+sealed class ReferralValidationResult {
+    object Valid : ReferralValidationResult()
+    data class Blocked(val reason: String) : ReferralValidationResult()
+}
+
+sealed class AccountCreationCheck {
+    object Allowed : AccountCreationCheck()
+    data class ExistingAccountPrompt(val existingEmail: String, val message: String) : AccountCreationCheck()
+    data class RateLimited(val message: String) : AccountCreationCheck()
+}
+
+object DeviceProtectionManager {
+    private const val PREFS_NAME = "prepza_device_security"
+    private const val KEY_DEVICE_ID = "device_fingerprint_id"
+    private const val KEY_REGISTERED_EMAILS = "device_registered_emails"
+    private const val KEY_CLAIMED_REFERRALS = "device_claimed_referrals"
+    private const val KEY_DEVICE_OWNED_REFERRAL_CODES = "device_owned_referral_codes"
+    private const val KEY_LAST_REGISTRATION_TIMESTAMP = "device_last_reg_ts"
+
+    private fun getPrefs(context: android.content.Context): android.content.SharedPreferences {
+        return context.getSharedPreferences(PREFS_NAME, android.content.Context.MODE_PRIVATE)
+    }
+
+    fun getOrCreateDeviceId(context: android.content.Context): String {
+        val prefs = getPrefs(context)
+        var deviceId = prefs.getString(KEY_DEVICE_ID, null)
+        if (deviceId.isNullOrBlank()) {
+            deviceId = "dev_" + java.util.UUID.randomUUID().toString().take(12)
+            prefs.edit().putString(KEY_DEVICE_ID, deviceId).apply()
+        }
+        return deviceId
+    }
+
+    /**
+     * Checks if this device already has registered accounts and warns against duplicate creation.
+     */
+    fun checkAccountCreation(context: android.content.Context, newEmail: String): AccountCreationCheck {
+        val prefs = getPrefs(context)
+        val cleanEmail = newEmail.trim().lowercase()
+        val registeredEmails = prefs.getStringSet(KEY_REGISTERED_EMAILS, emptySet()) ?: emptySet()
+
+        if (registeredEmails.contains(cleanEmail)) {
+            return AccountCreationCheck.ExistingAccountPrompt(
+                existingEmail = cleanEmail,
+                message = "An account with this email is already registered on this device. Please log in."
+            )
+        }
+
+        val lastTs = prefs.getLong(KEY_LAST_REGISTRATION_TIMESTAMP, 0L)
+        val now = System.currentTimeMillis()
+        // If creating more than 4 accounts in a single hour from same device, rate limit
+        if (registeredEmails.size >= 4 && (now - lastTs) < 3600_000L) {
+            return AccountCreationCheck.RateLimited(
+                "Multiple accounts were recently created on this device. Please log in to your existing account."
+            )
+        }
+
+        return AccountCreationCheck.Allowed
+    }
+
+    /**
+     * Strictly verifies referral codes against self-referral, device-looping, and multi-account farming.
+     */
+    fun validateReferral(
+        context: android.content.Context,
+        referralCode: String?,
+        candidateEmail: String,
+        candidateOwnCode: String?
+    ): ReferralValidationResult {
+        if (referralCode.isNullOrBlank()) return ReferralValidationResult.Valid
+
+        val cleanCode = referralCode.trim().uppercase()
+        val prefs = getPrefs(context)
+
+        // 1. Self referral on own code
+        if (!candidateOwnCode.isNullOrBlank() && cleanCode.equals(candidateOwnCode.trim(), ignoreCase = true)) {
+            return ReferralValidationResult.Blocked("You cannot use your own referral code.")
+        }
+
+        // 2. Code created on this device previously (prevent device-level self referral)
+        val ownedCodes = prefs.getStringSet(KEY_DEVICE_OWNED_REFERRAL_CODES, emptySet()) ?: emptySet()
+        if (ownedCodes.contains(cleanCode)) {
+            return ReferralValidationResult.Blocked("This referral code belongs to an account on this device. Self-referrals are not eligible.")
+        }
+
+        return ReferralValidationResult.Valid
+    }
+
+    fun recordAccountRegistration(context: android.content.Context, email: String, myReferralCode: String, usedReferralCode: String?) {
+        val prefs = getPrefs(context)
+        val cleanEmail = email.trim().lowercase()
+        val currentEmails = (prefs.getStringSet(KEY_REGISTERED_EMAILS, emptySet()) ?: emptySet()).toMutableSet()
+        currentEmails.add(cleanEmail)
+
+        val ownedCodes = (prefs.getStringSet(KEY_DEVICE_OWNED_REFERRAL_CODES, emptySet()) ?: emptySet()).toMutableSet()
+        if (myReferralCode.isNotBlank()) {
+            ownedCodes.add(myReferralCode.trim().uppercase())
+        }
+
+        val editor = prefs.edit()
+            .putStringSet(KEY_REGISTERED_EMAILS, currentEmails)
+            .putStringSet(KEY_DEVICE_OWNED_REFERRAL_CODES, ownedCodes)
+            .putLong(KEY_LAST_REGISTRATION_TIMESTAMP, System.currentTimeMillis())
+
+        if (!usedReferralCode.isNullOrBlank()) {
+            val claimed = (prefs.getStringSet(KEY_CLAIMED_REFERRALS, emptySet()) ?: emptySet()).toMutableSet()
+            claimed.add(usedReferralCode.trim().uppercase())
+            editor.putStringSet(KEY_CLAIMED_REFERRALS, claimed)
+        }
+
+        editor.apply()
+    }
+
+    fun getPrimaryExistingEmail(context: android.content.Context): String? {
+        val prefs = getPrefs(context)
+        val emails = prefs.getStringSet(KEY_REGISTERED_EMAILS, emptySet()) ?: emptySet()
+        return emails.firstOrNull()
+    }
+}
+

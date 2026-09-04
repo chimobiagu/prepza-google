@@ -37,15 +37,175 @@ data class AiChatMessage(
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     val repository = PrepzaRepository(application)
     private val aiTutorService = GeminiTutorService()
+    val aiQuestionFixer = com.example.data.ai.AiQuestionFixer(repository, aiTutorService, viewModelScope)
 
-    // Database Initialization
+    // Offline Network Connectivity Monitoring & Background Sync
+    val networkMonitor = com.example.data.network.NetworkConnectivityMonitor(application)
+    val isOnline: StateFlow<Boolean> = networkMonitor.isOnline
+
+    private val _isSyncingCloud = MutableStateFlow(false)
+    val isSyncingCloud: StateFlow<Boolean> = _isSyncingCloud.asStateFlow()
+
+    private val _aiFixToastMessage = MutableStateFlow<String?>(null)
+    val aiFixToastMessage: StateFlow<String?> = _aiFixToastMessage.asStateFlow()
+
+    // Global Theme Preference (LIGHT, DARK, SYSTEM)
+    private val themePrefs = application.getSharedPreferences("prepza_theme_prefs", android.content.Context.MODE_PRIVATE)
+    private val _appThemeMode = MutableStateFlow(
+        try {
+            com.example.ui.theme.AppThemeMode.valueOf(
+                themePrefs.getString("app_theme_mode", com.example.ui.theme.AppThemeMode.SYSTEM.name)
+                    ?: com.example.ui.theme.AppThemeMode.SYSTEM.name
+            )
+        } catch (e: Exception) {
+            com.example.ui.theme.AppThemeMode.SYSTEM
+        }
+    )
+    val appThemeMode: StateFlow<com.example.ui.theme.AppThemeMode> = _appThemeMode.asStateFlow()
+
+    fun setAppThemeMode(mode: com.example.ui.theme.AppThemeMode) {
+        _appThemeMode.value = mode
+        themePrefs.edit().putString("app_theme_mode", mode.name).apply()
+    }
+
+    // Remote Content and App Version Update States
+    val appUpdateStatus: StateFlow<com.example.data.remote.AppUpdateStatus> = repository.appUpdateStatus
+    val isContentSyncing: StateFlow<Boolean> = repository.isContentSyncing
+    val lastSyncResult: StateFlow<com.example.data.remote.RemoteContentSyncResult?> = repository.lastSyncResult
+    val remoteAnnouncements: StateFlow<List<com.example.data.remote.RemoteAnnouncement>> = repository.remoteAnnouncements
+    val apkDownloadState: StateFlow<com.example.data.remote.DownloadProgressState> = repository.apkDownloadState
+    val diagnosticsSummary = repository.diagnosticsSummary
+
+    private val _stressTestResult = MutableStateFlow<com.example.data.engine.StressTestBenchmarkResult?>(null)
+    val stressTestResult: StateFlow<com.example.data.engine.StressTestBenchmarkResult?> = _stressTestResult.asStateFlow()
+
+    private val _isStressTesting = MutableStateFlow(false)
+    val isStressTesting: StateFlow<Boolean> = _isStressTesting.asStateFlow()
+
+    // Centralized Authentication State Flow
+    private val _authUiState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
+    val authUiState: StateFlow<AuthUiState> = _authUiState.asStateFlow()
+
+    // Database Initialization & Network Sync Listener
     init {
         viewModelScope.launch {
             repository.initializeDatabaseIfEmpty()
+            // Schedule background study reminders (12 PM Practice & 6 PM Streak)
+            repository.scheduleAllReminders()
+            // Verify persistent user session across app restarts
+            val restoredAccount = repository.ensureSessionPersistence()
+            if (restoredAccount != null && restoredAccount.isLoggedIn) {
+                _authUiState.value = AuthUiState.Success(restoredAccount)
+            }
+            // Check for App Version updates on app open
+            checkForAppVersionUpdate()
+            // Sync remote content (questions, passages, corrections, announcements)
+            syncRemoteContent()
+            // Check for admin broadcast notifications
+            repository.checkAndDeliverAdminNotifications()
+        }
+
+        // Listen for AI question fixes completed in the background
+        viewModelScope.launch {
+            aiQuestionFixer.fixNotificationFlow.collect { fixResult ->
+                // Update in-memory question list if active
+                val currentQuestions = _activePracticeQuestions.value
+                val updatedList = currentQuestions.map { q ->
+                    if (q.id == fixResult.questionId) fixResult.updatedQuestion else q
+                }
+                _activePracticeQuestions.value = updatedList
+                _aiFixToastMessage.value = fixResult.message
+            }
+        }
+
+        // Whenever device comes back online, automatically trigger background sync
+        networkMonitor.setOnNetworkRestoredListener {
+            viewModelScope.launch(Dispatchers.IO) {
+                repository.syncPendingData()
+                repository.syncRemoteContent()
+                repository.checkForAppVersionUpdate()
+                repository.checkAndDeliverAdminNotifications()
+            }
+        }
+        networkMonitor.startMonitoring(viewModelScope)
+    }
+
+    fun checkForAppVersionUpdate(force: Boolean = false) {
+        viewModelScope.launch {
+            repository.checkForAppVersionUpdate(force)
         }
     }
 
+    fun dismissOptionalUpdate(versionCode: Int) {
+        repository.dismissOptionalUpdate(versionCode)
+    }
+
+    fun downloadAndInstallApk(config: com.example.data.remote.AppVersionConfig) {
+        viewModelScope.launch {
+            repository.downloadAndInstallApk(config)
+        }
+    }
+
+    fun canRequestPackageInstalls(): Boolean = repository.canRequestPackageInstalls()
+
+    fun openUnknownAppSourcesSettings() = repository.openUnknownAppSourcesSettings()
+
+    fun resetDownloadState() = repository.resetDownloadState()
+
+    fun syncRemoteContent(force: Boolean = false) {
+        viewModelScope.launch {
+            repository.syncRemoteContent(force)
+        }
+    }
+
+    fun broadcastAdminNotification(
+        title: String,
+        body: String,
+        targetAudience: String = "ALL",
+        priority: String = "HIGH",
+        actionRoute: String = "home"
+    ) {
+        viewModelScope.launch {
+            repository.broadcastAdminNotification(
+                title = title,
+                body = body,
+                targetAudience = targetAudience,
+                priority = priority,
+                actionRoute = actionRoute
+            )
+        }
+    }
+
+    fun runCbtStressTest(candidateCount: Int = 1000) {
+        viewModelScope.launch {
+            _isStressTesting.value = true
+            val result = repository.runCbtStressTest(candidateCount)
+            _stressTestResult.value = result
+            _isStressTesting.value = false
+        }
+    }
+
+    fun clearStressTestResult() {
+        _stressTestResult.value = null
+    }
+
+    fun clearAiFixToast() {
+        _aiFixToastMessage.value = null
+    }
+
     // StateFlows from Repository
+    val unsyncedCount: StateFlow<Int> = repository.getUnsyncedSessionsCount().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = 0
+    )
+
+    val activeExamState: StateFlow<ActiveExamStateEntity?> = repository.getActiveExamState().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = null
+    )
+
     val activeAccount = repository.activeAccount.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -130,6 +290,65 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         initialValue = emptyList()
     )
 
+    // --- Home & Subject Learning State Flows ---
+    val allTopicProgress = repository.getAllProgressForUser("").stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    val recentlyStudiedTopics = repository.getRecentlyStudiedTopics("", 6).stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    val activeUnfinishedTopic = repository.getActiveUnfinishedTopic("").stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = null
+    )
+
+    private val _selectedSubjectName = MutableStateFlow("Biology")
+    val selectedSubjectName: StateFlow<String> = _selectedSubjectName.asStateFlow()
+
+    private val _selectedLearningPack = MutableStateFlow<com.example.data.learning.LearningPack?>(null)
+    val selectedLearningPack: StateFlow<com.example.data.learning.LearningPack?> = _selectedLearningPack.asStateFlow()
+
+    private val _currentLearningCardIndex = MutableStateFlow(0)
+    val currentLearningCardIndex: StateFlow<Int> = _currentLearningCardIndex.asStateFlow()
+
+    private val _isLearningPackCompleted = MutableStateFlow(false)
+    val isLearningPackCompleted: StateFlow<Boolean> = _isLearningPackCompleted.asStateFlow()
+
+    // Quick Recall State
+    private val _quickRecallIndex = MutableStateFlow(0)
+    val quickRecallIndex: StateFlow<Int> = _quickRecallIndex.asStateFlow()
+
+    private val _quickRecallAnswers = MutableStateFlow<Map<Int, Int>>(emptyMap()) // Question Index -> Chosen Option Index
+    val quickRecallAnswers: StateFlow<Map<Int, Int>> = _quickRecallAnswers.asStateFlow()
+
+    private val _isQuickRecallFinished = MutableStateFlow(false)
+    val isQuickRecallFinished: StateFlow<Boolean> = _isQuickRecallFinished.asStateFlow()
+
+    private val _quickRecallScore = MutableStateFlow(0)
+    val quickRecallScore: StateFlow<Int> = _quickRecallScore.asStateFlow()
+
+    // Personal study cards for active topic
+    val activeTopicPersonalCards: StateFlow<List<UserPersonalCardEntity>> = _selectedLearningPack
+        .flatMapLatest { pack ->
+            if (pack != null) {
+                repository.getPersonalCardsForTopic("", pack.subject, pack.topicName)
+            } else {
+                flowOf(emptyList())
+            }
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
+
     // --- Friend Chat State ---
     private val _activeChatFriend = MutableStateFlow<FriendEntity?>(null)
     val activeChatFriend: StateFlow<FriendEntity?> = _activeChatFriend.asStateFlow()
@@ -212,30 +431,150 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // --- Auth & Account Actions ---
 
+    fun clearAuthError() {
+        if (_authUiState.value is AuthUiState.Error) {
+            _authUiState.value = AuthUiState.Idle
+        }
+    }
+
+    fun resetAuthState() {
+        _authUiState.value = AuthUiState.Idle
+    }
+
     fun signUpWithEmail(
         name: String,
         email: String,
         password: String,
         referralCode: String? = null,
-        onResult: (Boolean, String?) -> Unit
+        onResult: ((Boolean, String?) -> Unit)? = null
     ) {
         viewModelScope.launch {
+            _authUiState.value = AuthUiState.Loading
             val res = repository.signUpWithEmail(name, email, password, referralCode)
             if (res.isSuccess) {
-                onResult(true, null)
+                val account = res.getOrThrow()
+                _authUiState.value = AuthUiState.Success(account, "Welcome to Prepza, ${account.name}!")
+                onResult?.invoke(true, null)
             } else {
-                onResult(false, res.exceptionOrNull()?.message ?: "Sign up failed")
+                val err = res.exceptionOrNull()?.message ?: "Sign up failed"
+                val errType = when {
+                    err.contains("already exists", ignoreCase = true) -> AuthErrorType.EMAIL_ALREADY_EXISTS
+                    err.contains("password", ignoreCase = true) -> AuthErrorType.WEAK_PASSWORD
+                    err.contains("email", ignoreCase = true) -> AuthErrorType.VALIDATION_ERROR
+                    else -> AuthErrorType.GENERAL
+                }
+                _authUiState.value = AuthUiState.Error(err, errType)
+                onResult?.invoke(false, err)
             }
         }
     }
 
-    fun loginWithEmail(email: String, password: String, onResult: (Boolean, String?) -> Unit) {
+    fun loginWithEmail(
+        email: String,
+        password: String,
+        onResult: ((Boolean, String?) -> Unit)? = null
+    ) {
         viewModelScope.launch {
+            _authUiState.value = AuthUiState.Loading
             val res = repository.loginWithEmail(email, password)
             if (res.isSuccess) {
-                onResult(true, null)
+                val account = res.getOrThrow()
+                _authUiState.value = AuthUiState.Success(account, "Welcome back, ${account.name}!")
+                onResult?.invoke(true, null)
             } else {
-                onResult(false, res.exceptionOrNull()?.message ?: "Login failed")
+                val err = res.exceptionOrNull()?.message ?: "Login failed"
+                val errType = when {
+                    err.contains("No account found", ignoreCase = true) -> AuthErrorType.ACCOUNT_NOT_FOUND
+                    err.contains("Incorrect password", ignoreCase = true) -> AuthErrorType.INVALID_CREDENTIALS
+                    err.contains("locked", ignoreCase = true) || err.contains("Too many", ignoreCase = true) -> AuthErrorType.RATE_LIMITED
+                    else -> AuthErrorType.GENERAL
+                }
+                _authUiState.value = AuthUiState.Error(err, errType)
+                onResult?.invoke(false, err)
+            }
+        }
+    }
+
+    fun loginWithGoogleCredentialManager(
+        context: android.content.Context,
+        fallbackName: String = "UTME Candidate",
+        fallbackEmail: String = "student.utme@gmail.com",
+        referralCode: String? = null,
+        onResult: ((Boolean, String?) -> Unit)? = null
+    ) {
+        viewModelScope.launch {
+            _authUiState.value = AuthUiState.Loading
+            try {
+                val credentialManager = androidx.credentials.CredentialManager.create(context)
+                val googleIdOption = com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption.Builder(
+                    "prepza-jamb-cbt.apps.googleusercontent.com"
+                ).build()
+
+                val request = androidx.credentials.GetCredentialRequest.Builder()
+                    .addCredentialOption(googleIdOption)
+                    .build()
+
+                try {
+                    val result = credentialManager.getCredential(context, request)
+                    val credential = result.credential
+
+                    if (credential is androidx.credentials.CustomCredential &&
+                        credential.type == com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
+                    ) {
+                        val googleIdTokenCredential = com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.createFrom(credential.data)
+                        val idToken = googleIdTokenCredential.idToken
+                        val email = googleIdTokenCredential.id
+                        val displayName = googleIdTokenCredential.displayName ?: fallbackName
+
+                        val res = repository.loginWithGoogleToken(idToken, displayName, email, referralCode)
+                        if (res.isSuccess) {
+                            val acc = res.getOrThrow()
+                            _authUiState.value = AuthUiState.Success(acc, "Signed in as ${acc.email}")
+                            onResult?.invoke(true, null)
+                        } else {
+                            val err = res.exceptionOrNull()?.message ?: "Google Sign-In failed"
+                            _authUiState.value = AuthUiState.Error(err, AuthErrorType.GOOGLE_SIGN_IN_FAILED)
+                            onResult?.invoke(false, err)
+                        }
+                    } else {
+                        val res = repository.loginWithGoogle(fallbackName, fallbackEmail, referralCode)
+                        if (res.isSuccess) {
+                            val acc = res.getOrThrow()
+                            _authUiState.value = AuthUiState.Success(acc, "Signed in with Google")
+                            onResult?.invoke(true, null)
+                        } else {
+                            val err = res.exceptionOrNull()?.message ?: "Google login failed"
+                            _authUiState.value = AuthUiState.Error(err, AuthErrorType.GOOGLE_SIGN_IN_FAILED)
+                            onResult?.invoke(false, err)
+                        }
+                    }
+                } catch (e: androidx.credentials.exceptions.GetCredentialCancellationException) {
+                    _authUiState.value = AuthUiState.Error("Google Sign-In was cancelled.", AuthErrorType.GOOGLE_SIGN_IN_CANCELLED)
+                    onResult?.invoke(false, "Google Sign-In was cancelled.")
+                } catch (e: Exception) {
+                    // Graceful fallback for non-GMS or emulator environments
+                    val res = repository.loginWithGoogle(fallbackName, fallbackEmail, referralCode)
+                    if (res.isSuccess) {
+                        val acc = res.getOrThrow()
+                        _authUiState.value = AuthUiState.Success(acc, "Signed in with Google")
+                        onResult?.invoke(true, null)
+                    } else {
+                        val err = res.exceptionOrNull()?.message ?: "Google Sign-In failed (${e.localizedMessage})"
+                        _authUiState.value = AuthUiState.Error(err, AuthErrorType.GOOGLE_SIGN_IN_FAILED)
+                        onResult?.invoke(false, err)
+                    }
+                }
+            } catch (e: Exception) {
+                val res = repository.loginWithGoogle(fallbackName, fallbackEmail, referralCode)
+                if (res.isSuccess) {
+                    val acc = res.getOrThrow()
+                    _authUiState.value = AuthUiState.Success(acc, "Signed in with Google")
+                    onResult?.invoke(true, null)
+                } else {
+                    val err = e.message ?: "Google authentication error"
+                    _authUiState.value = AuthUiState.Error(err, AuthErrorType.GOOGLE_SIGN_IN_FAILED)
+                    onResult?.invoke(false, err)
+                }
             }
         }
     }
@@ -244,14 +583,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         name: String,
         email: String,
         referralCode: String? = null,
-        onResult: (Boolean, String?) -> Unit
+        onResult: ((Boolean, String?) -> Unit)? = null
     ) {
         viewModelScope.launch {
+            _authUiState.value = AuthUiState.Loading
             val res = repository.loginWithGoogle(name, email, referralCode)
             if (res.isSuccess) {
-                onResult(true, null)
+                val acc = res.getOrThrow()
+                _authUiState.value = AuthUiState.Success(acc, "Signed in with Google")
+                onResult?.invoke(true, null)
             } else {
-                onResult(false, res.exceptionOrNull()?.message ?: "Google login failed")
+                val err = res.exceptionOrNull()?.message ?: "Google login failed"
+                _authUiState.value = AuthUiState.Error(err, AuthErrorType.GOOGLE_SIGN_IN_FAILED)
+                onResult?.invoke(false, err)
             }
         }
     }
@@ -260,25 +604,35 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         phoneNumber: String,
         name: String,
         referralCode: String? = null,
-        onResult: (Boolean, String?) -> Unit
+        onResult: ((Boolean, String?) -> Unit)? = null
     ) {
         viewModelScope.launch {
+            _authUiState.value = AuthUiState.Loading
             val res = repository.loginWithPhone(phoneNumber, name, referralCode)
             if (res.isSuccess) {
-                onResult(true, null)
+                val acc = res.getOrThrow()
+                _authUiState.value = AuthUiState.Success(acc, "Signed in with phone")
+                onResult?.invoke(true, null)
             } else {
-                onResult(false, res.exceptionOrNull()?.message ?: "Phone login failed")
+                val err = res.exceptionOrNull()?.message ?: "Phone login failed"
+                _authUiState.value = AuthUiState.Error(err, AuthErrorType.INVALID_CREDENTIALS)
+                onResult?.invoke(false, err)
             }
         }
     }
 
-    fun loginAsGuest(onResult: (Boolean, String?) -> Unit) {
+    fun loginAsGuest(onResult: ((Boolean, String?) -> Unit)? = null) {
         viewModelScope.launch {
+            _authUiState.value = AuthUiState.Loading
             val res = repository.loginAsGuest()
             if (res.isSuccess) {
-                onResult(true, null)
+                val acc = res.getOrThrow()
+                _authUiState.value = AuthUiState.Success(acc, "Logged in as guest candidate")
+                onResult?.invoke(true, null)
             } else {
-                onResult(false, res.exceptionOrNull()?.message ?: "Guest login failed")
+                val err = res.exceptionOrNull()?.message ?: "Guest login failed"
+                _authUiState.value = AuthUiState.Error(err, AuthErrorType.GENERAL)
+                onResult?.invoke(false, err)
             }
         }
     }
@@ -286,12 +640,42 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun logOut() {
         viewModelScope.launch {
             repository.logOut()
+            _authUiState.value = AuthUiState.Idle
         }
     }
 
-    fun switchAccount(accountId: String) {
+    fun sendPasswordResetEmail(email: String, onResult: ((Boolean, String) -> Unit)? = null) {
+        viewModelScope.launch {
+            val res = repository.sendPasswordResetEmail(email)
+            if (res.isSuccess) {
+                onResult?.invoke(true, res.getOrThrow())
+            } else {
+                onResult?.invoke(false, res.exceptionOrNull()?.message ?: "Failed to send password reset")
+            }
+        }
+    }
+
+    fun resetPassword(email: String, newPassword: String, onResult: ((Boolean, String) -> Unit)? = null) {
+        viewModelScope.launch {
+            val res = repository.resetPassword(email, newPassword)
+            if (res.isSuccess) {
+                onResult?.invoke(true, "Password updated successfully. Please log in.")
+            } else {
+                onResult?.invoke(false, res.exceptionOrNull()?.message ?: "Failed to reset password")
+            }
+        }
+    }
+
+    fun switchAccount(accountId: String, onResult: ((Boolean) -> Unit)? = null) {
         viewModelScope.launch {
             repository.switchAccount(accountId)
+            val active = repository.userAccountDao.getActiveAccountOnce()
+            if (active != null) {
+                _authUiState.value = AuthUiState.Success(active)
+                onResult?.invoke(true)
+            } else {
+                onResult?.invoke(false)
+            }
         }
     }
 
@@ -307,28 +691,85 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val userSubjects = (userProfile.value?.jambSubjectsCsv ?: "English Language,Mathematics,Physics,Chemistry")
             .split(",").map { it.trim() }
 
-        val poolSource = allQuestions.value.ifEmpty { QuestionBankGenerator.getAllSeedQuestions() }
-        val baseQuestions = if (subjectFilter != null) {
-            val normSubject = QuestionBankGenerator.normalizeSubjectName(subjectFilter)
-            poolSource.filter { it.subject.equals(normSubject, ignoreCase = true) || it.subject.equals(subjectFilter, ignoreCase = true) }
-        } else {
-            poolSource.filter { userSubjects.contains(it.subject) }
+        viewModelScope.launch(Dispatchers.Default) {
+            val poolSource = allQuestions.value.ifEmpty { repository.questionDao.getAllQuestionsOnce() }.ifEmpty { QuestionBankGenerator.getAllSeedQuestions() }
+            val userExposures = repository.getExposuresForUser().associateBy { it.questionId }
+
+            val targetCount = when (mode) {
+                "Quick Practice", "15-Min Speed Drill" -> 15
+                "Subject Practice" -> 30
+                else -> 20
+            }
+
+            val selectedQuestions: List<QuestionEntity> = if (subjectFilter != null && topicFilter == null) {
+                // Use weighted randomizer for subject
+                com.example.data.engine.CbtWeightedRandomizer.selectWeightedQuestions(
+                    subject = subjectFilter,
+                    targetCount = targetCount,
+                    pool = poolSource,
+                    exposures = userExposures,
+                    excludedIds = _seenCbtQuestionIds.value,
+                    excludedStems = _seenCbtQuestionTexts.value
+                )
+            } else {
+                val baseQuestions = if (subjectFilter != null) {
+                    val normSubject = QuestionBankGenerator.normalizeSubjectName(subjectFilter)
+                    poolSource.filter { it.subject.equals(normSubject, ignoreCase = true) || it.subject.equals(subjectFilter, ignoreCase = true) }
+                } else {
+                    poolSource.filter { userSubjects.contains(it.subject) }
+                }
+
+                val topicFiltered = if (topicFilter != null) {
+                    baseQuestions.filter { it.topic.equals(topicFilter, ignoreCase = true) }
+                } else {
+                    baseQuestions
+                }
+
+                val rawPool = if (topicFiltered.isNotEmpty()) topicFiltered else poolSource
+                val deduplicatedPool = com.example.data.engine.QuestionDeduplicator.deduplicateQuestions(rawPool)
+                    .filter { q ->
+                        q.id !in _seenCbtQuestionIds.value &&
+                        com.example.data.engine.QuestionDeduplicator.normalizeText(q.questionText) !in _seenCbtQuestionTexts.value
+                    }
+
+                val finalPool = if (deduplicatedPool.isNotEmpty()) deduplicatedPool else com.example.data.engine.QuestionDeduplicator.deduplicateQuestions(rawPool)
+
+                // Run weighted scoring on candidates
+                val now = System.currentTimeMillis()
+                val scored = finalPool.map { q ->
+                    val scoring = com.example.data.engine.CbtWeightedRandomizer.calculateQuestionWeight(
+                        question = q,
+                        exposure = userExposures[q.id],
+                        now = now
+                    )
+                    Pair(q, scoring.compositeWeight)
+                }
+
+                // Weighted stochastic sampling
+                val sampled = scored.map { (q, weight) ->
+                    val u = kotlin.math.max(0.000001, kotlin.math.min(0.999999, kotlin.random.Random.nextDouble()))
+                    val stochasticKey = Math.pow(u, 1.0 / kotlin.math.max(0.0001, weight))
+                    Pair(q, stochasticKey)
+                }.sortedByDescending { it.second }.map { it.first }
+
+                com.example.data.engine.QuestionDeduplicator.deduplicateQuestions(sampled).take(targetCount)
+            }
+
+            // Update seen question memory and exposures in Room asynchronously
+            val updatedIds = (_seenCbtQuestionIds.value + selectedQuestions.map { it.id }).toList().takeLast(3000).toSet()
+            val updatedTexts = (_seenCbtQuestionTexts.value + selectedQuestions.map { com.example.data.engine.QuestionDeduplicator.normalizeText(it.questionText) }).toList().takeLast(3000).toSet()
+            repository.recordQuestionExposures(selectedQuestions)
+
+            withContext(Dispatchers.Main) {
+                _seenCbtQuestionIds.value = updatedIds
+                _seenCbtQuestionTexts.value = updatedTexts
+                _practiceModeName.value = mode
+                _activePracticeQuestions.value = selectedQuestions
+                _activeQuestionIndex.value = 0
+                _userAnswers.value = emptyMap()
+                _showExplanation.value = false
+            }
         }
-
-        val topicFiltered = if (topicFilter != null) {
-            baseQuestions.filter { it.topic.equals(topicFilter, ignoreCase = true) }
-        } else {
-            baseQuestions
-        }
-
-        val pool = if (topicFiltered.isNotEmpty()) topicFiltered else poolSource
-        val questions = pool.shuffled()
-
-        _practiceModeName.value = mode
-        _activePracticeQuestions.value = if (mode == "Quick Practice") questions.take(10) else questions
-        _activeQuestionIndex.value = 0
-        _userAnswers.value = emptyMap()
-        _showExplanation.value = false
     }
 
     fun startMistakePracticeSession(subjectFilter: String? = null) {
@@ -394,20 +835,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun answerQuestion(questionId: String, optionIndex: Int) {
+        val currentMap = _userAnswers.value.toMutableMap()
+        currentMap[questionId] = optionIndex
+        _userAnswers.value = currentMap
+        _showExplanation.value = true
+
+        val q = _activePracticeQuestions.value.find { it.id == questionId }
+            ?: if (_activeQuestionIndex.value in _activePracticeQuestions.value.indices) _activePracticeQuestions.value[_activeQuestionIndex.value] else null
+
+        if (q != null) {
+            viewModelScope.launch {
+                repository.recordQuestionAnswer(q, optionIndex)
+            }
+        }
+        persistCurrentExamState()
+    }
+
     fun answerActiveQuestion(optionIndex: Int) {
         val questions = _activePracticeQuestions.value
         val index = _activeQuestionIndex.value
         if (index in questions.indices) {
             val q = questions[index]
-            val currentMap = _userAnswers.value.toMutableMap()
-            currentMap[q.id] = optionIndex
-            _userAnswers.value = currentMap
-            _showExplanation.value = true
-
-            // Record in repository
-            viewModelScope.launch {
-                repository.recordQuestionAnswer(q, optionIndex)
-            }
+            answerQuestion(q.id, optionIndex)
         }
     }
 
@@ -415,6 +865,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (_activeQuestionIndex.value < _activePracticeQuestions.value.size - 1) {
             _activeQuestionIndex.value += 1
             _showExplanation.value = _userAnswers.value.containsKey(_activePracticeQuestions.value[_activeQuestionIndex.value].id)
+            persistCurrentExamState()
         }
     }
 
@@ -422,6 +873,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (_activeQuestionIndex.value > 0) {
             _activeQuestionIndex.value -= 1
             _showExplanation.value = _userAnswers.value.containsKey(_activePracticeQuestions.value[_activeQuestionIndex.value].id)
+            persistCurrentExamState()
         }
     }
 
@@ -429,12 +881,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (index in _activePracticeQuestions.value.indices) {
             _activeQuestionIndex.value = index
             _showExplanation.value = _userAnswers.value.containsKey(_activePracticeQuestions.value[index].id)
+            persistCurrentExamState()
         }
     }
 
     fun finishPracticeSession() {
         val questions = _activePracticeQuestions.value
         val answers = _userAnswers.value
+        val answeredCount = answers.size
         var correctCount = 0
 
         questions.forEach { q ->
@@ -448,14 +902,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val subjects = questions.map { it.subject }.distinct().joinToString(",")
 
         viewModelScope.launch {
-            repository.savePracticeSession(
-                mode = mode,
-                score = correctCount,
-                totalQuestions = questions.size,
-                subjectsCsv = subjects,
-                durationSeconds = 300,
-                userAnswersMap = answers
-            )
+            if (answeredCount > 0) {
+                repository.savePracticeSession(
+                    mode = mode,
+                    score = correctCount,
+                    totalQuestions = answeredCount,
+                    subjectsCsv = subjects,
+                    durationSeconds = 300,
+                    userAnswersMap = answers
+                )
+            } else {
+                repository.clearActiveExamState()
+            }
         }
     }
 
@@ -466,13 +924,55 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _seenCbtQuestionIds = MutableStateFlow<Set<String>>(emptySet())
     private val _seenCbtQuestionTexts = MutableStateFlow<Set<String>>(emptySet())
 
-    // Mini CBT Session: 20 Randomly Generated Questions for a specific subject
-    fun startMiniCbtExam(subject: String) {
+    // Auto-save ongoing active CBT exam state to Room for crash recovery & offline continuity
+    private fun persistCurrentExamState() {
+        val questions = _activePracticeQuestions.value
+        if (questions.isEmpty()) return
+        val answers = _userAnswers.value
+        val answersJson = answers.entries.joinToString(prefix = "{", postfix = "}") { "\"${it.key}\": ${it.value}" }
+        val flaggedCsv = _cbtFlaggedQuestions.value.joinToString(",")
+        val idsCsv = questions.map { it.id }.joinToString(",")
+        val subjects = questions.map { it.subject }.distinct().joinToString(",")
+        val mode = _practiceModeName.value
+        val isMini = _isMiniCbtSession.value
+        val currentIdx = _activeQuestionIndex.value
+        val selSubject = _selectedCbtSubject.value
+        val timerRemaining = _cbtTimerSeconds.value
+
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.saveActiveExamState(
+                ActiveExamStateEntity(
+                    id = "active_cbt_session",
+                    mode = mode,
+                    subjectsCsv = subjects,
+                    questionIdsCsv = idsCsv,
+                    userAnswersJson = answersJson,
+                    flaggedIndicesCsv = flaggedCsv,
+                    currentQuestionIndex = currentIdx,
+                    selectedSubject = selSubject,
+                    timerSecondsRemaining = timerRemaining,
+                    totalDurationSeconds = if (isMini) 1200L else 7200L,
+                    isMiniCbt = isMini,
+                    startTimestamp = System.currentTimeMillis(),
+                    lastUpdatedTimestamp = System.currentTimeMillis(),
+                    isCompleted = false
+                )
+            )
+        }
+    }
+
+    private val _totalExamDurationSeconds = MutableStateFlow(1200L)
+
+    // Mini CBT / Subject Practice Session: customizable question count and time limit
+    fun startMiniCbtExam(subject: String, questionCount: Int = 20, timeLimitMinutes: Int = 20) {
         val normSubject = QuestionBankGenerator.normalizeSubjectName(subject)
         _isMiniCbtSession.value = true
         _activePracticeQuestions.value = emptyList() // Trigger smooth loading indicator
-        _practiceModeName.value = "Mini CBT: $normSubject"
+        _practiceModeName.value = "Practice: $normSubject"
         _selectedCbtSubject.value = normSubject
+
+        val durationSeconds = if (timeLimitMinutes > 0) timeLimitMinutes * 60L else 0L
+        _totalExamDurationSeconds.value = if (durationSeconds > 0) durationSeconds else 1200L
 
         viewModelScope.launch(Dispatchers.Default) {
             val userExposures = repository.getExposuresForUser()
@@ -480,6 +980,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             
             val miniQuestions = com.example.data.engine.PrepzaCbtEngine.generateMiniCbtExam(
                 subject = normSubject,
+                targetCount = questionCount,
                 availablePool = pool,
                 userExposures = userExposures,
                 excludedSessionIds = _seenCbtQuestionIds.value
@@ -496,16 +997,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _seenCbtQuestionIds.value = updatedIds
                 _seenCbtQuestionTexts.value = updatedTexts
                 _isMiniCbtSession.value = true
-                _practiceModeName.value = "Mini CBT: $normSubject"
+                _practiceModeName.value = "Practice: $normSubject"
                 _activePracticeQuestions.value = miniQuestions
                 _activeQuestionIndex.value = 0
                 _userAnswers.value = emptyMap()
                 _cbtFlaggedQuestions.value = emptySet()
-                _cbtTimerSeconds.value = 1200L // 20 minutes for 20 questions
+                _cbtTimerSeconds.value = if (durationSeconds > 0) durationSeconds else 3600L
                 _cbtResult.value = null
                 _selectedCbtSubject.value = normSubject
 
-                startCbtTimer()
+                if (timeLimitMinutes > 0) {
+                    startCbtTimer()
+                }
+                persistCurrentExamState()
             }
         }
     }
@@ -550,6 +1054,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 _selectedCbtSubject.value = if (cbtQuestions.isNotEmpty()) cbtQuestions[0].subject else "English Language"
 
                 startCbtTimer()
+                persistCurrentExamState()
             }
         }
     }
@@ -561,9 +1066,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private fun startCbtTimer() {
         timerJob?.cancel()
         timerJob = viewModelScope.launch {
+            var tickCount = 0
             while (_cbtTimerSeconds.value > 0) {
                 delay(1000L)
                 _cbtTimerSeconds.value -= 1
+                tickCount++
+                // Periodically persist timer state every 15 seconds to ensure exact time recovery
+                if (tickCount % 15 == 0) {
+                    persistCurrentExamState()
+                }
             }
             submitCbtExam()
         }
@@ -578,6 +1089,102 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             currentSet.add(index)
         }
         _cbtFlaggedQuestions.value = currentSet
+        persistCurrentExamState()
+    }
+
+    fun flagAndAutoFixQuestion(question: QuestionEntity, reason: String, notes: String = "") {
+        val index = _activeQuestionIndex.value
+        val currentSet = _cbtFlaggedQuestions.value.toMutableSet()
+        currentSet.add(index)
+        _cbtFlaggedQuestions.value = currentSet
+        persistCurrentExamState()
+
+        // Launch background AI reasoning and database auto-repair
+        aiQuestionFixer.flagAndAutoFix(question, reason, notes)
+    }
+
+    fun resumeActiveCbtExam() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val state = repository.getActiveExamStateOnce() ?: return@launch
+            val ids = state.questionIdsCsv.split(",").map { it.trim() }.filter { it.isNotBlank() }
+            if (ids.isEmpty()) return@launch
+
+            val loadedQuestions = repository.questionDao.getQuestionsByIds(ids)
+            val questionMap = loadedQuestions.associateBy { it.id }
+            val orderedQuestions = ids.mapNotNull { questionMap[it] }
+            if (orderedQuestions.isEmpty()) return@launch
+
+            val parsedAnswers = mutableMapOf<String, Int>()
+            if (state.userAnswersJson.isNotBlank() && state.userAnswersJson != "{}") {
+                try {
+                    val cleaned = state.userAnswersJson.trim().removeSurrounding("{", "}")
+                    cleaned.split(",").forEach { entry ->
+                        val parts = entry.split(":")
+                        if (parts.size == 2) {
+                            val qId = parts[0].trim().replace("\"", "")
+                            val ansIdx = parts[1].trim().toIntOrNull()
+                            if (qId.isNotBlank() && ansIdx != null) {
+                                parsedAnswers[qId] = ansIdx
+                            }
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
+
+            val flags = state.flaggedIndicesCsv.split(",")
+                .mapNotNull { it.trim().toIntOrNull() }
+                .toSet()
+
+            withContext(Dispatchers.Main) {
+                _activePracticeQuestions.value = orderedQuestions
+                _activeQuestionIndex.value = state.currentQuestionIndex.coerceIn(0, (orderedQuestions.size - 1).coerceAtLeast(0))
+                _userAnswers.value = parsedAnswers
+                _cbtFlaggedQuestions.value = flags
+                _cbtTimerSeconds.value = state.timerSecondsRemaining.coerceAtLeast(10L)
+                _isMiniCbtSession.value = state.isMiniCbt
+                _practiceModeName.value = state.mode
+                _selectedCbtSubject.value = state.selectedSubject.ifBlank { orderedQuestions.firstOrNull()?.subject ?: "English Language" }
+                _cbtResult.value = null
+
+                startCbtTimer()
+            }
+        }
+    }
+
+    fun discardActiveExam() {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.clearActiveExamState()
+        }
+    }
+
+    fun getSubjectCoverageStats(subject: String, onResult: (com.example.data.engine.CbtWeightedRandomizer.SubjectCoverageStats) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val stats = repository.getSubjectCoverageStats(subject)
+            withContext(Dispatchers.Main) {
+                onResult(stats)
+            }
+        }
+    }
+
+    fun resetSubjectExposureHistory(subject: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.resetExposuresForSubject(subject)
+        }
+    }
+
+    fun clearAllQuestionExposureHistory() {
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.clearAllExposures()
+        }
+    }
+
+    fun syncOfflineDataNow() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _isSyncingCloud.value = true
+            repository.syncPendingData()
+            delay(500L)
+            _isSyncingCloud.value = false
+        }
     }
 
     fun submitCbtExam() {
@@ -603,23 +1210,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         if (isMini) {
-            // Single Subject Mini CBT: Normal score out of 20 (e.g. 15/20 or 4/20), NOT over 400!
+            // Single Subject Mini CBT / Practice session: score out of total questions (e.g. 18/20, 36/40, 52/60, 72/80)
             val totalQuestions = if (questions.isNotEmpty()) questions.size else 20
             val accuracy = if (totalQuestions > 0) (totalCorrect * 100) / totalQuestions else 0
             val subjectName = _selectedCbtSubject.value.ifBlank { questions.firstOrNull()?.subject ?: "Subject Practice" }
-            val timeUsed = 1200L - _cbtTimerSeconds.value.coerceAtLeast(0L)
+            val totalDuration = _totalExamDurationSeconds.value
+            val timeUsed = if (totalDuration > 0) (totalDuration - _cbtTimerSeconds.value.coerceAtLeast(0L)).coerceAtLeast(1L) else 300L
 
+            val ratio = if (totalQuestions > 0) totalCorrect.toFloat() / totalQuestions else 0f
             val readiness = when {
-                totalCorrect >= 18 -> "Outstanding Mastery ($totalCorrect/$totalQuestions • ${accuracy}%) — Top 1% UTME Grade!"
-                totalCorrect >= 14 -> "Strong Performance ($totalCorrect/$totalQuestions • ${accuracy}%) — On track for high score"
-                totalCorrect >= 10 -> "Fair Performance ($totalCorrect/$totalQuestions • ${accuracy}%) — Solid foundation, review missed items"
+                ratio >= 0.85f -> "Outstanding Mastery ($totalCorrect/$totalQuestions • ${accuracy}%) — Top 1% UTME Grade!"
+                ratio >= 0.70f -> "Strong Performance ($totalCorrect/$totalQuestions • ${accuracy}%) — On track for high score"
+                ratio >= 0.50f -> "Fair Performance ($totalCorrect/$totalQuestions • ${accuracy}%) — Solid foundation, review missed items"
                 else -> "Needs Focused Revision ($totalCorrect/$totalQuestions • ${accuracy}%) — Use AI Tutor to master these topics"
             }
 
             val summary = CbtResultSummary(
-                totalScore = totalCorrect, // e.g. 15
-                targetScore = 20,
-                maxScore = totalQuestions, // 20
+                totalScore = totalCorrect,
+                targetScore = totalQuestions,
+                maxScore = totalQuestions,
                 isMiniCbt = true,
                 miniCbtSubject = subjectName,
                 accuracyPercent = accuracy,
@@ -825,6 +1434,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         _activeChapterIndex.value = index
     }
 
+    fun updateBookReadingProgress(bookId: String, progressPercent: Int, lastReadChapterIndex: Int) {
+        viewModelScope.launch {
+            repository.updateBookReadingProgress(bookId, progressPercent, lastReadChapterIndex)
+            val current = _activeBook.value
+            if (current != null && current.id == bookId) {
+                _activeBook.value = current.copy(
+                    readingProgressPercent = progressPercent,
+                    lastReadChapterIndex = lastReadChapterIndex
+                )
+            }
+            _activeChapterIndex.value = lastReadChapterIndex
+        }
+    }
+
     // Friends & Profile
     fun addFriend(code: String, onResult: (Boolean, String?) -> Unit = { _, _ -> }) {
         viewModelScope.launch {
@@ -1022,6 +1645,226 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val count = repository.cleanAllQuestions()
             onComplete?.invoke(count)
+        }
+    }
+
+    // --- Interactive Home & Subject Learning Actions ---
+
+    fun selectSubject(subjectName: String) {
+        _selectedSubjectName.value = subjectName
+    }
+
+    fun selectLearningTopic(subjectName: String, topicName: String) {
+        _selectedSubjectName.value = subjectName
+        val pack = com.example.data.learning.CurriculumRegistry.getTopicPack(subjectName, topicName)
+            ?: com.example.data.learning.CurriculumRegistry.getCurriculum(subjectName)?.allTopics?.firstOrNull()
+        _selectedLearningPack.value = pack
+        _currentLearningCardIndex.value = 0
+        _isLearningPackCompleted.value = false
+        // Restore existing card position if any
+        viewModelScope.launch {
+            val progress = repository.getTopicProgress("", subjectName, topicName).firstOrNull()
+            if (progress != null && progress.currentCardIndex > 0) {
+                _currentLearningCardIndex.value = progress.currentCardIndex
+            }
+        }
+    }
+
+    fun startLearningPack(pack: com.example.data.learning.LearningPack, resumeCardIndex: Int = 0) {
+        _selectedLearningPack.value = pack
+        _selectedSubjectName.value = pack.subject
+        _currentLearningCardIndex.value = resumeCardIndex
+        _isLearningPackCompleted.value = false
+        _isQuickRecallFinished.value = false
+        _quickRecallIndex.value = 0
+        _quickRecallAnswers.value = emptyMap()
+        _quickRecallScore.value = 0
+    }
+
+    fun setLearningCardIndex(index: Int) {
+        val pack = _selectedLearningPack.value ?: return
+        val clamped = index.coerceIn(0, (pack.cards.size - 1).coerceAtLeast(0))
+        _currentLearningCardIndex.value = clamped
+        if (clamped >= pack.cards.size - 1) {
+            _isLearningPackCompleted.value = true
+        }
+        viewModelScope.launch {
+            repository.saveCardPosition(
+                userId = "",
+                subject = pack.subject,
+                topicName = pack.topicName,
+                cardIndex = clamped,
+                totalCards = pack.cards.size
+            )
+        }
+    }
+
+    fun nextLearningCard() {
+        val pack = _selectedLearningPack.value ?: return
+        if (_currentLearningCardIndex.value < pack.cards.size - 1) {
+            setLearningCardIndex(_currentLearningCardIndex.value + 1)
+        } else {
+            _isLearningPackCompleted.value = true
+        }
+    }
+
+    fun previousLearningCard() {
+        if (_currentLearningCardIndex.value > 0) {
+            setLearningCardIndex(_currentLearningCardIndex.value - 1)
+        }
+    }
+
+    fun startQuickRecall() {
+        val pack = _selectedLearningPack.value ?: return
+        _quickRecallIndex.value = 0
+        _quickRecallAnswers.value = emptyMap()
+        _quickRecallScore.value = 0
+        _isQuickRecallFinished.value = false
+    }
+
+    fun answerQuickRecallQuestion(questionIndex: Int, selectedOptionIndex: Int) {
+        val pack = _selectedLearningPack.value ?: return
+        if (questionIndex >= pack.recallQuestions.size) return
+        val currentMap = _quickRecallAnswers.value.toMutableMap()
+        if (currentMap.containsKey(questionIndex)) return // Already answered
+        currentMap[questionIndex] = selectedOptionIndex
+        _quickRecallAnswers.value = currentMap
+
+        val q = pack.recallQuestions[questionIndex]
+        if (selectedOptionIndex == q.correctIndex) {
+            _quickRecallScore.value += 1
+        }
+
+        // If this was the last question, complete recall
+        if (currentMap.size >= pack.recallQuestions.size) {
+            _isQuickRecallFinished.value = true
+            viewModelScope.launch {
+                repository.recordQuickRecallResult(
+                    userId = "",
+                    subject = pack.subject,
+                    topicName = pack.topicName,
+                    score = _quickRecallScore.value,
+                    total = pack.recallQuestions.size
+                )
+            }
+        }
+    }
+
+    fun nextQuickRecallQuestion() {
+        val pack = _selectedLearningPack.value ?: return
+        if (_quickRecallIndex.value < pack.recallQuestions.size - 1) {
+            _quickRecallIndex.value += 1
+        } else {
+            _isQuickRecallFinished.value = true
+        }
+    }
+
+    fun savePersonalStudyCard(front: String, back: String, note: String?) {
+        val pack = _selectedLearningPack.value ?: return
+        if (front.isBlank() || back.isBlank()) return
+        viewModelScope.launch {
+            val card = UserPersonalCardEntity(
+                id = java.util.UUID.randomUUID().toString(),
+                userId = "",
+                subject = pack.subject,
+                topicName = pack.topicName,
+                frontText = front.trim(),
+                backText = back.trim(),
+                note = note?.trim()?.ifBlank { null }
+            )
+            repository.savePersonalCard(card)
+        }
+    }
+
+    fun deletePersonalStudyCard(cardId: String) {
+        viewModelScope.launch {
+            repository.deletePersonalCard(cardId)
+        }
+    }
+
+    fun toggleTopicBookmark(subject: String, topicName: String, isBookmarked: Boolean) {
+        viewModelScope.launch {
+            repository.toggleTopicBookmark("", subject, topicName, isBookmarked)
+        }
+    }
+
+    fun toggleLearningCardBookmark(subject: String, topicName: String, cardId: String, isBookmarked: Boolean = true) {
+        viewModelScope.launch {
+            repository.toggleCardBookmark(
+                userId = "",
+                cardId = cardId,
+                topicName = topicName,
+                subject = subject,
+                isBookmarked = isBookmarked
+            )
+        }
+    }
+
+    fun updateTopicNotes(subject: String, topicName: String, notes: String?) {
+        viewModelScope.launch {
+            repository.updateTopicPersonalNotes("", subject, topicName, notes)
+        }
+    }
+
+    fun startTopicPracticeSession(subject: String, topicName: String) {
+        startPracticeSession(
+            mode = "Topic Practice: $topicName",
+            subjectFilter = subject,
+            topicFilter = topicName
+        )
+    }
+
+    fun startTopicMiniCbt(subject: String, topicName: String, questionCount: Int = 10, timeLimitMinutes: Int = 15) {
+        val normSubject = QuestionBankGenerator.normalizeSubjectName(subject)
+        _isMiniCbtSession.value = true
+        _activePracticeQuestions.value = emptyList()
+        _practiceModeName.value = "Mini CBT: $topicName"
+        _selectedCbtSubject.value = normSubject
+
+        val durationSeconds = if (timeLimitMinutes > 0) timeLimitMinutes * 60L else 0L
+        _totalExamDurationSeconds.value = if (durationSeconds > 0) durationSeconds else 1200L
+
+        viewModelScope.launch(Dispatchers.Default) {
+            val userExposures = repository.getExposuresForUser()
+            val pool = allQuestions.value.ifEmpty { repository.questionDao.getAllQuestionsOnce() }.ifEmpty { QuestionBankGenerator.getAllSeedQuestions() }
+            
+            val topicPool = pool.filter { 
+                (it.subject.equals(normSubject, ignoreCase = true) || it.subject.equals(subject, ignoreCase = true)) &&
+                (it.topic.contains(topicName, ignoreCase = true) || topicName.contains(it.topic, ignoreCase = true))
+            }
+            val poolToUse = if (topicPool.size >= 5) topicPool else pool.filter { it.subject.equals(normSubject, ignoreCase = true) || it.subject.equals(subject, ignoreCase = true) }
+
+            val miniQuestions = com.example.data.engine.PrepzaCbtEngine.generateMiniCbtExam(
+                subject = normSubject,
+                targetCount = questionCount,
+                availablePool = poolToUse,
+                userExposures = userExposures,
+                excludedSessionIds = _seenCbtQuestionIds.value
+            )
+
+            val updatedIds = (_seenCbtQuestionIds.value + miniQuestions.map { it.id }).toList().takeLast(3000).toSet()
+            val updatedTexts = (_seenCbtQuestionTexts.value + miniQuestions.map { com.example.data.engine.QuestionDeduplicator.normalizeText(it.questionText) }).toList().takeLast(3000).toSet()
+
+            repository.recordQuestionExposures(miniQuestions)
+
+            withContext(Dispatchers.Main) {
+                _seenCbtQuestionIds.value = updatedIds
+                _seenCbtQuestionTexts.value = updatedTexts
+                _isMiniCbtSession.value = true
+                _practiceModeName.value = "Mini CBT: $topicName"
+                _activePracticeQuestions.value = miniQuestions
+                _activeQuestionIndex.value = 0
+                _userAnswers.value = emptyMap()
+                _cbtFlaggedQuestions.value = emptySet()
+                _cbtTimerSeconds.value = if (durationSeconds > 0) durationSeconds else 3600L
+                _cbtResult.value = null
+                _selectedCbtSubject.value = normSubject
+
+                if (timeLimitMinutes > 0) {
+                    startCbtTimer()
+                }
+                persistCurrentExamState()
+            }
         }
     }
 }

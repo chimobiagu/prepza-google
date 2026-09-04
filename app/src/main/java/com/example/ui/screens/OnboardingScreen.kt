@@ -104,7 +104,10 @@ fun OnboardingScreen(
             "Literature in English",
             "Government",
             "Economics",
-            "Principles of Accounts"
+            "Principles of Accounts",
+            "Geography",
+            "History",
+            "Islamic Religious Studies (IRS)"
         )
     }
 

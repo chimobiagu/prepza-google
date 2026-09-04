@@ -441,20 +441,8 @@ class ExampleUnitTest {
     }
 
     @Test
-    fun testOnlyAllowed11SubjectsInDatabase() {
-        val allowedSubjects = setOf(
-            "English Language",
-            "Mathematics",
-            "Chemistry",
-            "Physics",
-            "Biology",
-            "CRS",
-            "Government",
-            "Economics",
-            "Principles of Accounts",
-            "Literature in English",
-            "Commerce"
-        )
+    fun testOnlyAllowedSubjectsInDatabase() {
+        val allowedSubjects = com.example.data.engine.SubjectRegistry.getAllSubjectNames().toSet()
 
         val pool = QuestionBankGenerator.getAllSeedQuestions()
         val distinctSubjects = pool.map { QuestionBankGenerator.normalizeSubjectName(it.subject) }.distinct().toSet()
@@ -463,9 +451,9 @@ class ExampleUnitTest {
         distinctSubjects.forEach { println(" - $it") }
 
         for (subj in distinctSubjects) {
-            assertTrue("Subject '$subj' must be in allowed 11 subjects list", subj in allowedSubjects)
+            assertTrue("Subject '$subj' must be in allowed subjects list", subj in allowedSubjects)
         }
-        assertEquals("Must have exactly the 11 allowed subjects", allowedSubjects, distinctSubjects)
+        assertEquals("Must have exactly the allowed registered subjects", allowedSubjects, distinctSubjects)
     }
 
     @Test

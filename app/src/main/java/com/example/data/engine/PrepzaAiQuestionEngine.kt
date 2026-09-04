@@ -30,6 +30,9 @@ object PrepzaAiQuestionEngine {
             "crs", "crk" -> "CRS"
             "commerce" -> "Commerce"
             "financial accounting", "principles of accounts", "principles of account", "accounting" -> "Principles of Accounts"
+            "geography", "geo" -> "Geography"
+            "history", "his" -> "History"
+            "irs", "irk", "islamic studies", "islamic religious studies", "islamic religious studies (irs)" -> "Islamic Religious Studies (IRS)"
             else -> subject.trim()
         }
 
@@ -81,6 +84,9 @@ object PrepzaAiQuestionEngine {
             "CRS" -> crsTemplates
             "Commerce" -> commerceTemplates
             "Principles of Accounts", "Financial Accounting" -> accountingTemplates
+            "Geography" -> geographyTemplates
+            "History" -> historyTemplates
+            "Islamic Religious Studies (IRS)", "IRS" -> irsTemplates
             else -> englishTemplates
         }
 
@@ -344,6 +350,45 @@ object PrepzaAiQuestionEngine {
             optionD = "₦900,000",
             correctAnswerIndex = 0,
             explanation = "From the fundamental accounting equation: Assets = Liabilities + Capital => Capital = Assets - Liabilities = ₦2,500,000 - ₦900,000 = ₦1,600,000."
+        )
+    )
+
+    private val geographyTemplates = listOf(
+        QuestionTemplate(
+            topic = "Atmosphere, Weather and Climate",
+            questionText = "The atmospheric layer closest to the Earth's surface where virtually all weather phenomena occur is the:",
+            optionA = "Stratosphere",
+            optionB = "Troposphere",
+            optionC = "Mesosphere",
+            optionD = "Thermosphere",
+            correctAnswerIndex = 1,
+            explanation = "The troposphere is the lowest layer of Earth's atmosphere, extending from surface level up to roughly 8–15 km, containing 75% of atmospheric mass and almost all clouds and water vapor."
+        )
+    )
+
+    private val historyTemplates = listOf(
+        QuestionTemplate(
+            topic = "British Conquest and Colonial Administration",
+            questionText = "The Northern and Southern Protectorates of Nigeria were amalgamated by Sir Frederick Lugard in what year?",
+            optionA = "1900",
+            optionB = "1914",
+            optionC = "1922",
+            optionD = "1960",
+            correctAnswerIndex = 1,
+            explanation = "On January 1, 1914, Lord Frederick Lugard amalgamated the Northern and Southern Protectorates of Nigeria to form modern unified Nigeria."
+        )
+    )
+
+    private val irsTemplates = listOf(
+        QuestionTemplate(
+            topic = "Tawhid and Articles of Faith (Iman)",
+            questionText = "In Islamic theology, the belief in the absolute oneness, uniqueness, and indivisibility of Allah is termed:",
+            optionA = "Shirk",
+            optionB = "Tawhid",
+            optionC = "Sunnah",
+            optionD = "Fiqh",
+            correctAnswerIndex = 1,
+            explanation = "Tawhid represents the core Islamic concept of monotheism, declaring the oneness of Allah in lordship (Rububiyyah), worship (Uluhiyyah), and names and attributes (Asma' wa al-Sifat)."
         )
     )
 }

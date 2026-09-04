@@ -36,9 +36,17 @@ import com.example.data.db.UserProfileEntity
 import com.example.ui.theme.*
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
+
+data class DayActivity(
+    val dayName: String,
+    val dateLabel: String,
+    val questionsAnswered: Int,
+    val isToday: Boolean
+)
 
 @Composable
 fun ProgressScreen(
@@ -50,7 +58,18 @@ fun ProgressScreen(
 ) {
     // 1. Calculate REAL metrics from user's Room DB sessions
     val totalAnswered = remember(recentSessions) {
-        recentSessions.sumOf { it.totalQuestions }
+        recentSessions.sumOf { s ->
+            if (s.userAnswersJson.isNotBlank() && s.userAnswersJson != "{}") {
+                try {
+                    val count = s.userAnswersJson.trim().removeSurrounding("{", "}").split(",").count { it.contains(":") }
+                    if (count > 0) count else s.totalQuestions
+                } catch (_: Exception) {
+                    s.totalQuestions
+                }
+            } else {
+                s.totalQuestions
+            }
+        }
     }
 
     val totalCorrect = remember(recentSessions) {
@@ -65,7 +84,7 @@ fun ProgressScreen(
         recentSessions.sumOf { it.durationSeconds }
     }
     val totalStudyMinutes = remember(totalStudySeconds) {
-        (totalStudySeconds / 60).coerceAtLeast(12)
+        (totalStudySeconds / 60).toInt()
     }
 
     val targetScore = profile?.targetScore ?: 320
@@ -78,6 +97,66 @@ fun ProgressScreen(
     }
 
     val streakDays = profile?.streakDays ?: 3
+
+    // Real Daily Progress for the last 7 calendar days
+    val dailyProgressList = remember(recentSessions) {
+        val list = mutableListOf<DayActivity>()
+        val cal = Calendar.getInstance()
+        val sdfKey = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+        val sdfDay = SimpleDateFormat("EEE", Locale.getDefault())
+        val sdfDate = SimpleDateFormat("MMM d", Locale.getDefault())
+        val todayKey = sdfKey.format(cal.time)
+
+        val countByDate = mutableMapOf<String, Int>()
+        recentSessions.forEach { s ->
+            val k = sdfKey.format(Date(s.timestamp))
+            val actualCount = if (s.userAnswersJson.isNotBlank() && s.userAnswersJson != "{}") {
+                try {
+                    val count = s.userAnswersJson.trim().removeSurrounding("{", "}").split(",").count { it.contains(":") }
+                    if (count > 0) count else s.totalQuestions
+                } catch (_: Exception) {
+                    s.totalQuestions
+                }
+            } else {
+                s.totalQuestions
+            }
+            countByDate[k] = (countByDate[k] ?: 0) + actualCount
+        }
+
+        // Build 7 calendar days leading to today
+        for (i in 6 downTo 0) {
+            val dayCal = Calendar.getInstance()
+            dayCal.add(Calendar.DAY_OF_YEAR, -i)
+            val dKey = sdfKey.format(dayCal.time)
+            val dayName = sdfDay.format(dayCal.time)
+            val dateLabel = sdfDate.format(dayCal.time)
+            val count = countByDate[dKey] ?: 0
+            list.add(
+                DayActivity(
+                    dayName = dayName,
+                    dateLabel = dateLabel,
+                    questionsAnswered = count,
+                    isToday = (dKey == todayKey)
+                )
+            )
+        }
+        list
+    }
+
+    val weeklyTotalQuestions = remember(dailyProgressList) {
+        dailyProgressList.sumOf { it.questionsAnswered }
+    }
+
+    val weeklyDailyAverage = remember(weeklyTotalQuestions) {
+        (weeklyTotalQuestions / 7f).roundToInt()
+    }
+
+    // Filter CBT Mock sessions for dedicated previous CBT results section
+    val cbtMockSessions = remember(recentSessions) {
+        recentSessions.filter {
+            it.mode.contains("CBT", ignoreCase = true) || it.mode.contains("Mock", ignoreCase = true)
+        }
+    }
 
     // Parse user's real subjects from profile
     val userSubjectsList = remember(profile?.jambSubjectsCsv) {
@@ -94,8 +173,19 @@ fun ProgressScreen(
 
         recentSessions.forEach { session ->
             val sessionSubjects = session.subjectsCsv.split(",").map { it.trim() }
-            if (sessionSubjects.isNotEmpty() && session.totalQuestions > 0) {
-                val perSubjectTotal = session.totalQuestions / sessionSubjects.size.coerceAtLeast(1)
+            val actualAnswered = if (session.userAnswersJson.isNotBlank() && session.userAnswersJson != "{}") {
+                try {
+                    val count = session.userAnswersJson.trim().removeSurrounding("{", "}").split(",").count { it.contains(":") }
+                    if (count > 0) count else session.totalQuestions
+                } catch (_: Exception) {
+                    session.totalQuestions
+                }
+            } else {
+                session.totalQuestions
+            }
+
+            if (sessionSubjects.isNotEmpty() && actualAnswered > 0) {
+                val perSubjectTotal = actualAnswered / sessionSubjects.size.coerceAtLeast(1)
                 val perSubjectCorrect = session.score / sessionSubjects.size.coerceAtLeast(1)
                 sessionSubjects.forEach { s ->
                     val current = map[s] ?: Pair(0, 0)
@@ -442,30 +532,36 @@ fun ProgressScreen(
                 ) {
                     Column {
                         Text(
-                            text = "Weekly Activity Volume",
+                            text = "Daily Practice Volume",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
                         )
                         Text(
-                            text = "Questions practiced across the week",
+                            text = "$weeklyTotalQuestions questions answered this week • Avg $weeklyDailyAverage/day",
                             style = MaterialTheme.typography.labelSmall,
                             color = TextSecondary
                         )
                     }
 
-                    Text(
-                        text = "$streakDays Day Streak",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = OrangeAccent
-                    )
+                    Surface(
+                        color = SoftOrangeBg,
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = "$streakDays Day Streak 🔥",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = OrangeAccent,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
                 WeeklyActivityBarChart(
-                    totalQuestions = totalAnswered,
+                    dailyActivities = dailyProgressList,
                     animatedFactor = animatedProgress
                 )
             }
@@ -706,9 +802,241 @@ fun ProgressScreen(
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // --- 8. RECENT SESSION LOGS ---
+        // --- 8. PREVIOUS CBT MOCK RESULTS (Room DB) ---
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = "Previous CBT Mock Results",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary
+                )
+                Text(
+                    text = "Full mock scores and 4-subject performance history",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextSecondary
+                )
+            }
+
+            if (cbtMockSessions.isNotEmpty()) {
+                Surface(
+                    color = SoftEmeraldBg,
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Text(
+                        text = "${cbtMockSessions.size} Mock${if (cbtMockSessions.size > 1) "s" else ""} Taken",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = PrimaryGreenDark,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        if (cbtMockSessions.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                cbtMockSessions.take(5).forEach { session ->
+                    val acc = if (session.totalQuestions > 0) (session.score * 100) / session.totalQuestions else 0
+                    val accuracyColor = when {
+                        acc >= 70 -> PrimaryGreen
+                        acc >= 50 -> AmberAccent
+                        else -> OrangeAccent
+                    }
+                    val dateFormatted = remember(session.timestamp) {
+                        SimpleDateFormat("MMM d, yyyy • h:mm a", Locale.getDefault()).format(Date(session.timestamp))
+                    }
+                    val durationMin = remember(session.durationSeconds) {
+                        val min = session.durationSeconds / 60
+                        val sec = session.durationSeconds % 60
+                        if (min > 0) "${min}m ${sec}s" else "${sec}s"
+                    }
+                    val subjectsList = remember(session.subjectsCsv) {
+                        session.subjectsCsv.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                    }
+
+                    // JAMB 400-scale score estimate
+                    val jambEstimatedScore = remember(session.score, session.totalQuestions) {
+                        if (session.totalQuestions > 0) {
+                            ((session.score.toFloat() / session.totalQuestions.toFloat()) * 400).toInt().coerceIn(0, 400)
+                        } else 0
+                    }
+
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onSelectSession(session) },
+                        shape = RoundedCornerShape(14.dp),
+                        color = SurfaceWhite,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle)
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Default.Computer,
+                                            contentDescription = null,
+                                            tint = PrimaryGreen,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Text(
+                                            text = session.mode,
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold,
+                                            color = TextPrimary
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = dateFormatted,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = TextSecondary
+                                    )
+                                }
+
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(
+                                        text = "$jambEstimatedScore / 400",
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = accuracyColor
+                                    )
+                                    Text(
+                                        text = "${session.score}/${session.totalQuestions} correct ($acc%)",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = TextSecondary
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            // 4-Subject mini breakdown badges
+                            if (subjectsList.isNotEmpty()) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    subjectsList.forEach { s ->
+                                        Surface(
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = AppBackground,
+                                            border = androidx.compose.foundation.BorderStroke(0.8.dp, BorderSubtle),
+                                            modifier = Modifier.weight(1f)
+                                        ) {
+                                            Text(
+                                                text = s.replace("Use of English", "English").take(10),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Medium,
+                                                color = TextPrimary,
+                                                maxLines = 1,
+                                                modifier = Modifier.padding(vertical = 4.dp, horizontal = 4.dp),
+                                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Timer,
+                                        contentDescription = null,
+                                        tint = TextMuted,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = "Time: $durationMin",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = TextSecondary,
+                                        fontSize = 11.sp
+                                    )
+                                }
+
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = "Review Answers",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = PrimaryGreenDark,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                        contentDescription = null,
+                                        tint = PrimaryGreen,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                color = SurfaceWhite,
+                border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Outlined.Timer,
+                            contentDescription = null,
+                            tint = TextMuted,
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "No CBT Mock results recorded yet",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "Take a 4-Subject CBT Mock or Mini CBT to record your scores here.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextMuted,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // --- 9. ALL RECENT SESSIONS ---
         Text(
-            text = "Recent Test Sessions",
+            text = "All Practice Sessions",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = TextPrimary
@@ -724,7 +1052,7 @@ fun ProgressScreen(
         ) {
             Column {
                 if (recentSessions.isNotEmpty()) {
-                    recentSessions.take(5).forEachIndexed { index, session ->
+                    recentSessions.take(6).forEachIndexed { index, session ->
                         val acc = if (session.totalQuestions > 0) (session.score * 100) / session.totalQuestions else 0
                         val accuracyColor = when {
                             acc >= 70 -> PrimaryGreen
@@ -784,7 +1112,7 @@ fun ProgressScreen(
                             }
                         }
 
-                        if (index < recentSessions.take(5).size - 1) {
+                        if (index < recentSessions.take(6).size - 1) {
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
                                 color = BorderSubtle.copy(alpha = 0.6f)
@@ -985,11 +1313,12 @@ private fun ScoreProgressionGraph(
 
 @Composable
 private fun WeeklyActivityBarChart(
-    totalQuestions: Int,
+    dailyActivities: List<DayActivity>,
     animatedFactor: Float
 ) {
-    val days = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
-    val activityRatios = listOf(0.45f, 0.70f, 0.55f, 0.90f, 0.60f, 1.0f, 0.80f)
+    val maxCount = remember(dailyActivities) {
+        (dailyActivities.maxOfOrNull { it.questionsAnswered } ?: 0).coerceAtLeast(15)
+    }
 
     Row(
         modifier = Modifier
@@ -998,9 +1327,13 @@ private fun WeeklyActivityBarChart(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.Bottom
     ) {
-        days.forEachIndexed { index, day ->
-            val ratio = activityRatios[index]
-            val isToday = index == 5 // Saturday highlight or weekend mock
+        dailyActivities.forEach { dayActivity ->
+            val hasActivity = dayActivity.questionsAnswered > 0
+            val ratio = if (hasActivity) {
+                (dayActivity.questionsAnswered.toFloat() / maxCount.toFloat()).coerceIn(0.12f, 1f)
+            } else {
+                0.06f
+            }
 
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -1008,11 +1341,15 @@ private fun WeeklyActivityBarChart(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = "${(ratio * 35).toInt()}",
+                    text = if (hasActivity) "${dayActivity.questionsAnswered}" else "0",
                     style = MaterialTheme.typography.labelSmall,
                     fontSize = 9.sp,
-                    color = if (isToday) PrimaryGreenDark else TextMuted,
-                    fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal
+                    color = when {
+                        dayActivity.isToday && hasActivity -> PrimaryGreenDark
+                        hasActivity -> TextPrimary
+                        else -> TextMuted
+                    },
+                    fontWeight = if (dayActivity.isToday || hasActivity) FontWeight.Bold else FontWeight.Normal
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -1020,22 +1357,32 @@ private fun WeeklyActivityBarChart(
                 Box(
                     modifier = Modifier
                         .width(18.dp)
-                        .height((80 * ratio * animatedFactor).dp.coerceAtLeast(6.dp))
+                        .height(
+                            if (hasActivity) {
+                                (80f * ratio * animatedFactor).dp.coerceAtLeast(8.dp)
+                            } else {
+                                6.dp
+                            }
+                        )
                         .clip(RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp))
                         .background(
-                            if (isToday) Brush.verticalGradient(listOf(PrimaryGreenLight, PrimaryGreen))
-                            else Brush.verticalGradient(listOf(Color(0xFFCBD5E1), Color(0xFF94A3B8)))
+                            when {
+                                dayActivity.isToday && hasActivity -> Brush.verticalGradient(listOf(PrimaryGreenLight, PrimaryGreen))
+                                hasActivity -> Brush.verticalGradient(listOf(PrimaryGreen.copy(alpha = 0.8f), PrimaryGreenDark))
+                                dayActivity.isToday -> Brush.verticalGradient(listOf(AmberAccent.copy(alpha = 0.5f), AmberAccent))
+                                else -> Brush.verticalGradient(listOf(Color(0xFFE2E8F0), Color(0xFFCBD5E1)))
+                            }
                         )
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = day,
+                    text = if (dayActivity.isToday) "Today" else dayActivity.dayName,
                     style = MaterialTheme.typography.labelSmall,
-                    fontSize = 11.sp,
-                    fontWeight = if (isToday) FontWeight.Bold else FontWeight.Medium,
-                    color = if (isToday) PrimaryGreenDark else TextSecondary
+                    fontSize = if (dayActivity.isToday) 9.sp else 11.sp,
+                    fontWeight = if (dayActivity.isToday) FontWeight.Bold else FontWeight.Medium,
+                    color = if (dayActivity.isToday) PrimaryGreenDark else TextSecondary
                 )
             }
         }

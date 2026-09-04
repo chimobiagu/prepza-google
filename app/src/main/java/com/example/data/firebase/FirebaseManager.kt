@@ -66,6 +66,31 @@ class FirebaseManager(private val context: Context) {
 
     // --- Authentication ---
 
+    fun parseFirebaseAuthException(e: Exception): String {
+        return when {
+            e.message?.contains("The email address is badly formatted", ignoreCase = true) == true ->
+                "The email address is improperly formatted."
+            e.message?.contains("The email address is already in use", ignoreCase = true) == true ||
+            e.message?.contains("email-already-in-use", ignoreCase = true) == true ->
+                "An account with this email already exists. Please sign in instead."
+            e.message?.contains("Password should be at least", ignoreCase = true) == true ||
+            e.message?.contains("weak-password", ignoreCase = true) == true ->
+                "Password is too weak. Please use at least 6 characters."
+            e.message?.contains("There is no user record", ignoreCase = true) == true ||
+            e.message?.contains("user-not-found", ignoreCase = true) == true ->
+                "No registered user found for this email address."
+            e.message?.contains("wrong-password", ignoreCase = true) == true ||
+            e.message?.contains("invalid-credential", ignoreCase = true) == true ->
+                "Incorrect password or invalid credentials."
+            e.message?.contains("network-request-failed", ignoreCase = true) == true ||
+            e.message?.contains("A network error", ignoreCase = true) == true ->
+                "Network connection issue. Please check your internet connection."
+            e.message?.contains("too-many-requests", ignoreCase = true) == true ->
+                "Too many attempts. Account temporarily locked for security. Please try again later."
+            else -> e.localizedMessage ?: "Authentication failed. Please verify your credentials."
+        }
+    }
+
     suspend fun signInWithGoogleCredential(credential: AuthCredential): Result<FirebaseUser?> = withContext(Dispatchers.IO) {
         val fbAuth = auth ?: return@withContext Result.failure(Exception("Firebase Auth not initialized"))
         try {
@@ -73,7 +98,7 @@ class FirebaseManager(private val context: Context) {
             Result.success(authResult.user)
         } catch (e: Exception) {
             Log.e(TAG, "Google Sign-In failed: ${e.message}", e)
-            Result.failure(e)
+            Result.failure(Exception(parseFirebaseAuthException(e), e))
         }
     }
 
@@ -89,7 +114,7 @@ class FirebaseManager(private val context: Context) {
             Result.success(result.user)
         } catch (e: Exception) {
             Log.e(TAG, "Email Sign-In failed: ${e.message}", e)
-            Result.failure(e)
+            Result.failure(Exception(parseFirebaseAuthException(e), e))
         }
     }
 
@@ -100,7 +125,7 @@ class FirebaseManager(private val context: Context) {
             Result.success(result.user)
         } catch (e: Exception) {
             Log.e(TAG, "Email Sign-Up failed: ${e.message}", e)
-            Result.failure(e)
+            Result.failure(Exception(parseFirebaseAuthException(e), e))
         }
     }
 
@@ -109,6 +134,17 @@ class FirebaseManager(private val context: Context) {
             auth?.signOut()
         } catch (e: Exception) {
             Log.e(TAG, "Sign out error: ${e.message}")
+        }
+    }
+
+    suspend fun sendPasswordResetEmail(email: String): Result<Unit> = withContext(Dispatchers.IO) {
+        val fbAuth = auth ?: return@withContext Result.failure(Exception("Firebase Auth not initialized"))
+        try {
+            fbAuth.sendPasswordResetEmail(email).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Log.e(TAG, "Password reset email failed: ${e.message}", e)
+            Result.failure(Exception(parseFirebaseAuthException(e), e))
         }
     }
 

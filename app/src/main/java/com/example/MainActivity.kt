@@ -8,30 +8,36 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.data.db.QuestionEntity
+import com.example.data.remote.AppUpdateStatus
 import com.example.ui.components.AcademicSettingsDialog
+import com.example.ui.components.AppUpdatePromptDialog
 import com.example.ui.components.PrepzaPlusUpgradeDialog
 import com.example.ui.components.TrialMilestoneReminderDialog
 import com.example.ui.screens.*
-import com.example.ui.theme.PrepzaTheme
-import com.example.ui.theme.PrimaryGreen
-import com.example.ui.theme.SurfaceWhite
-import com.example.ui.theme.TextPrimary
-import com.example.ui.theme.TextSecondary
+import com.example.ui.screens.learning.*
+import com.example.ui.theme.*
 import com.example.ui.viewmodel.MainViewModel
 import kotlinx.coroutines.launch
 
@@ -54,20 +60,42 @@ enum class ActiveScreen {
     FRIENDS,
     FRIEND_CHAT,
     MISTAKE_BANK,
-    OFFLINE_PACKS
+    OFFLINE_PACKS,
+    SUBJECT_DETAIL,
+    TOPIC_DETAIL,
+    LEARNING_PACK,
+    QUICK_RECALL
 }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        setupImmersiveMode()
         com.example.workers.TrialExpirationWorker.scheduleTrialChecks(this)
+        com.example.workers.CbtOfflineSyncWorker.schedulePeriodicSync(this)
+        com.example.workers.CbtOfflineSyncWorker.triggerImmediateSync(this)
         setContent {
             val viewModel: MainViewModel = viewModel()
-            PrepzaTheme {
+            val themeMode by viewModel.appThemeMode.collectAsStateWithLifecycle()
+            PrepzaTheme(themeMode = themeMode) {
                 PrepzaApp(viewModel = viewModel)
             }
         }
+    }
+
+    override fun onWindowFocusChanged(hasFocus: Boolean) {
+        super.onWindowFocusChanged(hasFocus)
+        if (hasFocus) {
+            setupImmersiveMode()
+        }
+    }
+
+    private fun setupImmersiveMode() {
+        val windowInsetsController = WindowCompat.getInsetsController(window, window.decorView)
+        windowInsetsController.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        windowInsetsController.hide(WindowInsetsCompat.Type.navigationBars())
     }
 }
 
@@ -86,9 +114,15 @@ fun PrepzaApp(viewModel: MainViewModel = viewModel()) {
         }
     }
 
+    val isOnline by viewModel.isOnline.collectAsStateWithLifecycle()
+    val unsyncedCount by viewModel.unsyncedCount.collectAsStateWithLifecycle()
+    val isSyncingCloud by viewModel.isSyncingCloud.collectAsStateWithLifecycle()
+    val activeExamState by viewModel.activeExamState.collectAsStateWithLifecycle()
+
     val activeAccount by viewModel.activeAccount.collectAsStateWithLifecycle()
     val allAccounts by viewModel.allAccounts.collectAsStateWithLifecycle()
     val userProfile by viewModel.userProfile.collectAsStateWithLifecycle()
+    val appThemeMode by viewModel.appThemeMode.collectAsStateWithLifecycle()
     val allQuestions by viewModel.allQuestions.collectAsStateWithLifecycle()
     val allBookmarks by viewModel.allBookmarks.collectAsStateWithLifecycle()
     val allFriends by viewModel.allFriends.collectAsStateWithLifecycle()
@@ -118,6 +152,20 @@ fun PrepzaApp(viewModel: MainViewModel = viewModel()) {
     val aiChatMessages by viewModel.aiChatMessages.collectAsStateWithLifecycle()
     val isAiLoading by viewModel.isAiLoading.collectAsStateWithLifecycle()
     val selectedTutorPersona by viewModel.selectedTutorPersona.collectAsStateWithLifecycle()
+    val aiFixToastMessage by viewModel.aiFixToastMessage.collectAsStateWithLifecycle()
+
+    val appUpdateStatus by viewModel.appUpdateStatus.collectAsStateWithLifecycle()
+    val apkDownloadState by viewModel.apkDownloadState.collectAsStateWithLifecycle()
+    val isContentSyncing by viewModel.isContentSyncing.collectAsStateWithLifecycle()
+    val lastSyncResult by viewModel.lastSyncResult.collectAsStateWithLifecycle()
+    val remoteAnnouncements by viewModel.remoteAnnouncements.collectAsStateWithLifecycle()
+    val authUiState by viewModel.authUiState.collectAsStateWithLifecycle()
+
+    val topicProgressList by viewModel.allTopicProgress.collectAsStateWithLifecycle()
+    val activeUnfinishedTopic by viewModel.activeUnfinishedTopic.collectAsStateWithLifecycle()
+    val selectedSubjectName by viewModel.selectedSubjectName.collectAsStateWithLifecycle()
+    val selectedLearningPack by viewModel.selectedLearningPack.collectAsStateWithLifecycle()
+    val currentLearningCardIndex by viewModel.currentLearningCardIndex.collectAsStateWithLifecycle()
 
     var activeScreen by remember { mutableStateOf(ActiveScreen.MAIN_TABS) }
     var currentTab by remember { mutableStateOf(MainTab.HOME) }
@@ -125,10 +173,39 @@ fun PrepzaApp(viewModel: MainViewModel = viewModel()) {
     var showSettingsDialog by remember { mutableStateOf(false) }
     var showUpgradeDialog by remember { mutableStateOf(false) }
 
-    var authErrorMessage by remember { mutableStateOf<String?>(null) }
-    var isAuthLoading by remember { mutableStateOf(false) }
+    val activityContext = androidx.compose.ui.platform.LocalContext.current
+
+    // Session persistence across app restarts
+    LaunchedEffect(activeAccount, authUiState) {
+        if (activeAccount != null && activeAccount?.isLoggedIn == true) {
+            if (activeScreen == ActiveScreen.AUTH) {
+                activeScreen = ActiveScreen.MAIN_TABS
+            }
+        } else if (authUiState is com.example.ui.viewmodel.AuthUiState.Success && activeScreen == ActiveScreen.AUTH) {
+            activeScreen = ActiveScreen.MAIN_TABS
+        }
+    }
 
     val bookmarkedIds = remember(allBookmarks) { allBookmarks.map { it.questionId }.toSet() }
+
+    // App Version Update Prompt (non-intrusive modal for optional or mandatory updates)
+    if (appUpdateStatus is AppUpdateStatus.OptionalUpdateAvailable ||
+        appUpdateStatus is AppUpdateStatus.MandatoryUpdateRequired) {
+        AppUpdatePromptDialog(
+            updateStatus = appUpdateStatus,
+            downloadState = apkDownloadState,
+            canInstallPackages = viewModel.canRequestPackageInstalls(),
+            onStartUpdate = { config ->
+                viewModel.downloadAndInstallApk(config)
+            },
+            onGrantInstallPermission = {
+                viewModel.openUnknownAppSourcesSettings()
+            },
+            onDismissOptional = { versionCode ->
+                viewModel.dismissOptionalUpdate(versionCode)
+            }
+        )
+    }
 
     // Check for active milestone reminder (20, 10, 5, 2 days before 30-day trial expires)
     val activeMilestone = userProfile?.activeMilestoneReminder
@@ -163,6 +240,10 @@ fun PrepzaApp(viewModel: MainViewModel = viewModel()) {
             onResetTrial = {
                 viewModel.resetTrial()
             },
+            onOpenReferrals = {
+                showUpgradeDialog = false
+                activeScreen = ActiveScreen.FRIENDS
+            },
             onDismiss = {
                 showUpgradeDialog = false
             }
@@ -173,6 +254,12 @@ fun PrepzaApp(viewModel: MainViewModel = viewModel()) {
         AcademicSettingsDialog(
             profile = userProfile,
             activeAccount = activeAccount,
+            isSyncingContent = isContentSyncing,
+            lastSyncMessage = lastSyncResult?.message,
+            currentThemeMode = appThemeMode,
+            onThemeModeChange = { mode ->
+                viewModel.setAppThemeMode(mode)
+            },
             onSaveProfile = { targetScore, subjectsCsv, studyGoalMinutes, institution, dreamCourse, jambDate ->
                 viewModel.updateAcademicSettings(
                     targetScore = targetScore,
@@ -200,77 +287,84 @@ fun PrepzaApp(viewModel: MainViewModel = viewModel()) {
                 showSettingsDialog = false
                 activeScreen = ActiveScreen.OFFLINE_PACKS
             },
+            onOpenReferrals = {
+                showSettingsDialog = false
+                activeScreen = ActiveScreen.FRIENDS
+            },
+            onCheckAppUpdate = {
+                viewModel.checkForAppVersionUpdate(force = true)
+            },
+            onSyncContent = {
+                viewModel.syncRemoteContent(force = true)
+            },
             onDismiss = { showSettingsDialog = false }
         )
     }
 
-    when (activeScreen) {
-        ActiveScreen.AUTH -> {
-            AuthScreen(
-                onLoginWithEmail = { email, password ->
-                    isAuthLoading = true
-                    authErrorMessage = null
-                    viewModel.loginWithEmail(email, password) { success, err ->
-                        isAuthLoading = false
-                        if (success) {
-                            activeScreen = ActiveScreen.MAIN_TABS
-                        } else {
-                            authErrorMessage = err
+    Box(modifier = Modifier.fillMaxSize()) {
+        when (activeScreen) {
+            ActiveScreen.AUTH -> {
+                AuthScreen(
+                    authUiState = authUiState,
+                    savedAccounts = allAccounts,
+                    onLoginWithEmail = { email, password ->
+                        viewModel.loginWithEmail(email, password) { success, _ ->
+                            if (success) {
+                                activeScreen = ActiveScreen.MAIN_TABS
+                            }
                         }
-                    }
-                },
-                onSignUpWithEmail = { name, email, password, referralCode ->
-                    isAuthLoading = true
-                    authErrorMessage = null
-                    viewModel.signUpWithEmail(name, email, password, referralCode) { success, err ->
-                        isAuthLoading = false
-                        if (success) {
-                            activeScreen = ActiveScreen.ONBOARDING
-                        } else {
-                            authErrorMessage = err
+                    },
+                    onSignUpWithEmail = { name, email, password, referralCode ->
+                        viewModel.signUpWithEmail(name, email, password, referralCode) { success, _ ->
+                            if (success) {
+                                activeScreen = ActiveScreen.ONBOARDING
+                            }
                         }
-                    }
-                },
-                onLoginWithGoogle = { name, email, referralCode ->
-                    isAuthLoading = true
-                    authErrorMessage = null
-                    viewModel.loginWithGoogle(name, email, referralCode) { success, err ->
-                        isAuthLoading = false
-                        if (success) {
-                            activeScreen = ActiveScreen.ONBOARDING
-                        } else {
-                            authErrorMessage = err
+                    },
+                    onLoginWithGoogle = { name, email, referralCode ->
+                        viewModel.loginWithGoogleCredentialManager(
+                            context = activityContext,
+                            fallbackName = name,
+                            fallbackEmail = email,
+                            referralCode = referralCode
+                        ) { success, _ ->
+                            if (success) {
+                                activeScreen = ActiveScreen.MAIN_TABS
+                            }
                         }
-                    }
-                },
-                onLoginWithPhone = { phone, name, referralCode ->
-                    isAuthLoading = true
-                    authErrorMessage = null
-                    viewModel.loginWithPhone(phone, name, referralCode) { success, err ->
-                        isAuthLoading = false
-                        if (success) {
-                            activeScreen = ActiveScreen.ONBOARDING
-                        } else {
-                            authErrorMessage = err
+                    },
+                    onLoginWithPhone = { phone, name, referralCode ->
+                        viewModel.loginWithPhone(phone, name, referralCode) { success, _ ->
+                            if (success) {
+                                activeScreen = ActiveScreen.MAIN_TABS
+                            }
                         }
-                    }
-                },
-                onLoginAsGuest = {
-                    isAuthLoading = true
-                    authErrorMessage = null
-                    viewModel.loginAsGuest { success, err ->
-                        isAuthLoading = false
-                        if (success) {
-                            activeScreen = ActiveScreen.MAIN_TABS
-                        } else {
-                            authErrorMessage = err
+                    },
+                    onLoginAsGuest = {
+                        viewModel.loginAsGuest { success, _ ->
+                            if (success) {
+                                activeScreen = ActiveScreen.MAIN_TABS
+                            }
                         }
+                    },
+                    onSwitchToSavedAccount = { accountId ->
+                        viewModel.switchAccount(accountId) { success ->
+                            if (success) {
+                                activeScreen = ActiveScreen.MAIN_TABS
+                            }
+                        }
+                    },
+                    onRequestPasswordReset = { email, onSent ->
+                        viewModel.sendPasswordResetEmail(email, onSent)
+                    },
+                    onResetPasswordWithCode = { email, newPass, onDone ->
+                        viewModel.resetPassword(email, newPass, onDone)
+                    },
+                    onClearError = {
+                        viewModel.clearAuthError()
                     }
-                },
-                errorMessage = authErrorMessage,
-                isLoading = isAuthLoading
-            )
-        }
+                )
+            }
 
         ActiveScreen.ONBOARDING -> {
             OnboardingScreen(
@@ -339,7 +433,11 @@ fun PrepzaApp(viewModel: MainViewModel = viewModel()) {
                     viewModel.selectQuestionIndex(idx)
                 },
                 onAnswerSelected = { optionIndex -> viewModel.answerActiveQuestion(optionIndex) },
+                onAnswerSelectedForQuestion = { qId, optionIndex -> viewModel.answerQuestion(qId, optionIndex) },
                 onToggleFlag = { viewModel.toggleFlagCurrentQuestion() },
+                onFlagAndFix = { question, reason, notes ->
+                    viewModel.flagAndAutoFixQuestion(question, reason, notes)
+                },
                 onSubmitExam = {
                     viewModel.submitCbtExam()
                     activeScreen = ActiveScreen.CBT_RESULTS
@@ -544,13 +642,86 @@ fun PrepzaApp(viewModel: MainViewModel = viewModel()) {
             )
         }
 
+        ActiveScreen.SUBJECT_DETAIL -> {
+            BackHandler {
+                activeScreen = ActiveScreen.MAIN_TABS
+            }
+            SubjectDetailScreen(
+                subjectName = selectedSubjectName,
+                viewModel = viewModel,
+                onBack = { activeScreen = ActiveScreen.MAIN_TABS },
+                onOpenTopic = { pack ->
+                    viewModel.startLearningPack(pack, 0)
+                    activeScreen = ActiveScreen.LEARNING_PACK
+                },
+                onStartPractice = { subj ->
+                    viewModel.startPracticeSession("Subject Practice: $subj", subj, null)
+                    activeScreen = ActiveScreen.QUESTION_PRACTICE
+                }
+            )
+        }
+
+        ActiveScreen.TOPIC_DETAIL -> {
+            BackHandler {
+                activeScreen = ActiveScreen.SUBJECT_DETAIL
+            }
+            val pack = selectedLearningPack ?: com.example.data.learning.CurriculumRegistry.getAllCurriculums().first().groups.first().topics.first()
+            TopicDetailScreen(
+                pack = pack,
+                viewModel = viewModel,
+                onBack = { activeScreen = ActiveScreen.SUBJECT_DETAIL },
+                onStartLearning = { startIdx ->
+                    viewModel.startLearningPack(pack, startIdx)
+                    activeScreen = ActiveScreen.LEARNING_PACK
+                },
+                onStartQuickRecall = {
+                    viewModel.startQuickRecall()
+                    activeScreen = ActiveScreen.QUICK_RECALL
+                },
+                onStartPractice = { subj, topic ->
+                    viewModel.startTopicPracticeSession(subj, topic)
+                    activeScreen = ActiveScreen.QUESTION_PRACTICE
+                }
+            )
+        }
+
+        ActiveScreen.LEARNING_PACK -> {
+            val pack = selectedLearningPack ?: com.example.data.learning.CurriculumRegistry.getAllCurriculums().first().groups.first().topics.first()
+            BackHandler {
+                activeScreen = ActiveScreen.SUBJECT_DETAIL
+            }
+            LearningPackScreen(
+                pack = pack,
+                initialCardIndex = currentLearningCardIndex,
+                viewModel = viewModel,
+                onClose = { activeScreen = ActiveScreen.SUBJECT_DETAIL }
+            )
+        }
+
+        ActiveScreen.QUICK_RECALL -> {
+            val pack = selectedLearningPack ?: com.example.data.learning.CurriculumRegistry.getAllCurriculums().first().groups.first().topics.first()
+            BackHandler {
+                activeScreen = ActiveScreen.TOPIC_DETAIL
+            }
+            QuickRecallScreen(
+                pack = pack,
+                viewModel = viewModel,
+                onClose = { activeScreen = ActiveScreen.TOPIC_DETAIL },
+                onStartPractice = { subj, topic ->
+                    viewModel.startTopicPracticeSession(subj, topic)
+                    activeScreen = ActiveScreen.QUESTION_PRACTICE
+                }
+            )
+        }
+
         ActiveScreen.MAIN_TABS -> {
+            val isDarkTheme = LocalThemeIsDark.current
             Scaffold(
-                containerColor = MaterialTheme.colorScheme.background,
+                containerColor = if (isDarkTheme) RawAppBackgroundDark else RawAppBackgroundLight,
                 bottomBar = {
                     NavigationBar(
-                        containerColor = MaterialTheme.colorScheme.surface,
-                        tonalElevation = 8.dp
+                        containerColor = if (isDarkTheme) Color(0xFF0E1A16) else Color(0xFFE2EAE5),
+                        tonalElevation = 6.dp
                     ) {
                         MainTab.values().forEach { tab ->
                             val isSelected = currentTab == tab
@@ -571,11 +742,11 @@ fun PrepzaApp(viewModel: MainViewModel = viewModel()) {
                                     )
                                 },
                                 colors = NavigationBarItemDefaults.colors(
-                                    selectedIconColor = PrimaryGreen,
-                                    selectedTextColor = PrimaryGreen,
-                                    indicatorColor = PrimaryGreen.copy(alpha = 0.12f),
-                                    unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                                    selectedIconColor = if (isDarkTheme) Color(0xFF10B981) else Color(0xFF15803D),
+                                    selectedTextColor = if (isDarkTheme) Color(0xFF10B981) else Color(0xFF15803D),
+                                    indicatorColor = if (isDarkTheme) Color(0xFF064E3B) else Color(0xFFDCFCE7),
+                                    unselectedIconColor = if (isDarkTheme) Color(0xFF94A3B8) else Color(0xFF64748B),
+                                    unselectedTextColor = if (isDarkTheme) Color(0xFF94A3B8) else Color(0xFF64748B)
                                 ),
                                 modifier = Modifier.testTag("nav_tab_${tab.name.lowercase()}")
                             )
@@ -592,13 +763,42 @@ fun PrepzaApp(viewModel: MainViewModel = viewModel()) {
                         MainTab.HOME -> {
                             HomeScreen(
                                 profile = userProfile,
+                                topicProgressList = topicProgressList,
+                                activeUnfinishedTopic = activeUnfinishedTopic,
                                 unmasteredMistakesCount = unmasteredMistakesCount,
+                                isOnline = isOnline,
+                                unsyncedCount = unsyncedCount,
+                                isSyncingCloud = isSyncingCloud,
+                                remoteAnnouncements = remoteAnnouncements,
+                                activeExamState = activeExamState,
+                                onResumeActiveExam = {
+                                    viewModel.resumeActiveCbtExam()
+                                    activeScreen = ActiveScreen.CBT_EXAM
+                                },
+                                onDiscardActiveExam = {
+                                    viewModel.discardActiveExam()
+                                },
+                                onSyncNow = {
+                                    viewModel.syncOfflineDataNow()
+                                },
+                                onOpenSubject = { subjectName ->
+                                    viewModel.selectSubject(subjectName)
+                                    activeScreen = ActiveScreen.SUBJECT_DETAIL
+                                },
+                                onOpenTopic = { pack ->
+                                    viewModel.startLearningPack(pack, 0)
+                                    activeScreen = ActiveScreen.TOPIC_DETAIL
+                                },
+                                onStartLearningPack = { pack, resumeIdx ->
+                                    viewModel.startLearningPack(pack, resumeIdx)
+                                    activeScreen = ActiveScreen.LEARNING_PACK
+                                },
                                 onNavigateToPractice = { mode, subject ->
                                     viewModel.startPracticeSession(mode, subject, null)
                                     activeScreen = ActiveScreen.QUESTION_PRACTICE
                                 },
-                                onStartMiniCbt = { subject ->
-                                    viewModel.startMiniCbtExam(subject)
+                                onStartMiniCbt = { subject, count, timeMinutes ->
+                                    viewModel.startMiniCbtExam(subject, count, timeMinutes)
                                     activeScreen = ActiveScreen.CBT_EXAM
                                 },
                                 onNavigateToCbt = { chosenSubjects ->
@@ -636,12 +836,20 @@ fun PrepzaApp(viewModel: MainViewModel = viewModel()) {
                         MainTab.PRACTICE -> {
                             PracticeScreen(
                                 userSubjectsCsv = userProfile?.jambSubjectsCsv,
+                                activeExamState = activeExamState,
+                                onResumeActiveExam = {
+                                    viewModel.resumeActiveCbtExam()
+                                    activeScreen = ActiveScreen.CBT_EXAM
+                                },
+                                onDiscardActiveExam = {
+                                    viewModel.discardActiveExam()
+                                },
                                 onStartPractice = { mode, subject ->
                                     viewModel.startPracticeSession(mode, subject, null)
                                     activeScreen = ActiveScreen.QUESTION_PRACTICE
                                 },
-                                onStartMiniCbt = { subject ->
-                                    viewModel.startMiniCbtExam(subject)
+                                onStartMiniCbt = { subject, count, timeMinutes ->
+                                    viewModel.startMiniCbtExam(subject, count, timeMinutes)
                                     activeScreen = ActiveScreen.CBT_EXAM
                                 },
                                 onStartCbtMock = { chosenSubjects ->
@@ -684,11 +892,77 @@ fun PrepzaApp(viewModel: MainViewModel = viewModel()) {
                                 onOpenBook = { book -> viewModel.openBook(book) },
                                 onSelectChapter = { idx -> viewModel.selectChapter(idx) },
                                 onCloseReader = { viewModel.closeReader() },
+                                onProgressUpdated = { bookId, chIdx, percent ->
+                                    viewModel.updateBookReadingProgress(bookId, percent, chIdx)
+                                },
                                 onAskAiTutor = { prompt ->
                                     contextQuestionForAi = ""
                                     viewModel.askAiTutor(prompt)
                                     activeScreen = ActiveScreen.AI_TUTOR
                                 }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Floating AI Background Auto-Fix Notification Toast
+    AnimatedVisibility(
+        visible = aiFixToastMessage != null,
+        modifier = Modifier
+            .align(Alignment.TopCenter)
+            .windowInsetsPadding(WindowInsets.statusBars)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+            val msg = aiFixToastMessage
+            if (msg != null) {
+                LaunchedEffect(msg) {
+                    kotlinx.coroutines.delay(4500L)
+                    viewModel.clearAiFixToast()
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color(0xFF064E3B),
+                    shadowElevation = 10.dp,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF10B981)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.AutoAwesome,
+                                contentDescription = null,
+                                tint = Color(0xFF34D399),
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = msg,
+                                style = MaterialTheme.typography.bodySmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White,
+                                fontSize = 12.sp
+                            )
+                        }
+                        IconButton(
+                            onClick = { viewModel.clearAiFixToast() },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Close,
+                                contentDescription = "Dismiss",
+                                tint = Color.White.copy(alpha = 0.7f),
+                                modifier = Modifier.size(16.dp)
                             )
                         }
                     }

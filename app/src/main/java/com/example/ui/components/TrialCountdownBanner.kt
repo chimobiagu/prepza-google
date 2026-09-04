@@ -85,7 +85,7 @@ fun TrialCountdownBanner(
 
             Surface(
                 shape = RoundedCornerShape(8.dp),
-                color = if (isPlus) PrimaryGreen.copy(alpha = 0.15f) else TextPrimary,
+                color = if (isPlus) PrimaryGreen.copy(alpha = 0.15f) else PrimaryGreen,
                 modifier = Modifier.clickable { onUpgradeClick() }
             ) {
                 Text(

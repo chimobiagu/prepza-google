@@ -27,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.db.QuestionEntity
+import com.example.ui.components.FormattedText
 import com.example.ui.components.PrepzaProgressBar
 import com.example.ui.components.QuestionImageViewer
 import com.example.ui.components.QuestionMediaDetector
@@ -739,11 +740,12 @@ private fun CbtDetailedAnswersReviewScreen(
                             }
 
                             // Question Text
-                            Text(
-                                text = QuestionMediaDetector.cleanQuestionDisplayText(q.questionText),
+                            FormattedText(
+                                text = q.questionText,
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.SemiBold,
-                                color = TextPrimary
+                                color = TextPrimary,
+                                isQuestionStem = true
                             )
 
                             // Question Image / Diagram Display
@@ -794,38 +796,84 @@ private fun CbtDetailedAnswersReviewScreen(
                                                 color = if (isCorrectChoice) PrimaryGreenDark else if (isUserChoice) IncorrectRed else TextPrimary,
                                                 fontSize = 13.sp
                                             )
-                                            Text(
+                                            FormattedText(
                                                 text = optionText,
                                                 style = MaterialTheme.typography.bodySmall,
                                                 color = TextPrimary
                                             )
                                         }
 
-                                        if (isCorrectChoice) {
+                                        if (isCorrectChoice && isUserChoice) {
                                             Surface(
                                                 shape = RoundedCornerShape(6.dp),
                                                 color = PrimaryGreen
                                             ) {
-                                                Text(
-                                                    text = "Correct",
-                                                    color = Color.White,
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    fontWeight = FontWeight.Bold,
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                )
+                                                Row(
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Check,
+                                                        contentDescription = null,
+                                                        tint = Color.White,
+                                                        modifier = Modifier.size(12.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(3.dp))
+                                                    Text(
+                                                        text = "Your Choice • Correct",
+                                                        color = Color.White,
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                }
+                                            }
+                                        } else if (isCorrectChoice) {
+                                            Surface(
+                                                shape = RoundedCornerShape(6.dp),
+                                                color = PrimaryGreen
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Check,
+                                                        contentDescription = null,
+                                                        tint = Color.White,
+                                                        modifier = Modifier.size(12.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(3.dp))
+                                                    Text(
+                                                        text = "Correct Answer",
+                                                        color = Color.White,
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                }
                                             }
                                         } else if (isUserChoice) {
                                             Surface(
                                                 shape = RoundedCornerShape(6.dp),
                                                 color = IncorrectRed
                                             ) {
-                                                Text(
-                                                    text = "Your Choice",
-                                                    color = Color.White,
-                                                    style = MaterialTheme.typography.labelSmall,
-                                                    fontWeight = FontWeight.Bold,
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                )
+                                                Row(
+                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Close,
+                                                        contentDescription = null,
+                                                        tint = Color.White,
+                                                        modifier = Modifier.size(12.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(3.dp))
+                                                    Text(
+                                                        text = "Your Choice (Wrong)",
+                                                        color = Color.White,
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        fontWeight = FontWeight.Bold
+                                                    )
+                                                }
                                             }
                                         }
                                     }

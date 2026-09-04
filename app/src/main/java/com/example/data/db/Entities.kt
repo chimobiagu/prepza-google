@@ -75,7 +75,8 @@ data class QuestionEntity(
     tableName = "practice_sessions",
     indices = [
         Index(value = ["userId"]),
-        Index(value = ["timestamp"])
+        Index(value = ["timestamp"]),
+        Index(value = ["isSynced"])
     ]
 )
 data class PracticeSessionEntity(
@@ -87,7 +88,9 @@ data class PracticeSessionEntity(
     val timestamp: Long = System.currentTimeMillis(),
     val subjectsCsv: String,       // e.g. "English Language,Mathematics,Physics,Chemistry"
     val durationSeconds: Long,
-    val userAnswersJson: String    // JSON string mapping questionId -> selectedOptionIndex
+    val userAnswersJson: String,   // JSON string mapping questionId -> selectedOptionIndex
+    val isSynced: Boolean = false,
+    val syncedAtTimestamp: Long? = null
 )
 
 @Entity(
@@ -293,4 +296,78 @@ data class QuestionExposureEntity(
     val exposureCount: Int = 1,
     val lastExposedTimestamp: Long = System.currentTimeMillis()
 )
+
+@Entity(tableName = "active_exam_state")
+data class ActiveExamStateEntity(
+    @PrimaryKey val id: String = "active_cbt_session",
+    val mode: String,                 // "Full CBT Mock Exam", "Mini CBT: Mathematics", etc.
+    val subjectsCsv: String,
+    val questionIdsCsv: String,       // comma separated question IDs in exact order
+    val userAnswersJson: String,      // JSON map of questionId -> selectedOptionIndex
+    val flaggedIndicesCsv: String = "", // comma separated list of question indices that are flagged
+    val currentQuestionIndex: Int = 0,
+    val selectedSubject: String = "",
+    val timerSecondsRemaining: Long = 7200L,
+    val totalDurationSeconds: Long = 7200L,
+    val isMiniCbt: Boolean = false,
+    val startTimestamp: Long = System.currentTimeMillis(),
+    val lastUpdatedTimestamp: Long = System.currentTimeMillis(),
+    val isCompleted: Boolean = false
+)
+
+@Entity(
+    tableName = "topic_progress",
+    indices = [
+        Index(value = ["userId", "subject"]),
+        Index(value = ["userId", "subject", "topicName"])
+    ]
+)
+data class TopicProgressEntity(
+    @PrimaryKey val id: String, // "${userId}_${subject}_${topicName}"
+    val userId: String = "",
+    val subject: String,
+    val topicName: String,
+    val currentCardIndex: Int = 0,
+    val totalCards: Int = 0,
+    val isLearningCompleted: Boolean = false,
+    val lastRecallScore: Int = 0,
+    val recallTotal: Int = 0,
+    val practiceCount: Int = 0,
+    val practiceAccuracyPercent: Int = 0,
+    val masteryState: String = "NOT_STARTED", // "NOT_STARTED", "IN_PROGRESS", "LEARNED", "NEEDS_PRACTICE", "STRONG"
+    val lastStudiedTimestamp: Long = System.currentTimeMillis(),
+    val isBookmarked: Boolean = false,
+    val personalNotes: String? = null
+)
+
+@Entity(
+    tableName = "user_personal_cards",
+    indices = [
+        Index(value = ["userId", "subject", "topicName"])
+    ]
+)
+data class UserPersonalCardEntity(
+    @PrimaryKey val id: String, // UUID string
+    val userId: String = "",
+    val subject: String,
+    val topicName: String,
+    val frontText: String,
+    val backText: String,
+    val note: String? = null,
+    val createdAt: Long = System.currentTimeMillis()
+)
+
+@Entity(
+    tableName = "card_bookmarks",
+    primaryKeys = ["cardId", "userId"]
+)
+data class CardBookmarkEntity(
+    val cardId: String,
+    val userId: String = "",
+    val topicName: String,
+    val subject: String,
+    val timestamp: Long = System.currentTimeMillis()
+)
+
+
 

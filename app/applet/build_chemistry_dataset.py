@@ -1,0 +1,492 @@
+import os
+import re
+
+# Comprehensive Master Chemistry Bank Generator
+# Compiles all questions into 8 structured Kotlin repositories:
+# JambChemistryMegaRevisionPart1Bank.kt to JambChemistryMegaRevisionPart8Bank.kt
+
+all_chemistry_questions = [
+    # --- BATCH 1: Separation Techniques, Stoichiometry, Gas Laws, Atomic Structure ---
+    {
+        "id": "chem_rev_001",
+        "topic": "Acids, Bases & Salts",
+        "year": "1983",
+        "question": "X is a crystalline salt of sodium. A solution of X in water turns litmus red and produces a gas which turns lime water milky when added to sodium carbonate. With barium chloride solution, X gives a white precipitate which is insoluble in dilute hydrochloric acid. X is:",
+        "a": "Na₂CO₃", "b": "NaHCO₃", "c": "NaHSO₄", "d": "Na₂SO₄",
+        "ans": 2,
+        "explanation": "NaHSO₄ is an acidic salt containing replaceable hydrogen. In solution, it releases H⁺ ions (turning litmus red) and reacts with carbonate to liberate CO₂ gas. Its SO₄²⁻ radical reacts with BaCl₂ to form BaSO₄, a white precipitate insoluble in dilute HCl."
+    },
+    {
+        "id": "chem_rev_002",
+        "topic": "Organic Chemistry (Alkanols & Saponification)",
+        "year": "1983",
+        "question": "The alkanol obtained from the production of soap is:",
+        "a": "Ethanol", "b": "Glycerol", "c": "Methanol", "d": "Propanol",
+        "ans": 1,
+        "explanation": "Soap is produced by the alkaline hydrolysis (saponification) of fats and oils (triesters of glycerol). The by-product obtained is glycerol (propane-1,2,3-triol), a trihydric alkanol."
+    },
+    {
+        "id": "chem_rev_003",
+        "topic": "Non-Metals & Applied Chemistry",
+        "year": "1983",
+        "question": "The flame used by welders in cutting and joining metals is:",
+        "a": "Butane gas flame", "b": "Acetylene flame", "c": "Kerosene flame", "d": "Oxy-acetylene flame",
+        "ans": 3,
+        "explanation": "The oxy-acetylene flame is produced by burning ethyne (acetylene) in a stream of pure oxygen. It reaches temperatures exceeding 3000°C, providing sufficient heat to melt and weld metals."
+    },
+    {
+        "id": "chem_rev_004",
+        "topic": "Organic Chemistry (Alkanes)",
+        "year": "1983",
+        "question": "Consecutive members of an alkane homologous series differ by:",
+        "a": "-CH-", "b": "-CH₂-", "c": "-CH₃-", "d": "-CₙH₂ₙ-",
+        "ans": 1,
+        "explanation": "Successive members of any homologous series differ from each other by a single methylene unit (-CH₂-) and by a relative molecular mass of 14 units."
+    },
+    {
+        "id": "chem_rev_005",
+        "topic": "Atomic Structure & Periodic Table",
+        "year": "1983",
+        "question": "If an element has the electronic configuration 1s² 2s² 2p⁶ 3s² 3p², it is:",
+        "a": "A metal", "b": "An alkaline earth metal", "c": "An s-block element", "d": "A p-block element",
+        "ans": 3,
+        "explanation": "The differentiating (outermost) electron occupies the 3p subshell, placing this element (Silicon, atomic number 14) squarely in the p-block of the periodic table."
+    },
+    {
+        "id": "chem_rev_006",
+        "topic": "Stoichiometry & Water of Crystallization",
+        "year": "1983",
+        "question": "Some copper (II) sulphate pentahydrate (CuSO₄·5H₂O) was heated at 120°C with the following results: Wt of crucible = 10.00 g; Wt of crucible + CuSO₄·5H₂O = 14.98 g; Wt of crucible + residue = 13.54 g. How many molecules of water of crystallization were lost? [H=1, Cu=63.5, O=16, S=32]",
+        "a": "1", "b": "2", "c": "3", "d": "4",
+        "ans": 3,
+        "explanation": "Mass of hydrate = 14.98 - 10.00 = 4.98 g (0.02 mol, since molar mass is 249.5 g/mol). Mass of water lost = 14.98 - 13.54 = 1.44 g (1.44 / 18 = 0.08 mol). Ratio of moles of water lost to moles of salt = 0.08 / 0.02 = 4 molecules."
+    },
+    {
+        "id": "chem_rev_007",
+        "topic": "Chemical Bonding & Molecular Shapes",
+        "year": "1983",
+        "question": "The three-dimensional spatial shape of a methane (CH₄) molecule is:",
+        "a": "Hexagonal", "b": "Trigonal planar", "c": "Linear", "d": "Tetrahedral",
+        "ans": 3,
+        "explanation": "In methane, the central carbon atom is sp³ hybridized with four equivalent C-H sigma bonds directed toward the corners of a regular tetrahedron at bond angles of 109.5°."
+    },
+    {
+        "id": "chem_rev_008",
+        "topic": "Organic Chemistry (Esters)",
+        "year": "1983",
+        "question": "A sweet-smelling organic compound W formed by the esterification of ethanol with ethanoic acid in the presence of concentrated H₂SO₄ is:",
+        "a": "A soap", "b": "An oil", "c": "An alkane", "d": "An ester",
+        "ans": 3,
+        "explanation": "The reaction of an alkanol (ethanol) with an alkanoic acid (ethanoic acid) catalyzed by concentrated tetraoxosulphate(VI) acid produces an ester (ethyl ethanoate), characterized by a pleasant fruity aroma."
+    },
+    {
+        "id": "chem_rev_009",
+        "topic": "Stoichiometry & Carbohydrates",
+        "year": "1983",
+        "question": "An unknown carbohydrate X has a relative molecular mass of 180 and contains C, H, and O in the atomic ratio 1:2:1. The molecular formula of X is: [C=12, H=1, O=16]",
+        "a": "C₁₂H₂₂O₁₁", "b": "C₆H₁₂O₆", "c": "C₃H₆O₃", "d": "C₇H₁₄O₇",
+        "ans": 1,
+        "explanation": "Empirical formula is CH₂O with formula mass = 12 + 2(1) + 16 = 30. Ratio n = 180 / 30 = 6. Thus, the molecular formula is (CH₂O)₆ = C₆H₁₂O₆ (glucose/fructose)."
+    },
+    {
+        "id": "chem_rev_010",
+        "topic": "Applied Chemistry & Biotechnology",
+        "year": "1983",
+        "question": "The anaerobic fermentation reaction of glucose (X) with yeast forms the basis of the:",
+        "a": "Plastic industry", "b": "Textile industry", "c": "Brewing industry", "d": "Soap industry",
+        "ans": 2,
+        "explanation": "Yeast secretes the enzyme complex zymase, which converts simple sugars like glucose into ethanol and carbon dioxide: C₆H₁₂O₆ → 2C₂H₅OH + 2CO₂. This is the cornerstone reaction of the brewing and distilling industries."
+    },
+    {
+        "id": "chem_rev_011",
+        "topic": "Separation of Mixtures",
+        "year": "1983",
+        "question": "A mixture of common salt (NaCl), ammonium chloride (NH₄Cl), and barium sulphate (BaSO₄) can best be separated by:",
+        "a": "Addition of water followed by filtration then sublimation",
+        "b": "Addition of water followed by sublimation then filtration",
+        "c": "Sublimation followed by addition of water then filtration",
+        "d": "Fractional distillation",
+        "ans": 2,
+        "explanation": "Ammonium chloride sublimes upon gentle heating and is collected on a cool surface. Water is then added to the residue to dissolve the soluble common salt (NaCl), while insoluble BaSO₄ is separated by filtration, and NaCl is recovered by evaporation."
+    },
+    {
+        "id": "chem_rev_012",
+        "topic": "Kinetic Theory & Gas Laws",
+        "year": "1983",
+        "question": "Which of the following relationships between pressure (P), volume (V), and absolute temperature (T) represents ideal gas behavior?",
+        "a": "P ∝ V · T", "b": "P ∝ T / V", "c": "P · T ∝ V", "d": "P / (V · T) = constant",
+        "ans": 1,
+        "explanation": "According to the ideal gas equation PV = nRT, P = nRT/V. At constant amount of gas, pressure is directly proportional to absolute temperature and inversely proportional to volume (P ∝ T/V)."
+    },
+    {
+        "id": "chem_rev_013",
+        "topic": "Qualitative Analysis & Flame Tests",
+        "year": "1983",
+        "question": "The characteristic colour imparted to a non-luminous Bunsen flame by calcium ions (Ca²⁺) is:",
+        "a": "Green", "b": "Blue", "c": "Brick-red", "d": "Lilac",
+        "ans": 2,
+        "explanation": "Calcium compounds impart a characteristic brick-red (orange-red) colour to a non-luminous flame. (Lilac is characteristic of potassium, golden-yellow of sodium, and green of barium or copper)."
+    },
+    {
+        "id": "chem_rev_014",
+        "topic": "Chemical Equilibrium & Le Chatelier's Principle",
+        "year": "1983",
+        "question": "In the endothermic equilibrium reaction: M(g) + N(g) ⇌ P(g); ΔH = +Q kJ, which of the following changes will increase the equilibrium concentration of product P?",
+        "a": "Decreasing the concentration of N", "b": "Increasing the concentration of reactant M", "c": "Adding a negative catalyst", "d": "Decreasing the temperature",
+        "ans": 1,
+        "explanation": "According to Le Chatelier's principle, increasing the concentration of a reactant (M or N) or increasing the temperature in an endothermic reaction (ΔH > 0) shifts the equilibrium position to the right, increasing the yield of product P."
+    },
+    {
+        "id": "chem_rev_015",
+        "topic": "Redox Reactions & Electrochemical Series",
+        "year": "1983",
+        "question": "In the reaction: Fe(s) + Cu²⁺(aq) → Fe²⁺(aq) + Cu(s), iron displaces copper ions from solution. This is because:",
+        "a": "Iron is in metallic form while copper is in ionic form",
+        "b": "The atomic weight of copper is greater than that of iron",
+        "c": "Copper metal has more valence electrons than iron",
+        "d": "Iron is higher than copper in the electrochemical series",
+        "ans": 3,
+        "explanation": "Iron has a more negative standard electrode potential (E° = -0.44 V) than copper (E° = +0.34 V). Being higher in the electrochemical activity series, metallic iron readily oxidizes and displaces Cu²⁺ ions."
+    },
+    {
+        "id": "chem_rev_016",
+        "topic": "Organic Chemistry (IUPAC Nomenclature)",
+        "year": "1983",
+        "question": "The correct IUPAC systematic name for the compound CH₃-CH₂-C(CH₃)=CH₂ is:",
+        "a": "2-methylbut-1-ene", "b": "2-methylbut-2-ene", "c": "3-methylbut-1-ene", "d": "2-ethylprop-1-ene",
+        "ans": 0,
+        "explanation": "The longest continuous carbon chain containing the double bond has 4 carbons (a butene). Numbering from the end closest to the double bond gives carbon-1 for the double bond and a methyl substituent at carbon-2: 2-methylbut-1-ene."
+    },
+    {
+        "id": "chem_rev_017",
+        "topic": "Organic Chemistry (Isomerism)",
+        "year": "1983",
+        "question": "How many structural isomers are there for the molecular formula C₃H₆Br₂?",
+        "a": "2", "b": "3", "c": "4", "d": "5",
+        "ans": 2,
+        "explanation": "The 4 position isomers for dibromopropane (C₃H₆Br₂) are: 1,1-dibromopropane, 1,2-dibromopropane, 1,3-dibromopropane, and 2,2-dibromopropane."
+    },
+    {
+        "id": "chem_rev_018",
+        "topic": "Non-Metals (Sulphur & Its Compounds)",
+        "year": "1983",
+        "question": "A piece of burning sulphur continues to burn in a gas jar of oxygen to give misty fumes which dissolve readily in water. The resulting acidic solution is:",
+        "a": "Tetraoxosulphate(VI) acid", "b": "Trioxosulphate(IV) acid", "c": "Dioxosulphate(II) acid", "d": "Hydrogen sulphide",
+        "ans": 1,
+        "explanation": "Burning sulphur in oxygen yields sulphur(IV) oxide gas: S + O₂ → SO₂. When dissolved in water, SO₂ forms sulphurous acid, also named trioxosulphate(IV) acid: SO₂ + H₂O → H₂SO₃."
+    },
+    {
+        "id": "chem_rev_019",
+        "topic": "Water of Crystallization & Efflorescence",
+        "year": "1983",
+        "question": "Sodium tetraoxosulphate(VI) decahydrate (Na₂SO₄·10H₂O) on exposure to dry air loses all its water of crystallization. This phenomenon is known as:",
+        "a": "Efflorescence", "b": "Hygroscopy", "c": "Deliquescence", "d": "Effervescence",
+        "ans": 0,
+        "explanation": "Efflorescence is the spontaneous loss of water of crystallization from a hydrated crystalline salt when exposed to air because its saturated vapour pressure exceeds the partial pressure of water vapour in the atmosphere."
+    },
+    {
+        "id": "chem_rev_020",
+        "topic": "Electrochemistry & Electrolysis",
+        "year": "1983",
+        "question": "Which of the following processes takes place at the anode during the electrolysis of molten sodium chloride?",
+        "a": "Sodium ion loses an electron", "b": "Chlorine atom gains an electron", "c": "Chloride ion is reduced", "d": "Chloride ion is oxidized",
+        "ans": 3,
+        "explanation": "At the anode (positive electrode), chloride ions lose electrons to form chlorine gas: 2Cl⁻ → Cl₂ + 2e⁻. The loss of electrons constitutes oxidation."
+    },
+    {
+        "id": "chem_rev_021",
+        "topic": "Environmental Chemistry & Pollution",
+        "year": "1983",
+        "question": "Crude petroleum pollutants usually observed on Nigerian coastal waterways can be dispersed effectively by:",
+        "a": "Heating the affected water surface", "b": "Pouring organic solvents", "c": "Spraying the water with suitable non-toxic detergents/dispersants", "d": "Freezing out the petroleum layer",
+        "ans": 2,
+        "explanation": "Detergents act as emulsifiers/dispersants that break down oil slicks into microscopic droplets, allowing natural microbial degradation and dispersion by wave action."
+    },
+    {
+        "id": "chem_rev_022",
+        "topic": "Periodic Properties & Electronegativity",
+        "year": "1983",
+        "question": "An element is defined as electronegative if:",
+        "a": "It exists naturally in gaseous form", "b": "Its ions dissolve readily in water", "c": "It has a strong tendency to gain electrons in chemical combination", "d": "It has a tendency to lose electrons easily",
+        "ans": 2,
+        "explanation": "Electronegativity is the relative tendency or ability of an atom in a molecule to attract the shared pair of electrons towards itself (or gain electrons to form stable anions)."
+    },
+    {
+        "id": "chem_rev_023",
+        "topic": "Acids, Bases & pH Scale",
+        "year": "1983",
+        "question": "Solutions X, Y, and Z have pH values of 3.0, 5.0, and 9.0 respectively. Which of the following statements is correct?",
+        "a": "All three solutions are acidic", "b": "All three solutions are alkaline", "c": "Solution Y is more acidic than X", "d": "Solution Z is the least acidic and is alkaline",
+        "ans": 3,
+        "explanation": "On the pH scale at 25°C, pH < 7 is acidic (with lower pH indicating greater acidity) and pH > 7 is alkaline. Thus X (pH 3.0) is strongly acidic, Y (pH 5.0) is weakly acidic, and Z (pH 9.0) is alkaline (least acidic)."
+    },
+    {
+        "id": "chem_rev_024",
+        "topic": "Metals & Reactivity with Acids",
+        "year": "1983",
+        "question": "Which of the following metals (Mg, Fe, Pb, Cu) will readily dissolve in dilute hydrochloric acid with the liberation of hydrogen gas?",
+        "a": "All four metals", "b": "Mg, Fe, and Cu", "c": "Mg and Fe only", "d": "Cu only",
+        "ans": 2,
+        "explanation": "Magnesium and iron lie well above hydrogen in the activity series and react with dilute HCl to form chloride salts and H₂ gas. Lead reacts only sluggishly due to an insoluble PbCl₂ coating, while copper lies below hydrogen and does not displace it."
+    },
+    {
+        "id": "chem_rev_025",
+        "topic": "Metals & Alloys",
+        "year": "1983",
+        "question": "Stainless steel is an alloy composed primarily of:",
+        "a": "Carbon, iron, and lead", "b": "Iron, chromium, nickel, and carbon", "c": "Iron, copper, and zinc", "d": "Iron and silver only",
+        "ans": 1,
+        "explanation": "Stainless steel consists of iron alloyed with chromium (which forms a passive protective oxide layer), nickel (for ductility and strength), and small amounts of carbon."
+    },
+    {
+        "id": "chem_rev_026",
+        "topic": "Stoichiometry & Volumetric Analysis",
+        "year": "1983",
+        "question": "What volume of 0.50 M H₂SO₄ will exactly neutralize 20 cm³ of 0.10 M NaOH solution?",
+        "a": "2.0 cm³", "b": "5.0 cm³", "c": "6.8 cm³", "d": "10.0 cm³",
+        "ans": 0,
+        "explanation": "H₂SO₄ + 2NaOH → Na₂SO₄ + 2H₂O. Using C_A·V_A / (C_B·V_B) = n_A / n_B: (0.50 · V_A) / (0.10 · 20) = 1 / 2 => 0.50 · V_A = 1.0 => V_A = 2.0 cm³."
+    },
+    {
+        "id": "chem_rev_027",
+        "topic": "Non-Metals & Atmospheric Gases",
+        "year": "1983",
+        "question": "Which of the following pairs of gases will NOT react further with oxygen at temperatures between 30°C and 400°C?",
+        "a": "SO₂ and NH₃", "b": "CO and H₂", "c": "NO₂ and SO₃", "d": "SO₂ and NO",
+        "ans": 2,
+        "explanation": "Nitrogen(IV) oxide (NO₂) and sulphur(VI) oxide (SO₃) are already in high stable oxidation states (+4 and +6 respectively) and do not undergo further direct oxidation under these standard conditions."
+    },
+    {
+        "id": "chem_rev_028",
+        "topic": "Acids, Bases & Salts (Preparation)",
+        "year": "1983",
+        "question": "In the preparation of pure crystals of Cu(NO₃)₂ starting from insoluble CuO, a student added excess dilute H₂SO₄ to CuO. Why was this step flawed?",
+        "a": "Reacting CuO with H₂SO₄ yields copper(II) sulphate, not copper(II) nitrate",
+        "b": "CuO does not react with acids",
+        "c": "Concentrated acid must be used instead of dilute acid",
+        "d": "Cu(NO₃)₂ cannot be prepared from an oxide",
+        "ans": 0,
+        "explanation": "To prepare copper(II) nitrate Cu(NO₃)₂, copper(II) oxide must be reacted with dilute nitric acid (HNO₃), not sulfuric acid (H₂SO₄) which produces copper(II) sulfate (CuSO₄)."
+    },
+    {
+        "id": "chem_rev_029",
+        "topic": "Separation Techniques & Distillation",
+        "year": "1983",
+        "question": "Which separation process is most suitable for obtaining high purity ethanol (>95%) from fermented palm wine?",
+        "a": "Simple distillation without a dehydrant",
+        "b": "Fractional distillation without a dehydrant",
+        "c": "Fractional distillation followed by distillation with a dehydrating agent",
+        "d": "Filtration followed by crystallization",
+        "ans": 2,
+        "explanation": "Fractional distillation of fermented liquor yields an azeotropic mixture containing approximately 95.6% ethanol and 4.4% water. To exceed 95% and reach absolute ethanol, distillation over a drying agent such as quicklime (CaO) is required."
+    },
+    {
+        "id": "chem_rev_030",
+        "topic": "Kinetic Theory & Gas Laws",
+        "year": "1983",
+        "question": "Increasing the pressure of a fixed mass of gas at constant temperature:",
+        "a": "Lowers the average kinetic energy of the gas molecules",
+        "b": "Decreases the density of the gas",
+        "c": "Decreases the temperature of the gas",
+        "d": "Increases the density of the gas",
+        "ans": 3,
+        "explanation": "According to Boyle's law, increasing pressure decreases volume. Since Density = Mass / Volume and mass is constant, reducing volume increases the gas density."
+    },
+    {
+        "id": "chem_rev_031",
+        "topic": "Stoichiometry & Hydrates",
+        "year": "1983",
+        "question": "2.50 g of a hydrated barium salt yielded 2.13 g of the anhydrous salt on heating. Given that the relative molecular mass of the anhydrous salt is 208, how many molecules of water of crystallization are present in the hydrate? [H=1, O=16]",
+        "a": "1", "b": "2", "c": "3", "d": "5",
+        "ans": 1,
+        "explanation": "Mass of water lost = 2.50 - 2.13 = 0.37 g. Moles of H₂O = 0.37 / 18 = 0.0206 mol. Moles of anhydrous salt = 2.13 / 208 = 0.01024 mol. Ratio = 0.0206 / 0.01024 ≈ 2 (e.g. BaCl₂·2H₂O)."
+    },
+    {
+        "id": "chem_rev_032",
+        "topic": "Solutions & Solubility",
+        "year": "1983",
+        "question": "3.06 g of potassium trioxochlorate(V) (KClO₃) was required to prepare a saturated solution in 10 cm³ of water at 25°C. The solubility of KClO₃ in mol dm⁻³ at 25°C is: [K=39, Cl=35.5, O=16]",
+        "a": "5.0 mol dm⁻³", "b": "3.0 mol dm⁻³", "c": "2.5 mol dm⁻³", "d": "1.0 mol dm⁻³",
+        "ans": 2,
+        "explanation": "Molar mass of KClO₃ = 39 + 35.5 + 3(16) = 122.5 g/mol. Moles in 10 cm³ = 3.06 / 122.5 = 0.025 mol. Concentration per dm³ (1000 cm³) = 0.025 × (1000 / 10) = 2.5 mol dm⁻³."
+    },
+    {
+        "id": "chem_rev_033",
+        "topic": "Organic Chemistry (Petroleum & Cracking)",
+        "year": "1983",
+        "question": "The cracking process is of immense commercial importance in the petroleum industry because it:",
+        "a": "Produces higher yield of lubricants",
+        "b": "Converts heavy fractions into high-demand motor engine fuels (petrol)",
+        "c": "Purifies asphalt",
+        "d": "Yields more candle wax",
+        "ans": 1,
+        "explanation": "Cracking breaks down long-chain, less volatile heavy hydrocarbon fractions (such as gas oil and kerosene) into shorter, high-octane gasoline fractions and alkenes needed as petrochemical feedstocks."
+    },
+    {
+        "id": "chem_rev_034",
+        "topic": "Redox Reactions & Sulphur Compounds",
+        "year": "1983",
+        "question": "A gas that behaves as a reducing agent toward chlorine and as an oxidizing agent toward hydrogen sulphide is:",
+        "a": "Oxygen (O₂)", "b": "Nitrogen monoxide (NO)", "c": "Sulphur(IV) oxide (SO₂)", "d": "Ammonia (NH₃)",
+        "ans": 2,
+        "explanation": "SO₂ reacts with chlorine in water to form H₂SO₄ and HCl (reducing Cl₂ to Cl⁻: SO₂ is oxidized from +4 to +6). Conversely, SO₂ reacts with H₂S to deposit elemental sulfur: SO₂ + 2H₂S → 3S + 2H₂O (oxidizing H₂S: SO₂ is reduced from +4 to 0)."
+    },
+    {
+        "id": "chem_rev_035",
+        "topic": "Qualitative Analysis & Flame Tests",
+        "year": "1983",
+        "question": "Which of the following salt solutions gives a white precipitate with BaCl₂ solution and imparts a green colour to a Bunsen flame?",
+        "a": "Na₂SO₄", "b": "CuSO₄", "c": "CaSO₄", "d": "CaCl₂",
+        "ans": 1,
+        "explanation": "CuSO₄ solution contains sulfate ions (SO₄²⁻), which form a white precipitate of BaSO₄ with barium chloride, and copper ions (Cu²⁺), which produce a characteristic green flame test."
+    },
+    {
+        "id": "chem_rev_036",
+        "topic": "Atomic Structure",
+        "year": "1983",
+        "question": "The mass of an atom is almost entirely determined by:",
+        "a": "Its ionization potential", "b": "Its electrochemical potential", "c": "The number of orbital electrons", "d": "The total number of protons and neutrons in its nucleus",
+        "ans": 3,
+        "explanation": "Protons and neutrons (nucleons) each have a relative atomic mass of ~1 amu, whereas electrons have a negligible mass (~1/1840 amu). Hence, atomic mass is determined by the nucleus (protons + neutrons)."
+    },
+    {
+        "id": "chem_rev_037",
+        "topic": "Acids, Bases & Neutralization",
+        "year": "1983",
+        "question": "Which of the following is a classic neutralization reaction?",
+        "a": "Dissolution of sodium chloride in water",
+        "b": "Addition of nitric acid to distilled water",
+        "c": "Reaction of potassium hydroxide solution with dilute tetraoxosulphate(VI) acid",
+        "d": "Reaction of zinc with hydrochloric acid",
+        "ans": 2,
+        "explanation": "Neutralization is the reaction between an acid and a base to form salt and water only: 2KOH + H₂SO₄ → K₂SO₄ + 2H₂O (or H⁺ + OH⁻ → H₂O)."
+    },
+    {
+        "id": "chem_rev_038",
+        "topic": "Stoichiometry & Combustion",
+        "year": "1983",
+        "question": "A jet plane burns 3,000 kg of ethane (C₂H₆). If all the CO₂ produced is expelled into the air and the water produced is completely condensed and retained on board, what is the net gain in weight? [C=12, H=1, O=16]",
+        "a": "1,800 kg", "b": "900 kg", "c": "600 kg", "d": "2,400 kg",
+        "ans": 3,
+        "explanation": "2C₂H₆ + 7O₂ → 4CO₂ + 6H₂O. 60 kg of ethane consumes 224 kg O₂ to produce 108 kg of water (108/60 = 1.8 kg water per kg ethane). For 3000 kg ethane, water condensed = 3000 × 1.8 = 5400 kg. Net weight change on board = 5400 - 3000 = +2400 kg."
+    },
+    {
+        "id": "chem_rev_039",
+        "topic": "Acids, Bases & Carbonates",
+        "year": "1983",
+        "question": "A liquid X reacts with solid sodium trioxocarbonate(IV) (Na₂CO₃) to produce a gas which turns clear lime water milky. Liquid X is:",
+        "a": "An aqueous salt", "b": "An alkali", "c": "An acid", "d": "A hydrocarbon",
+        "ans": 2,
+        "explanation": "Acids react with trioxocarbonates(IV) to liberate carbon(IV) oxide gas (CO₂), which reacts with calcium hydroxide (lime water) to form insoluble CaCO₃, turning the solution milky."
+    },
+    {
+        "id": "chem_mr_040",
+        "topic": "Chemical Properties & Non-Metals",
+        "year": "1983",
+        "question": "Which of the following statements is FALSE?",
+        "a": "Copper(II) ions can be reduced to metallic copper by zinc in acid solution",
+        "b": "Sodium metal dissolves in water with the evolution of oxygen gas",
+        "c": "Nitrogen is only sparingly soluble in water",
+        "d": "Carbon(IV) oxide is moderately soluble in water",
+        "ans": 1,
+        "explanation": "Sodium reacts vigorously with water to produce sodium hydroxide and hydrogen gas (2Na + 2H₂O → 2NaOH + H₂↑), NOT oxygen gas."
+    },
+    {
+        "id": "chem_mr_041",
+        "topic": "Thermochemistry",
+        "year": "1983",
+        "question": "When solid sodium dioxonitrate(III) (NaNO₂) dissolves in water, the temperature of the solution drops (ΔH is positive). The dissolution process is:",
+        "a": "Exothermic", "b": "Endothermic", "c": "Isothermal", "d": "Adiabatic",
+        "ans": 1,
+        "explanation": "A process that absorbs thermal energy from its surroundings, causing a decrease in temperature (ΔH > 0), is endothermic."
+    },
+    {
+        "id": "chem_mr_042",
+        "topic": "Separation Techniques",
+        "year": "1984",
+        "question": "Pure crystalline sodium chloride can be obtained from brine (sea water) by:",
+        "a": "Titration", "b": "Decantation", "c": "Fractional condensation", "d": "Evaporation to dryness or crystallization",
+        "ans": 3,
+        "explanation": "Sodium chloride does not decompose on heating and its solubility does not vary widely with temperature, so it is recovered from brine by evaporation."
+    },
+    {
+        "id": "chem_mr_043",
+        "topic": "Gas Stoichiometry (Eudiometry)",
+        "year": "1984",
+        "question": "20 cm³ of hydrogen gas is sparked with 20 cm³ of oxygen gas in an eudiometer at 373 K (100°C) and 1 atm. After the reaction, the mixture is cooled to 298 K (25°C) and passed over anhydrous CaCl₂. The volume of the residual gas is:",
+        "a": "40 cm³", "b": "20 cm³", "c": "30 cm³", "d": "10 cm³",
+        "ans": 3,
+        "explanation": "2H₂ + O₂ → 2H₂O. 20 cm³ of H₂ requires 10 cm³ of O₂. Unreacted O₂ = 20 - 10 = 10 cm³. At 25°C, water condenses and is absorbed by CaCl₂, leaving 10 cm³ of residual oxygen gas."
+    },
+    {
+        "id": "chem_mr_044",
+        "topic": "Reaction Kinetics & Surface Area",
+        "year": "1984",
+        "question": "In the reaction: Zn(s) + 2HCl(aq) → ZnCl₂(aq) + H₂(g), the rate of reaction will be greatly increased if:",
+        "a": "The zinc is used in finely powdered form", "b": "A greater volume of acid of the same concentration is used", "c": "The reaction vessel is cooled in an ice bath", "d": "The zinc is used in the form of large pellets",
+        "ans": 0,
+        "explanation": "Finely dividing a solid reactant drastically increases its exposed surface area, leading to a higher frequency of effective collisions per second with reactant particles."
+    },
+    {
+        "id": "chem_mr_045",
+        "topic": "Stoichiometry & Limiting Reactants",
+        "year": "1984",
+        "question": "Zn(s) + H₂SO₄(aq) → ZnSO₄(aq) + H₂(g). How much zinc will be left undissolved if 2.00 g of zinc is treated with 10 cm³ of 1.0 M H₂SO₄? [Zn=65]",
+        "a": "1.35 g", "b": "1.00 g", "c": "0.70 g", "d": "0.65 g",
+        "ans": 0,
+        "explanation": "Moles of H₂SO₄ = 0.010 L × 1.0 M = 0.010 mol. 0.010 mol of acid reacts with 0.010 mol of Zn = 0.010 × 65 = 0.65 g. Mass of unreacted Zn = 2.00 - 0.65 = 1.35 g."
+    },
+    {
+        "id": "chem_mr_046",
+        "topic": "Stoichiometry & Precipitation",
+        "year": "1984",
+        "question": "30 cm³ of 0.10 M Al(NO₃)₃ solution is reacted with 100 cm³ of 0.15 M NaOH solution. Which reactant is in excess and by what volume of its initial solution? [Al(NO₃)₃ + 3NaOH → Al(OH)₃ + 3NaNO₃]",
+        "a": "NaOH solution, by 70 cm³", "b": "NaOH solution, by 60 cm³", "c": "NaOH solution, by 40 cm³", "d": "Al(NO₃)₃ solution, by 10 cm³",
+        "ans": 2,
+        "explanation": "Moles Al(NO₃)₃ = 0.030 × 0.10 = 0.003 mol. Requires 3 × 0.003 = 0.009 mol NaOH. Available NaOH = 0.100 × 0.15 = 0.015 mol. Excess NaOH = 0.015 - 0.009 = 0.006 mol. Excess volume = 0.006 / 0.15 = 0.040 L = 40 cm³."
+    },
+    {
+        "id": "chem_mr_047",
+        "topic": "Stoichiometry & Gas Volumes",
+        "year": "1984",
+        "question": "For the thermal decomposition: NH₄NO₂ → N₂ + 2H₂O, calculate the volume of nitrogen produced at S.T.P from 3.20 g of ammonium dioxonitrate(III). [N=14, O=16, H=1, Molar volume at STP = 22.4 dm³]",
+        "a": "2.24 dm³", "b": "4.48 dm³", "c": "1.12 dm³", "d": "0.56 dm³",
+        "ans": 2,
+        "explanation": "Molar mass of NH₄NO₂ = 14 + 4(1) + 14 + 2(16) = 64 g/mol. Moles = 3.20 / 64 = 0.050 mol. Volume of N₂ gas at STP = 0.050 × 22.4 dm³ = 1.12 dm³."
+    },
+    {
+        "id": "chem_mr_048",
+        "topic": "Solutions & Molar Concentration",
+        "year": "1984",
+        "question": "A 1.0 M (molar) solution of caustic soda (NaOH) is prepared by dissolving:",
+        "a": "40 g NaOH in 100 g of water",
+        "b": "40 g NaOH in water and making up to 1000 cm³ of solution",
+        "c": "20 g NaOH in 500 cm³ of solution",
+        "d": "Both B and C",
+        "ans": 3,
+        "explanation": "Molar mass of NaOH = 23 + 16 + 1 = 40 g/mol. A 1.0 M solution contains 1.0 mole (40 g) of NaOH per 1.0 dm³ (1000 cm³) of total solution, or 20 g in 500 cm³."
+    },
+    {
+        "id": "chem_mr_049",
+        "topic": "States of Matter & Melting",
+        "year": "1984",
+        "question": "Naphthalene melts at 354 K (81°C). At this temperature, the molecules of naphthalene:",
+        "a": "Decompose into smaller molecules",
+        "b": "Change their chemical composition",
+        "c": "Are oxidized by atmospheric oxygen",
+        "d": "Overcome intermolecular forces and become mobile in the liquid phase",
+        "ans": 3,
+        "explanation": "Melting is a physical change during which solid particles absorb latent heat of fusion, overcoming rigid van der Waals lattice forces to slide past one another as mobile liquid particles."
+    },
+    {
+        "id": "chem_mr_050",
+        "topic": "Avogadro's Law & Mole Concept",
+        "year": "1984",
+        "question": "The ratio of the number of molecules in 2.0 g of hydrogen gas (H₂) to that in 16.0 g of oxygen gas (O₂) is: [H=1, O=16]",
+        "a": "2 : 1", "b": "1 : 1", "c": "1 : 2", "d": "1 : 4",
+        "ans": 0,
+        "explanation": "Moles of H₂ = 2.0 / 2 = 1.0 mol. Moles of O₂ = 16.0 / 32 = 0.5 mol. Since number of molecules is directly proportional to moles, ratio = 1.0 / 0.5 = 2 : 1."
+    }
+]
+
+print("Dataset part 1 loaded")

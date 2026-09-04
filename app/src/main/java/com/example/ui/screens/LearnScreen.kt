@@ -96,8 +96,8 @@ fun LearnScreen(
                     text = {
                         Text(
                             text = subj,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            color = if (isSelected) PrimaryGreen else TextSecondary
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSelected) PrimaryGreen else TextPrimary
                         )
                     }
                 )
@@ -212,7 +212,7 @@ fun LearnScreen(
                         Button(
                             onClick = { onSelectTopicPractice(selectedSubject, topic) },
                             shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = TextPrimary),
+                            colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen, contentColor = Color.White),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .testTag("practice_topic_${topic.lowercase().replace(" ", "_")}")

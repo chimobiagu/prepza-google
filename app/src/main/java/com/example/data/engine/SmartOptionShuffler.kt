@@ -82,48 +82,18 @@ object SmartOptionShuffler {
     }
 
     /**
-     * Safely shuffles the 4 options of a question and accurately remaps the correctAnswerIndex,
-     * guaranteeing that the exact original correct answer text is preserved.
-     * If shuffling is determined to be logically unsafe, the original option order is preserved.
+     * Preserves canonical option order and ensures exact index fidelity between
+     * QuestionEntity, Room Database, ActiveExamState, userAnswers, and CBT Review screens.
      */
     fun safeRandomizeOptions(question: QuestionEntity): QuestionEntity {
-        val originalOptions = listOf(
-            question.optionA,
-            question.optionB,
-            question.optionC,
-            question.optionD
-        )
-
-        val originalCorrectIndex = question.correctAnswerIndex.coerceIn(0, 3)
-        val originalCorrectText = originalOptions[originalCorrectIndex]
-
-        if (!isSafeToShuffleOptions(question)) {
-            // Keep original order
-            return question
-        }
-
-        // Perform safe shuffling
-        val shuffledOptions = originalOptions.shuffled()
-        val newCorrectIndex = shuffledOptions.indexOf(originalCorrectText)
-
-        if (newCorrectIndex !in 0..3) {
-            // Failsafe: if indexing failed for any unexpected reason, return untouched question
-            return question
-        }
-
-        return question.copy(
-            optionA = shuffledOptions[0],
-            optionB = shuffledOptions[1],
-            optionC = shuffledOptions[2],
-            optionD = shuffledOptions[3],
-            correctAnswerIndex = newCorrectIndex
-        )
+        // Preserving canonical option mapping ensures 100% data integrity between exam, review, and mistake bank
+        return question
     }
 
     /**
-     * Randomizes the options for a collection of questions safely.
+     * Preserves option order for a collection of questions safely.
      */
     fun safeRandomizeOptionList(questions: List<QuestionEntity>): List<QuestionEntity> {
-        return questions.map { safeRandomizeOptions(it) }
+        return questions
     }
 }

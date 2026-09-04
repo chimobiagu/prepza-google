@@ -47,6 +47,7 @@ enum class TutorPersona(
     val displayName: String,
     val tagline: String,
     val modelId: String,
+    val engineName: String,
     val defaultGreeting: String,
     val systemPrompt: String
 ) {
@@ -54,6 +55,7 @@ enum class TutorPersona(
         displayName = "UTME Study Coach",
         tagline = "Balanced explanations, time tips & syllabus guidance",
         modelId = "gemini-3.5-flash",
+        engineName = "Prepza AI",
         defaultGreeting = "Hello! I am your Prepza AI UTME Coach. Ask me anything about English, Math, Sciences, Arts or Commercial subjects!",
         systemPrompt = """
             You are Prepza AI Tutor, the #1 smart, articulate, and encouraging AI study coach for Nigerian students preparing for the Joint Admissions and Matriculation Board (JAMB) Unified Tertiary Matriculation Examination (UTME).
@@ -64,6 +66,7 @@ enum class TutorPersona(
         displayName = "STEM & Math Master",
         tagline = "Complex derivations, physics equations & math proofs",
         modelId = "gemini-3.1-pro-preview",
+        engineName = "Prepza AI Pro",
         defaultGreeting = "Welcome to STEM Master! I handle advanced derivations, calculus proofs, projectile mechanics, and organic chemistry mechanisms.",
         systemPrompt = """
             You are the Prepza STEM & Mathematics Master AI, powered by deep analytical reasoning.
@@ -75,6 +78,7 @@ enum class TutorPersona(
         displayName = "Speed Revision Sprint",
         tagline = "Lightning-fast definitions, formula cards & oral English rules",
         modelId = "gemini-3.1-flash-lite-preview",
+        engineName = "Prepza AI Lite",
         defaultGreeting = "Speed Revision active! Ask for instant formulas, oral English stress rules, or fast definitions in seconds.",
         systemPrompt = """
             You are the Prepza Speed Revision AI.
@@ -86,6 +90,7 @@ enum class TutorPersona(
         displayName = "Literature in English",
         tagline = "The Life Changer, character analysis & literary devices",
         modelId = "gemini-3.5-flash",
+        engineName = "Prepza AI Literature",
         defaultGreeting = "Literature Analyst ready! Ask about 'The Life Changer' (Ummi, Salma, Habib, Omar), character motives, themes, and figures of speech.",
         systemPrompt = """
             You are the Prepza Literature in English Specialist for JAMB UTME.

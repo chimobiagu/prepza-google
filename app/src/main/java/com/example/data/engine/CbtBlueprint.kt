@@ -25,7 +25,10 @@ object CbtBlueprint {
         "Literature in English",
         "CRS",
         "Commerce",
-        "Principles of Accounts"
+        "Principles of Accounts",
+        "Geography",
+        "History",
+        "Islamic Religious Studies (IRS)"
     )
 
     /**
@@ -174,6 +177,40 @@ object CbtBlueprint {
             "Depreciation of Fixed Assets",
             "Partnership Accounts",
             "Manufacturing and Non-Profit Accounts"
+        ),
+        "Geography" to listOf(
+            "The Earth and the Solar System",
+            "Rocks, Weathering and Mass Wasting",
+            "Landforms and Geomorphology",
+            "Atmosphere, Weather and Climate",
+            "Vegetation Belts and Soils",
+            "Map Reading and Cartography",
+            "Human Population and Settlement",
+            "Agriculture and Mineral Resources",
+            "Regional Geography of Nigeria",
+            "Environmental Hazards and Conservation"
+        ),
+        "History" to listOf(
+            "Sources and Historiography of African History",
+            "Pre-Colonial Nigerian Kingdoms and Empires",
+            "Kanem-Borno and Hausa States",
+            "Benin Kingdom and Oyo Empire",
+            "Sokoto Caliphate and 19th Century Jihads",
+            "Trans-Atlantic Slave Trade and Legitimate Commerce",
+            "British Conquest and Colonial Administration",
+            "Nationalist Movements and Constitutional Evolution",
+            "Independent Nigeria and Post-Colonial Politics",
+            "Pan-Africanism and Modern African History"
+        ),
+        "Islamic Religious Studies (IRS)" to listOf(
+            "Tawhid and Articles of Faith (Iman)",
+            "Pillars of Islam (Ibadah and Fiqh)",
+            "Quranic Studies and Prescribed Surahs",
+            "Hadith and Sunnah of the Prophet (SAW)",
+            "Sirah and the Early Muslim Community",
+            "The Rightly Guided Caliphs (Khulafa' al-Rashidun)",
+            "Islamic Family Law and Commercial Ethics",
+            "Islam in West Africa and Contemporary Issues"
         )
     )
 

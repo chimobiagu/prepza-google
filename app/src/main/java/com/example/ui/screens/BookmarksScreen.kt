@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.example.data.db.BookmarkEntity
 import com.example.data.db.QuestionEntity
 import com.example.ui.components.EmptyStateView
+import com.example.ui.components.FormattedText
 import com.example.ui.components.PrepzaCard
 import com.example.ui.components.QuestionImageViewer
 import com.example.ui.components.QuestionMediaDetector
@@ -112,12 +113,13 @@ fun BookmarksScreen(
 
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            Text(
-                                text = QuestionMediaDetector.cleanQuestionDisplayText(q.questionText),
+                            FormattedText(
+                                text = q.questionText,
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.SemiBold,
                                 color = TextPrimary,
-                                maxLines = 3
+                                maxLines = 3,
+                                isQuestionStem = true
                             )
 
                             // Question Image / Diagram Display if present

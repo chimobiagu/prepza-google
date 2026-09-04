@@ -168,6 +168,13 @@ object QuestionMediaDetector {
     private fun inferDiagramType(text: String, subject: String, topic: String): String {
         val combined = "$text $subject $topic".lowercase()
         return when {
+            combined.contains("commerce") || combined.contains("channel") || combined.contains("wholesal") || combined.contains("retail") || combined.contains("production") || combined.contains("distribution") -> "commerce_flowchart"
+            combined.contains("demand") || combined.contains("supply") || combined.contains("equilibrium") || combined.contains("elasticity") || combined.contains("marginal") || combined.contains("cost curve") -> "economics_curve"
+            combined.contains("genetics") || combined.contains("punnett") || combined.contains("allele") || combined.contains("heterozyg") || combined.contains("homozyg") || combined.contains("monohybrid") -> "biology_genetics"
+            combined.contains("food chain") || combined.contains("food web") || combined.contains("trophic") || combined.contains("ecosystem") || combined.contains("pyramid of") -> "biology_ecology"
+            combined.contains("electrolysis") || combined.contains("anode") || combined.contains("cathode") || combined.contains("electrolyte") || combined.contains("galvanic") -> "chemistry_electrolysis"
+            combined.contains("benzene") || combined.contains("alkane") || combined.contains("alkene") || combined.contains("alkyne") || combined.contains("ester") || combined.contains("isomer") -> "chemistry_organic"
+            combined.contains("vector") || combined.contains("inclined") || combined.contains("normal reaction") || combined.contains("friction") || combined.contains("resultant") -> "physics_vectors"
             combined.contains("circuit") || combined.contains("resistor") || combined.contains("ammeter") || combined.contains("galvanometer") || combined.contains("potentiometer") -> "circuit"
             combined.contains("lens") || combined.contains("mirror") || combined.contains("prism") || combined.contains("ray") || combined.contains("refraction") -> "optics"
             combined.contains("pulley") || combined.contains("inclined plane") || combined.contains("lever") || combined.contains("pendulum") -> "mechanics"
@@ -175,7 +182,7 @@ object QuestionMediaDetector {
             combined.contains("cell") || combined.contains("chloroplast") || combined.contains("mitochondria") || combined.contains("nucleus") || combined.contains("membrane") -> "biology_cell"
             combined.contains("flower") || combined.contains("carpel") || combined.contains("stamen") || combined.contains("ovary") -> "biology_flower"
             combined.contains("nephron") || combined.contains("kidney") || combined.contains("glomerulus") || combined.contains("heart") || combined.contains("eye") -> "biology_anatomy"
-            combined.contains("titration") || combined.contains("apparatus") || combined.contains("distillation") || combined.contains("electrolysis") || combined.contains("beaker") -> "chemistry_apparatus"
+            combined.contains("titration") || combined.contains("apparatus") || combined.contains("distillation") || combined.contains("beaker") || combined.contains("flask") -> "chemistry_apparatus"
             combined.contains("circle") || combined.contains("tangent") || combined.contains("chord") || combined.contains("arc") || combined.contains("cyclic") -> "math_circle"
             combined.contains("triangle") || combined.contains("trigonometry") || combined.contains("elevation") || combined.contains("depression") || combined.contains("bearing") -> "math_triangle"
             combined.contains("venn") || combined.contains("set") || combined.contains("union") || combined.contains("intersection") -> "math_venn"
@@ -186,7 +193,8 @@ object QuestionMediaDetector {
     }
 
     /**
-     * Cleans display text by removing explicit raw markdown image or diagram tags so question reads cleanly.
+     * Cleans display text by removing explicit raw markdown image or diagram tags so question reads cleanly,
+     * and strips accidental leading question number tags.
      */
     fun cleanQuestionDisplayText(rawText: String): String {
         var text = rawText
@@ -194,6 +202,12 @@ object QuestionMediaDetector {
         text = HTML_IMAGE_PATTERN.matcher(text).replaceAll("")
         text = BRACKET_IMAGE_PATTERN.matcher(text).replaceAll("")
         text = DIAGRAM_TAG_PATTERN.matcher(text).replaceAll("")
+        // Strip bracket tags like [JAMB 1986], [JAMB 1986: Q26], [UTME 2012]
+        text = text.replace(Regex("^\\[(?:JAMB|UTME|WAEC)[^\\]]*\\]\\s*", RegexOption.IGNORE_CASE), "")
+        // Strip prefixes like "JAMB 1986: Q26 -", "JAMB English Q60:", "1986 Q26:", etc.
+        text = text.replace(Regex("^(?:JAMB|UTME|WAEC)\\s*(?:[A-Za-z\\s]+)?\\s*\\d{4}[:\\s]*(?:Q\\.?\\s*\\d+)?[:\\-\\.]?\\s*", RegexOption.IGNORE_CASE), "")
+        // Strip leading numbering: "1.", "Q1:", "Question 1:", "(1)", "No. 1:"
+        text = text.replace(Regex("^(?:\\d{1,3}[.)\\-:]|q\\d{1,3}[.:]|question\\s+\\d{1,3}[.:]|no\\.?\\s*\\d{1,3}[.:])\\s*", RegexOption.IGNORE_CASE), "")
         return text.trim()
     }
 }
@@ -612,10 +626,17 @@ fun QuestionCanvasDiagram(
                 "optics" -> drawOpticsRayDiagram(w, h)
                 "mechanics" -> drawMechanicsPulley(w, h)
                 "wave" -> drawWaveformDiagram(w, h)
+                "physics_vectors" -> drawPhysicsForceVectors(w, h)
+                "commerce_flowchart" -> drawCommerceFlowchart(w, h)
+                "economics_curve" -> drawEconomicsSupplyDemand(w, h)
                 "biology_cell" -> drawBiologyCell(w, h)
                 "biology_flower" -> drawBiologyFlower(w, h)
                 "biology_anatomy" -> drawBiologyAnatomy(w, h)
+                "biology_genetics" -> drawGeneticsPunnett(w, h)
+                "biology_ecology" -> drawEcologyFoodWeb(w, h)
                 "chemistry_apparatus" -> drawChemistryApparatus(w, h)
+                "chemistry_electrolysis" -> drawElectrolysisApparatus(w, h)
+                "chemistry_organic" -> drawBenzeneRing(w, h)
                 "math_circle" -> drawCircleGeometry(w, h)
                 "math_triangle" -> drawTrigTriangle(w, h)
                 "math_venn" -> drawVennDiagram(w, h)
@@ -1029,4 +1050,235 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGenericScientif
     drawLine(primary, Offset(w * 0.2f, center.y), Offset(w * 0.8f, center.y), strokeWidth = 2.5f)
     drawLine(primary, Offset(center.x, h * 0.2f), Offset(center.x, h * 0.8f), strokeWidth = 2.5f)
     drawCircle(Color(0xFFF59E0B), radius = 16f, center = center)
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawCommerceFlowchart(w: Float, h: Float) {
+    val boxColor = Color(0xFF0D9488)
+    val arrowColor = Color(0xFF1E293B)
+    val boxW = w * 0.22f
+    val boxH = h * 0.45f
+    val y = h * 0.25f
+
+    // 3 Connected Distribution Channel Nodes (Producer -> Wholesaler / Agent -> Retailer / Consumer)
+    val x1 = w * 0.08f
+    val x2 = w * 0.39f
+    val x3 = w * 0.70f
+
+    val nodes = listOf(x1, x2, x3)
+    nodes.forEach { nx ->
+        drawRoundRect(
+            color = boxColor.copy(alpha = 0.15f),
+            topLeft = Offset(nx, y),
+            size = Size(boxW, boxH),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f)
+        )
+        drawRoundRect(
+            color = boxColor,
+            topLeft = Offset(nx, y),
+            size = Size(boxW, boxH),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f),
+            style = Stroke(2.5f)
+        )
+        // Inner line detail
+        drawLine(boxColor, Offset(nx + 10f, y + boxH * 0.5f), Offset(nx + boxW - 10f, y + boxH * 0.5f), strokeWidth = 2f)
+    }
+
+    // Directional Flow Arrows between nodes
+    val arrowY = y + boxH * 0.5f
+    // Arrow 1 -> 2
+    drawLine(arrowColor, Offset(x1 + boxW, arrowY), Offset(x2, arrowY), strokeWidth = 3f)
+    drawLine(arrowColor, Offset(x2 - 10f, arrowY - 6f), Offset(x2, arrowY), strokeWidth = 3f)
+    drawLine(arrowColor, Offset(x2 - 10f, arrowY + 6f), Offset(x2, arrowY), strokeWidth = 3f)
+
+    // Arrow 2 -> 3
+    drawLine(arrowColor, Offset(x2 + boxW, arrowY), Offset(x3, arrowY), strokeWidth = 3f)
+    drawLine(arrowColor, Offset(x3 - 10f, arrowY - 6f), Offset(x3, arrowY), strokeWidth = 3f)
+    drawLine(arrowColor, Offset(x3 - 10f, arrowY + 6f), Offset(x3, arrowY), strokeWidth = 3f)
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawEconomicsSupplyDemand(w: Float, h: Float) {
+    val axisColor = Color(0xFF334155)
+    val demandColor = Color(0xFFDC2626)
+    val supplyColor = Color(0xFF16A34A)
+    val eqColor = Color(0xFF2563EB)
+
+    val originX = w * 0.15f
+    val originY = h * 0.85f
+    val topY = h * 0.15f
+    val rightX = w * 0.85f
+
+    // Axes: P (Price) on Y, Q (Quantity) on X
+    drawLine(axisColor, Offset(originX, originY), Offset(originX, topY), strokeWidth = 3f)
+    drawLine(axisColor, Offset(originX, originY), Offset(rightX, originY), strokeWidth = 3f)
+
+    // Demand Curve (Downward sloping)
+    drawLine(demandColor, Offset(originX + 20f, topY + 20f), Offset(rightX - 20f, originY - 20f), strokeWidth = 3.5f)
+
+    // Supply Curve (Upward sloping)
+    drawLine(supplyColor, Offset(originX + 20f, originY - 20f), Offset(rightX - 20f, topY + 20f), strokeWidth = 3.5f)
+
+    // Equilibrium Point (E)
+    val eqX = (originX + rightX) / 2f
+    val eqY = (originY + topY) / 2f
+    drawCircle(eqColor, radius = 5f, center = Offset(eqX, eqY))
+
+    // Dashed lines to axes
+    val dash = PathEffect.dashPathEffect(floatArrayOf(8f, 6f), 0f)
+    drawLine(eqColor.copy(alpha = 0.7f), Offset(originX, eqY), Offset(eqX, eqY), strokeWidth = 2f, pathEffect = dash)
+    drawLine(eqColor.copy(alpha = 0.7f), Offset(eqX, originY), Offset(eqX, eqY), strokeWidth = 2f, pathEffect = dash)
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawGeneticsPunnett(w: Float, h: Float) {
+    val gridColor = Color(0xFF475569)
+    val alleleColor = Color(0xFF7C3AED)
+    val midX = w * 0.5f
+    val midY = h * 0.5f
+    val cellSize = (h * 0.35f)
+
+    val left = midX - cellSize
+    val top = midY - cellSize
+    val right = midX + cellSize
+    val bottom = midY + cellSize
+
+    // 2x2 Punnett Grid
+    drawRoundRect(
+        color = Color(0xFFF3E8FF),
+        topLeft = Offset(left, top),
+        size = Size(cellSize * 2f, cellSize * 2f),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f)
+    )
+    drawRoundRect(
+        color = gridColor,
+        topLeft = Offset(left, top),
+        size = Size(cellSize * 2f, cellSize * 2f),
+        cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f),
+        style = Stroke(3f)
+    )
+
+    // Horizontal & Vertical dividing lines
+    drawLine(gridColor, Offset(left, midY), Offset(right, midY), strokeWidth = 2.5f)
+    drawLine(gridColor, Offset(midX, top), Offset(midX, bottom), strokeWidth = 2.5f)
+
+    // Gamete Allele Markers (Circles with genotypes)
+    drawCircle(alleleColor, radius = 12f, center = Offset(left + cellSize * 0.5f, top - 18f))
+    drawCircle(alleleColor, radius = 12f, center = Offset(left + cellSize * 1.5f, top - 18f))
+    drawCircle(alleleColor, radius = 12f, center = Offset(left - 18f, top + cellSize * 0.5f))
+    drawCircle(alleleColor, radius = 12f, center = Offset(left - 18f, top + cellSize * 1.5f))
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawEcologyFoodWeb(w: Float, h: Float) {
+    val leafGreen = Color(0xFF15803D)
+    val yellow = Color(0xFFD97706)
+    val red = Color(0xFFDC2626)
+    val arrowColor = Color(0xFF334155)
+
+    val pY = h * 0.75f // Producer
+    val c1Y = h * 0.45f // Primary
+    val c2Y = h * 0.18f // Apex
+
+    val midX = w * 0.5f
+
+    // Producer Base (Grass / Algae)
+    drawRoundRect(leafGreen, topLeft = Offset(midX - 70f, pY), size = Size(140f, 32f), cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f))
+
+    // Primary Consumers (2 boxes)
+    drawRoundRect(yellow, topLeft = Offset(w * 0.22f, c1Y), size = Size(90f, 30f), cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f))
+    drawRoundRect(yellow, topLeft = Offset(w * 0.58f, c1Y), size = Size(90f, 30f), cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f))
+
+    // Apex Predator
+    drawRoundRect(red, topLeft = Offset(midX - 60f, c2Y), size = Size(120f, 30f), cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f, 6f))
+
+    // Energy Flow Arrows upwards
+    drawLine(arrowColor, Offset(midX - 30f, pY), Offset(w * 0.32f, c1Y + 30f), strokeWidth = 2.5f)
+    drawLine(arrowColor, Offset(midX + 30f, pY), Offset(w * 0.68f, c1Y + 30f), strokeWidth = 2.5f)
+    drawLine(arrowColor, Offset(w * 0.32f, c1Y), Offset(midX - 20f, c2Y + 30f), strokeWidth = 2.5f)
+    drawLine(arrowColor, Offset(w * 0.68f, c1Y), Offset(midX + 20f, c2Y + 30f), strokeWidth = 2.5f)
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawElectrolysisApparatus(w: Float, h: Float) {
+    val beakerColor = Color(0xFF0284C7)
+    val liquidColor = Color(0xFFBAE6FD)
+    val electrodeColor = Color(0xFF1E293B)
+    val wireColor = Color(0xFFDC2626)
+
+    val midX = w * 0.5f
+    val bLeft = midX - 80f
+    val bRight = midX + 80f
+    val bTop = h * 0.35f
+    val bBottom = h * 0.85f
+
+    // Electrolyte Liquid & Beaker
+    drawRoundRect(liquidColor, topLeft = Offset(bLeft + 5f, bTop + 30f), size = Size(150f, bBottom - bTop - 35f), cornerRadius = androidx.compose.ui.geometry.CornerRadius(8f, 8f))
+    drawRoundRect(beakerColor, topLeft = Offset(bLeft, bTop), size = Size(160f, bBottom - bTop), cornerRadius = androidx.compose.ui.geometry.CornerRadius(10f, 10f), style = Stroke(3.5f))
+
+    // Anode (+) on left, Cathode (-) on right
+    drawRect(electrodeColor, topLeft = Offset(bLeft + 30f, bTop + 15f), size = Size(18f, 75f))
+    drawRect(electrodeColor, topLeft = Offset(bRight - 48f, bTop + 15f), size = Size(18f, 75f))
+
+    // Top Battery & Circuit connection
+    drawLine(wireColor, Offset(bLeft + 39f, bTop + 15f), Offset(bLeft + 39f, h * 0.18f), strokeWidth = 2.5f)
+    drawLine(wireColor, Offset(bLeft + 39f, h * 0.18f), Offset(midX - 15f, h * 0.18f), strokeWidth = 2.5f)
+
+    drawLine(wireColor, Offset(bRight - 39f, bTop + 15f), Offset(bRight - 39f, h * 0.18f), strokeWidth = 2.5f)
+    drawLine(wireColor, Offset(bRight - 39f, h * 0.18f), Offset(midX + 15f, h * 0.18f), strokeWidth = 2.5f)
+
+    // Battery cell symbol
+    drawLine(electrodeColor, Offset(midX - 15f, h * 0.12f), Offset(midX - 15f, h * 0.24f), strokeWidth = 5f)
+    drawLine(electrodeColor, Offset(midX + 15f, h * 0.15f), Offset(midX + 15f, h * 0.21f), strokeWidth = 3f)
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawBenzeneRing(w: Float, h: Float) {
+    val ringColor = Color(0xFF0F766E)
+    val midX = w * 0.5f
+    val midY = h * 0.5f
+    val r = h * 0.32f
+
+    // Hexagon Path
+    val path = Path()
+    for (i in 0..5) {
+        val angle = Math.toRadians((i * 60.0) - 30.0)
+        val px = (midX + r * Math.cos(angle)).toFloat()
+        val py = (midY + r * Math.sin(angle)).toFloat()
+        if (i == 0) path.moveTo(px, py) else path.lineTo(px, py)
+    }
+    path.close()
+
+    drawPath(path, ringColor, style = Stroke(3.5f))
+
+    // Resonance delocalized electron cloud inner circle
+    drawCircle(ringColor, radius = r * 0.55f, center = Offset(midX, midY), style = Stroke(2.5f))
+}
+
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawPhysicsForceVectors(w: Float, h: Float) {
+    val rampColor = Color(0xFF64748B)
+    val boxColor = Color(0xFF0284C7)
+    val forceColor = Color(0xFFDC2626)
+
+    val startX = w * 0.15f
+    val endX = w * 0.85f
+    val groundY = h * 0.85f
+    val apexY = h * 0.35f
+
+    // Inclined Plane Wedge
+    val rampPath = Path().apply {
+        moveTo(startX, groundY)
+        lineTo(endX, groundY)
+        lineTo(endX, apexY)
+        close()
+    }
+    drawPath(rampPath, rampColor.copy(alpha = 0.2f))
+    drawPath(rampPath, rampColor, style = Stroke(3f))
+
+    // Mass block on incline
+    val blockCenter = Offset((startX + endX) * 0.52f, (groundY + apexY) * 0.52f)
+    drawCircle(boxColor, radius = 16f, center = blockCenter)
+
+    // Weight force W (vertically down)
+    drawLine(forceColor, blockCenter, Offset(blockCenter.x, blockCenter.y + 55f), strokeWidth = 3f)
+
+    // Normal Reaction R (perpendicular to ramp)
+    drawLine(Color(0xFF16A34A), blockCenter, Offset(blockCenter.x - 30f, blockCenter.y - 45f), strokeWidth = 3f)
+
+    // Friction force F_r (up the incline)
+    drawLine(Color(0xFFD97706), blockCenter, Offset(blockCenter.x + 35f, blockCenter.y - 25f), strokeWidth = 3f)
 }

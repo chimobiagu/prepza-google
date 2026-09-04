@@ -19,8 +19,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.db.FriendChatMessageEntity
@@ -42,6 +47,8 @@ fun FriendChatScreen(
     var messageInput by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
     val coroutineScope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     // Auto scroll to bottom when new messages arrive
     LaunchedEffect(messages.size) {
@@ -227,6 +234,23 @@ fun FriendChatScreen(
                                 .weight(1f)
                                 .testTag("friend_chat_input_field"),
                             shape = RoundedCornerShape(24.dp),
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                            keyboardActions = KeyboardActions(
+                                onSend = {
+                                    val textToSend = messageInput.trim()
+                                    if (textToSend.isNotBlank()) {
+                                        focusManager.clearFocus()
+                                        keyboardController?.hide()
+                                        onSendMessage(textToSend)
+                                        messageInput = ""
+                                        coroutineScope.launch {
+                                            if (messages.isNotEmpty()) {
+                                                listState.animateScrollToItem(messages.size)
+                                            }
+                                        }
+                                    }
+                                }
+                            ),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedContainerColor = AppBackground,
                                 unfocusedContainerColor = AppBackground,
@@ -247,6 +271,8 @@ fun FriendChatScreen(
                                 .clickable(enabled = messageInput.isNotBlank()) {
                                     val textToSend = messageInput.trim()
                                     if (textToSend.isNotBlank()) {
+                                        focusManager.clearFocus()
+                                        keyboardController?.hide()
                                         onSendMessage(textToSend)
                                         messageInput = ""
                                         coroutineScope.launch {

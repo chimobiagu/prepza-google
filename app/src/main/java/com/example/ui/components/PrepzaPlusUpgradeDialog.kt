@@ -38,6 +38,7 @@ fun PrepzaPlusUpgradeDialog(
     onUpgradeSuccess: () -> Unit,
     onSimulateDays: (Int) -> Unit = {},
     onResetTrial: () -> Unit = {},
+    onOpenReferrals: () -> Unit = {},
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -115,7 +116,7 @@ fun PrepzaPlusUpgradeDialog(
                             onUpgradeSuccess()
                             onDismiss()
                         },
-                        colors = ButtonDefaults.buttonColors(containerColor = TextPrimary),
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen, contentColor = Color.White),
                         shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
@@ -361,7 +362,7 @@ fun PrepzaPlusUpgradeDialog(
                                         }
                                     }
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = TextPrimary, contentColor = Color.White),
+                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen, contentColor = Color.White),
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -507,7 +508,7 @@ fun PrepzaPlusUpgradeDialog(
                                         }
                                     }
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = TextPrimary, contentColor = Color.White),
+                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen, contentColor = Color.White),
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -521,6 +522,50 @@ fun PrepzaPlusUpgradeDialog(
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text("Activate Prepza Plus", fontWeight = FontWeight.Bold)
                                 }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Free Referral Option Banner
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = SoftAmberBg,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, AmberAccent.copy(alpha = 0.3f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.CardGiftcard, contentDescription = null, tint = AmberAccent, modifier = Modifier.size(18.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Want Free Prepza Plus?",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TextPrimary
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Refer 10 candidates with your unique study code to get 1 Full Month of Prepza Plus 100% free.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextSecondary,
+                                fontSize = 11.sp
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedButton(
+                                onClick = {
+                                    onDismiss()
+                                    onOpenReferrals()
+                                },
+                                shape = RoundedCornerShape(8.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = AmberAccent),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, AmberAccent.copy(alpha = 0.6f)),
+                                modifier = Modifier.fillMaxWidth().height(36.dp),
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp)
+                            ) {
+                                Text("View Referral Program & Study Code", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -587,7 +632,7 @@ fun TrialMilestoneReminderDialog(
                     onDismissReminder()
                     onUpgradeClick()
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = TextPrimary),
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen, contentColor = Color.White),
                 shape = RoundedCornerShape(10.dp)
             ) {
                 Text("Upgrade (₦500)", fontWeight = FontWeight.Bold)

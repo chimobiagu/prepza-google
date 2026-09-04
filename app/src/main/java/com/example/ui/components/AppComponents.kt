@@ -168,7 +168,7 @@ fun PrepzaButton(
             .testTag("prepza_button_${text.lowercase().replace(" ", "_")}"),
         shape = RoundedCornerShape(14.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = if (isDark) TextPrimary else PrimaryGreen,
+            containerColor = if (isDark) DarkCardBg else PrimaryGreen,
             contentColor = Color.White,
             disabledContainerColor = BorderSubtle,
             disabledContentColor = TextMuted
@@ -230,16 +230,16 @@ fun PrepzaChip(
     Surface(
         modifier = modifier.clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
-        color = if (isSelected) TextPrimary else MaterialTheme.colorScheme.surface,
+        color = if (isSelected) PrimaryGreen else SurfaceWhite,
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
-            if (isSelected) TextPrimary else MaterialTheme.colorScheme.outline
+            if (isSelected) PrimaryGreen else BorderSubtle
         )
     ) {
         Text(
             text = text,
             style = MaterialTheme.typography.labelLarge,
-            color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
+            color = if (isSelected) Color.White else TextPrimary,
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
         )
     }
@@ -422,10 +422,10 @@ fun ScientificCalculatorDialog(
                                         },
                                     shape = RoundedCornerShape(8.dp),
                                     color = when (btn) {
-                                        "=" -> TextPrimary
+                                        "=" -> PrimaryGreen
                                         "C", "⌫" -> IncorrectRedBg
                                         "÷", "×", "-", "+", "√", "%" -> PaleGreenBg
-                                        else -> MaterialTheme.colorScheme.surface
+                                        else -> SurfaceWhite
                                     },
                                     border = androidx.compose.foundation.BorderStroke(0.5.dp, BorderSubtle)
                                 ) {
@@ -538,15 +538,16 @@ fun QuestionPaletteBottomSheet(
                         color = when {
                             isFlagged -> WarningAmberBg
                             isAnswered -> CorrectGreenBg
+                            isCurrent -> MaterialTheme.colorScheme.primaryContainer
                             else -> MaterialTheme.colorScheme.surface
                         },
                         border = androidx.compose.foundation.BorderStroke(
                             width = if (isCurrent) 2.dp else 1.dp,
                             color = when {
-                                isCurrent -> TextPrimary
+                                isCurrent -> MaterialTheme.colorScheme.primary
                                 isFlagged -> WarningAmber
                                 isAnswered -> CorrectGreen
-                                else -> BorderSubtle
+                                else -> MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                             }
                         )
                     ) {
@@ -554,11 +555,12 @@ fun QuestionPaletteBottomSheet(
                             Text(
                                 text = "${index + 1}",
                                 style = MaterialTheme.typography.labelLarge,
-                                fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Medium,
+                                fontWeight = if (isCurrent || isAnswered || isFlagged) FontWeight.Bold else FontWeight.Medium,
                                 color = when {
                                     isFlagged -> WarningAmber
                                     isAnswered -> CorrectGreen
-                                    else -> TextPrimary
+                                    isCurrent -> MaterialTheme.colorScheme.primary
+                                    else -> MaterialTheme.colorScheme.onSurface
                                 }
                             )
                         }

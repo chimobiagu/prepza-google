@@ -245,18 +245,23 @@ fun QuestionPracticeScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp)
         ) {
-            // Origin Badge (Matching Inspiration Image 2 "JAMB 2025")
+            // Origin Badge
+            val isAuthenticJamb = question.originType == "JAMB_ORIGINAL" || question.isVerifiedJamb
             Surface(
-                color = SoftEmeraldBg,
+                color = if (isAuthenticJamb) SoftEmeraldBg else AppBackground,
                 shape = RoundedCornerShape(8.dp),
-                border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryGreenLight.copy(alpha = 0.3f))
+                border = androidx.compose.foundation.BorderStroke(
+                    1.dp,
+                    if (isAuthenticJamb) PrimaryGreenLight.copy(alpha = 0.3f) else BorderSubtle
+                )
             ) {
+                val originText = if (question.year.isNotBlank()) {
+                    "JAMB Past Question • ${question.year}"
+                } else {
+                    "UTME Standard Question"
+                }
                 Text(
-                    text = if (question.originType == "JAMB_ORIGINAL") {
-                        "JAMB ${question.year.ifBlank { "2025" }} · ${question.subject}"
-                    } else {
-                        "Prepza AI · ${question.subject}"
-                    },
+                    text = originText,
                     style = MaterialTheme.typography.labelSmall,
                     color = PrimaryGreen,
                     fontWeight = FontWeight.Bold,
@@ -279,14 +284,15 @@ fun QuestionPracticeScreen(
             }
 
             // Question Text
-            Text(
-                text = QuestionMediaDetector.cleanQuestionDisplayText(question.questionText),
+            FormattedText(
+                text = question.questionText,
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontSize = 20.sp,
                     lineHeight = 28.sp
                 ),
                 fontWeight = FontWeight.Bold,
-                color = TextPrimary
+                color = TextPrimary,
+                isQuestionStem = true
             )
 
             // Question Image / Diagram Display if present
@@ -363,7 +369,7 @@ fun QuestionPracticeScreen(
 
                         Spacer(modifier = Modifier.width(14.dp))
 
-                        Text(
+                        FormattedText(
                             text = text,
                             style = MaterialTheme.typography.bodyLarge,
                             color = TextPrimary,
@@ -427,7 +433,7 @@ fun QuestionPracticeScreen(
 
                             Spacer(modifier = Modifier.height(10.dp))
 
-                            Text(
+                            FormattedText(
                                 text = question.explanation,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = TextPrimary,
@@ -455,11 +461,25 @@ fun QuestionPracticeScreen(
                                     horizontalArrangement = Arrangement.Center,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
+                                    Icon(
+                                        imageVector = Icons.Default.AutoAwesome,
+                                        contentDescription = null,
+                                        tint = PrimaryGreen,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = "Explain Further with AI Tutor",
+                                        text = "Ask AI Tutor (Voice & Text)",
                                         style = MaterialTheme.typography.labelLarge,
                                         fontWeight = FontWeight.Bold,
                                         color = PrimaryGreen
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.Mic,
+                                        contentDescription = null,
+                                        tint = PrimaryGreenDark,
+                                        modifier = Modifier.size(14.dp)
                                     )
                                 }
                             }

@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.example.data.db.MistakeEntity
 import com.example.data.db.QuestionEntity
 import com.example.ui.components.EmptyStateView
+import com.example.ui.components.FormattedText
 import com.example.ui.components.PrepzaCard
 import com.example.ui.components.QuestionImageViewer
 import com.example.ui.components.QuestionMediaDetector
@@ -320,13 +321,14 @@ fun MistakeQuestionCard(
                         )
                     }
                     Surface(
-                        color = AppBackground,
+                        color = PaleGreenBg,
                         shape = RoundedCornerShape(6.dp)
                     ) {
+                        val originBadge = if (question.year.isNotBlank()) "JAMB • ${question.year}" else "UTME Question"
                         Text(
-                            text = "JAMB ${question.year}",
+                            text = originBadge,
                             style = MaterialTheme.typography.labelSmall,
-                            color = TextSecondary,
+                            color = PrimaryGreen,
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                         )
@@ -364,11 +366,12 @@ fun MistakeQuestionCard(
             Spacer(modifier = Modifier.height(6.dp))
 
             // Question Text
-            Text(
-                text = QuestionMediaDetector.cleanQuestionDisplayText(question.questionText),
+            FormattedText(
+                text = question.questionText,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.SemiBold,
-                color = TextPrimary
+                color = TextPrimary,
+                isQuestionStem = true
             )
 
             // Question Image / Diagram Display

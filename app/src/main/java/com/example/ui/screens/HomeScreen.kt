@@ -1,7 +1,9 @@
 package com.example.ui.screens
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -9,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -20,26 +23,50 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.data.db.ActiveExamStateEntity
+import com.example.data.db.TopicProgressEntity
 import com.example.data.db.UserProfileEntity
+import com.example.data.learning.LearningPack
+import com.example.data.remote.RemoteAnnouncement
 import com.example.ui.components.CbtSubjectSelectionDialog
-import com.example.ui.components.PrepzaProgressBar
+import com.example.ui.components.PracticeSetupDialog
 import com.example.ui.theme.*
-import kotlinx.coroutines.delay
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+
+data class PrepzaHomeSubject(
+    val id: String,
+    val name: String,
+    val description: String,
+    val icon: ImageVector,
+    val category: String
+)
 
 @Composable
 fun HomeScreen(
     profile: UserProfileEntity?,
+    topicProgressList: List<TopicProgressEntity> = emptyList(),
+    activeUnfinishedTopic: TopicProgressEntity? = null,
     unmasteredMistakesCount: Int = 0,
+    isOnline: Boolean = true,
+    unsyncedCount: Int = 0,
+    isSyncingCloud: Boolean = false,
+    remoteAnnouncements: List<RemoteAnnouncement> = emptyList(),
+    activeExamState: ActiveExamStateEntity? = null,
+    onResumeActiveExam: () -> Unit = {},
+    onDiscardActiveExam: () -> Unit = {},
+    onSyncNow: () -> Unit = {},
+    onOpenSubject: (String) -> Unit = {},
+    onOpenTopic: (LearningPack) -> Unit = {},
+    onStartLearningPack: (LearningPack, Int) -> Unit = { _, _ -> },
     onNavigateToPractice: (mode: String, subject: String?) -> Unit,
-    onStartMiniCbt: (subject: String) -> Unit = { subj -> onNavigateToPractice("Mini CBT", subj) },
+    onStartMiniCbt: (subject: String, questionCount: Int, timeLimitMinutes: Int) -> Unit = { subj, _, _ -> onNavigateToPractice("Practice", subj) },
     onNavigateToCbt: (selectedSubjects: List<String>) -> Unit,
     onNavigateToLibrary: () -> Unit,
     onNavigateToBookmarks: () -> Unit,
@@ -50,168 +77,315 @@ fun HomeScreen(
     onOpenSettings: () -> Unit = {},
     onUpgradeClick: () -> Unit = {}
 ) {
+    var showCbtSubjectDialog by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
-    var selectedCategoryFilter by remember { mutableStateOf("All") }
-    var showSubjectSelectionDialog by remember { mutableStateOf(false) }
+    var selectedCategory by remember { mutableStateOf("All") }
 
     val userSubjects = remember(profile?.jambSubjectsCsv) {
         profile?.jambSubjectsCsv?.split(",")?.map { it.trim() }?.filter { it.isNotBlank() }
-            ?: listOf("English Language", "Mathematics", "Biology", "Chemistry", "Physics")
+            ?: listOf("English Language", "Mathematics", "Physics", "Chemistry")
     }
 
-    if (showSubjectSelectionDialog) {
+    if (showCbtSubjectDialog) {
         CbtSubjectSelectionDialog(
             initialSubjects = userSubjects,
             onStartExam = { chosenSubjects ->
-                showSubjectSelectionDialog = false
+                showCbtSubjectDialog = false
                 onNavigateToCbt(chosenSubjects)
             },
             onDismiss = {
-                showSubjectSelectionDialog = false
+                showCbtSubjectDialog = false
             }
+        )
+    }
+
+    val studentName = profile?.name?.takeIf { it.isNotBlank() } ?: "Candidate"
+    val studentInitial = studentName.firstOrNull()?.toString()?.uppercase() ?: "C"
+    val streakDays = profile?.streakDays ?: 1
+    val targetScore = profile?.targetScore ?: 320
+
+    // Full 14 UTME subjects matching the original PREPZA database & screenshot
+    val subjectsList = remember {
+        listOf(
+            PrepzaHomeSubject("english", "Use of English", "Comprehension, Lexis & Life Changer", Icons.Outlined.MenuBook, "Languages"),
+            PrepzaHomeSubject("math", "Mathematics", "Algebra, Calculus & Geometry", Icons.Outlined.Calculate, "Sciences"),
+            PrepzaHomeSubject("biology", "Biology", "Genetics, Physiology & Ecology", Icons.Outlined.Eco, "Sciences"),
+            PrepzaHomeSubject("chemistry", "Chemistry", "Physical, Organic & Inorganic", Icons.Outlined.Science, "Sciences"),
+            PrepzaHomeSubject("physics", "Physics", "Mechanics, Optics & Electricity", Icons.Outlined.Bolt, "Sciences"),
+            PrepzaHomeSubject("economics", "Economics", "Microeconomics, Macro & Public Finance", Icons.Outlined.TrendingUp, "Commercial"),
+            PrepzaHomeSubject("government", "Government", "Constitutional History & Systems", Icons.Outlined.AccountBalance, "Arts"),
+            PrepzaHomeSubject("literature", "Literature in English", "Prescribed Prose, Drama & Poetry", Icons.Outlined.AutoStories, "Arts"),
+            PrepzaHomeSubject("commerce", "Commerce", "Trade, Banking & Business Management", Icons.Outlined.Storefront, "Commercial"),
+            PrepzaHomeSubject("crs", "CRS", "Old & New Testament, Epistles", Icons.Outlined.Bookmark, "Arts"),
+            PrepzaHomeSubject("accounts", "Principles of Accounts", "Double Entry, Balance Sheet & Auditing", Icons.Outlined.ReceiptLong, "Commercial"),
+            PrepzaHomeSubject("geography", "Geography", "Solar System, Rocks, Weather & Map Work", Icons.Outlined.Public, "Sciences"),
+            PrepzaHomeSubject("history", "History", "Nigerian Kingdoms, Jihads & Nationalism", Icons.Outlined.HistoryEdu, "Arts"),
+            PrepzaHomeSubject("irs", "Islamic Religious Studies (IRS)", "Tawhid, Fiqh, Quran, Hadith & Sirah", Icons.Outlined.Mosque, "Arts")
         )
     }
 
     val categories = listOf("All", "Languages", "Sciences", "Arts", "Commercial")
 
-    val allSubjectsWithMeta = remember {
-        listOf(
-            SubjectCardData("Use of English", "Languages", "Comprehension, Lexis & Life Changer", 0.85f, Icons.Outlined.MenuBook),
-            SubjectCardData("Mathematics", "Sciences", "Algebra, Calculus & Geometry", 0.78f, Icons.Outlined.Calculate),
-            SubjectCardData("Physics", "Sciences", "Mechanics, Waves & Electricity", 0.43f, Icons.Outlined.Bolt),
-            SubjectCardData("Chemistry", "Sciences", "Organic, Periodic Table & Stoichiometry", 0.56f, Icons.Outlined.Science),
-            SubjectCardData("Biology", "Sciences", "Genetics, Physiology & Ecology", 0.85f, Icons.Outlined.Eco),
-            SubjectCardData("Economics", "Commercial", "Microeconomics, Macro & Public Finance", 0.72f, Icons.Outlined.TrendingUp),
-            SubjectCardData("Government", "Arts", "Constitutional History & Systems", 0.80f, Icons.Outlined.AccountBalance),
-            SubjectCardData("Literature in English", "Arts", "Prescribed Prose, Drama & Poetry", 0.68f, Icons.Outlined.AutoStories),
-            SubjectCardData("Commerce", "Commercial", "Trade, Banking & Business Management", 0.74f, Icons.Outlined.Storefront),
-            SubjectCardData("CRS", "Arts", "Old & New Testament, Epistles", 0.88f, Icons.Outlined.Bookmark),
-            SubjectCardData("Principles of Accounts", "Commercial", "Double Entry, Balance Sheet & Auditing", 0.64f, Icons.Outlined.ReceiptLong)
-        )
-    }
+    val filteredSubjects = remember(searchQuery, selectedCategory) {
+        subjectsList.filter { subj ->
+            val matchesSearch = searchQuery.isBlank() ||
+                    subj.name.contains(searchQuery, ignoreCase = true) ||
+                    subj.description.contains(searchQuery, ignoreCase = true)
 
-    val filteredSubjects = remember(searchQuery, selectedCategoryFilter) {
-        allSubjectsWithMeta.filter { subject ->
-            val matchesQuery = searchQuery.isBlank() || subject.name.contains(searchQuery, ignoreCase = true)
-            val matchesCategory = selectedCategoryFilter == "All" || subject.category.equals(selectedCategoryFilter, ignoreCase = true)
-            matchesQuery && matchesCategory
+            val matchesCat = when (selectedCategory) {
+                "All" -> true
+                else -> subj.category.equals(selectedCategory, ignoreCase = true) ||
+                        (selectedCategory == "Languages" && subj.name.contains("English", ignoreCase = true)) ||
+                        (selectedCategory == "Sciences" && subj.name in listOf("Mathematics", "Physics", "Chemistry", "Biology", "Geography")) ||
+                        (selectedCategory == "Commercial" && subj.name in listOf("Economics", "Commerce", "Principles of Accounts", "Mathematics")) ||
+                        (selectedCategory == "Arts" && subj.name in listOf("Use of English", "Literature in English", "Government", "CRS", "History", "Islamic Religious Studies (IRS)"))
+            }
+
+            matchesSearch && matchesCat
         }
     }
 
-    val studentName = profile?.name?.split(" ")?.firstOrNull() ?: "Student"
-    val initialLetter = studentName.firstOrNull()?.toString()?.uppercase() ?: "S"
+    val isDark = LocalThemeIsDark.current
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(AppBackground)
+            .background(if (isDark) RawAppBackgroundDark else RawAppBackgroundLight)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp, vertical = 14.dp)
+            .padding(horizontal = 18.dp)
+            .padding(top = 16.dp, bottom = 32.dp)
     ) {
-        // 1. Minimal Top Profile Row
+        // ==========================================
+        // 1. TOP PROFILE HEADER
+        // ==========================================
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.clickable { onOpenSettings() }
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Surface(
-                    shape = CircleShape,
-                    color = PrimaryGreen,
-                    modifier = Modifier.size(38.dp)
+                // Circle Avatar
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(if (isDark) Color(0xFF0F5132) else Color(0xFF0F5132)),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            text = initialLetter,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                    }
+                    Text(
+                        text = studentInitial,
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
 
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(12.dp))
 
                 Column {
                     Text(
                         text = studentName,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        color = if (isDark) Color(0xFFF8FAFC) else Color(0xFF1E293B)
                     )
                     Text(
-                        text = "Target: ${profile?.targetScore ?: 320} · ${profile?.streakDays ?: 1}d streak",
+                        text = "Target: $targetScore • ${streakDays}d streak",
                         style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary
+                        color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
                     )
                 }
             }
 
+            // Top Right Actions (Friends + Settings)
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Surface(
-                    shape = CircleShape,
-                    color = SurfaceWhite,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+                // Friends button
+                Box(
                     modifier = Modifier
-                        .size(36.dp)
+                        .size(40.dp)
                         .clip(CircleShape)
-                        .clickable(onClick = onNavigateToFriends)
-                        .testTag("home_friends_quick_btn")
+                        .border(1.dp, if (isDark) Color(0xFF263345) else Color(0xFFE2E8F0), CircleShape)
+                        .background(if (isDark) Color(0xFF16202E) else Color.White)
+                        .clickable { onNavigateToFriends() }
+                        .testTag("home_friends_button"),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Outlined.Group,
-                            contentDescription = "Friends",
-                            tint = TextPrimary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Outlined.People,
+                        contentDescription = "Friends",
+                        tint = if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155),
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
 
-                Surface(
-                    shape = CircleShape,
-                    color = SurfaceWhite,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+                // Settings button
+                Box(
                     modifier = Modifier
-                        .size(36.dp)
+                        .size(40.dp)
                         .clip(CircleShape)
-                        .clickable(onClick = onOpenSettings)
-                        .testTag("home_menu_quick_btn")
+                        .border(1.dp, if (isDark) Color(0xFF263345) else Color(0xFFE2E8F0), CircleShape)
+                        .background(if (isDark) Color(0xFF16202E) else Color.White)
+                        .clickable { onOpenSettings() }
+                        .testTag("home_settings_button"),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.Outlined.Settings,
-                            contentDescription = "Settings",
-                            tint = TextPrimary,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Outlined.Settings,
+                        contentDescription = "Settings",
+                        tint = if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155),
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Prepza Plus 30-Day Free Trial & Upgrade Banner (Visible until user upgrades to Plus)
-        if (profile == null || !profile.isPlusSubscriber) {
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = SoftEmeraldBg,
-                border = androidx.compose.foundation.BorderStroke(1.5.dp, PrimaryGreen),
-                shadowElevation = 2.dp,
+        // ==========================================
+        // 2. CLOUD SYNCED PILL BANNER
+        // ==========================================
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = isOnline && !isSyncingCloud, onClick = onSyncNow),
+            shape = RoundedCornerShape(24.dp),
+            color = if (isDark) Color(0xFF063A29).copy(alpha = 0.5f) else Color(0xFFF0FDF4),
+            border = BorderStroke(1.dp, if (isDark) Color(0xFF047857) else Color(0xFFBBF7D0))
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = if (!isOnline) Icons.Outlined.CloudOff else Icons.Outlined.CloudQueue,
+                    contentDescription = null,
+                    tint = if (isDark) Color(0xFF10B981) else Color(0xFF15803D),
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = if (!isOnline) "Offline Mode • Stored locally" else if (isSyncingCloud) "Cloud Syncing in progress..." else "Cloud Synced • Automatic background sync enabled",
+                    fontSize = 12.sp,
+                    color = if (isDark) Color(0xFF34D399) else Color(0xFF166534),
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // ==========================================
+        // 3. PREPZA PLUS UPGRADE CARD
+        // ==========================================
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onUpgradeClick() },
+            shape = RoundedCornerShape(16.dp),
+            color = if (isDark) Color(0xFF063A29).copy(alpha = 0.5f) else Color(0xFFF0FDF4),
+            border = BorderStroke(1.5.dp, if (isDark) Color(0xFF059669) else Color(0xFF22C55E))
+        ) {
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onUpgradeClick() }
-                    .testTag("home_trial_status_banner")
+                    .padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    // Green circular lightning icon
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(if (isDark) Color(0xFF10B981) else Color(0xFF15803D)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Bolt,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Prepza Plus",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = if (isDark) Color.White else Color(0xFF1E293B)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(if (isDark) Color(0xFF065F46) else Color(0xFF14532D))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "₦500 LIFETIME",
+                                    color = Color.White,
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = "30 days left in free trial • Paystack & Transfer",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
+                            fontSize = 11.sp
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Upgrade Button
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(if (isDark) Color(0xFF065F46) else Color(0xFF14532D))
+                        .clickable { onUpgradeClick() }
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Upgrade",
+                        color = Color.White,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        softWrap = false
+                    )
+                }
+            }
+        }
+
+        // Active exam resumption if needed
+        if (activeExamState != null) {
+            Spacer(modifier = Modifier.height(14.dp))
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = if (isDark) Color(0xFF382910) else Color(0xFFFFFBEB),
+                border = BorderStroke(1.dp, if (isDark) Color(0xFFD97706) else Color(0xFFF59E0B)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(14.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -219,436 +393,391 @@ fun HomeScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.weight(1f)
                     ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = PrimaryGreen,
-                            modifier = Modifier.size(34.dp)
-                        ) {
-                            Box(contentAlignment = Alignment.Center) {
-                                Icon(
-                                    imageVector = Icons.Default.Bolt,
-                                    contentDescription = "Prepza Plus",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = "Prepza Plus",
-                                    fontWeight = FontWeight.Bold,
-                                    style = MaterialTheme.typography.titleSmall,
-                                    color = PrimaryGreenDark
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Surface(
-                                    shape = RoundedCornerShape(6.dp),
-                                    color = PrimaryGreen
-                                ) {
-                                    Text(
-                                        text = "₦500 LIFETIME",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color.White,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                        fontSize = 10.sp
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "${profile?.daysRemainingInTrial ?: 30} days left in free trial • Paystack & Transfer",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = TextSecondary,
-                                fontSize = 11.sp
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = PrimaryGreenDark
-                    ) {
-                        Text(
-                            text = "Upgrade →",
-                            fontWeight = FontWeight.Bold,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.White,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        // 2. Headline
-        Text(
-            text = "UTME Mastery",
-            style = MaterialTheme.typography.displayMedium.copy(
-                fontSize = 24.sp,
-                letterSpacing = (-0.5).sp
-            ),
-            fontWeight = FontWeight.Bold,
-            color = TextPrimary
-        )
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // 3. Hero Card: Quick Drill
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(18.dp))
-                .clickable { onNavigateToPractice("Continue Practice", userSubjects.firstOrNull()) }
-                .testTag("hero_continue_practice_card"),
-            color = TextPrimary,
-            shape = RoundedCornerShape(18.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(18.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = "CONTINUE DRILL",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = TextMuted,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.sp
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = userSubjects.firstOrNull() ?: "English Language",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    PrepzaProgressBar(
-                        progress = 0.70f,
-                        modifier = Modifier.fillMaxWidth(0.9f),
-                        color = PrimaryGreenLight,
-                        trackColor = Color.White.copy(alpha = 0.15f)
-                    )
-                }
-
-                Surface(
-                    shape = CircleShape,
-                    color = PrimaryGreen,
-                    modifier = Modifier.size(42.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
                         Icon(
-                            imageVector = Icons.Default.PlayArrow,
-                            contentDescription = "Play",
-                            tint = Color.White,
-                            modifier = Modifier.size(24.dp)
+                            imageVector = Icons.Default.Timer,
+                            contentDescription = null,
+                            tint = Color(0xFFF59E0B),
+                            modifier = Modifier.size(20.dp)
                         )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                text = "Unfinished CBT Session",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp,
+                                color = if (isDark) Color(0xFFFDE68A) else Color(0xFF92400E)
+                            )
+                            Text(
+                                text = "${activeExamState.timerSecondsRemaining / 60}m remaining",
+                                fontSize = 11.sp,
+                                color = if (isDark) Color(0xFFFBBF24) else Color(0xFFB45309)
+                            )
+                        }
                     }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 4. Quick Actions
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            // CBT Mock
-            Surface(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(14.dp))
-                    .clickable { showSubjectSelectionDialog = true }
-                    .testTag("quick_action_cbt"),
-                shape = RoundedCornerShape(14.dp),
-                color = SurfaceWhite,
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle)
-            ) {
-                Row(
-                    modifier = Modifier.padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
+                    Button(
+                        onClick = onResumeActiveExam,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
                         shape = RoundedCornerShape(8.dp),
-                        color = SoftAmberBg,
-                        modifier = Modifier.size(34.dp)
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                     ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Outlined.Timer,
-                                contentDescription = null,
-                                tint = AmberAccent,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "CBT Mock",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
-                    )
-                }
-            }
-
-            // AI Tutor
-            Surface(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(14.dp))
-                    .clickable(onClick = onNavigateToAiTutor)
-                    .testTag("quick_action_ai_tutor"),
-                shape = RoundedCornerShape(14.dp),
-                color = SoftEmeraldBg,
-                border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryGreenLight.copy(alpha = 0.4f))
-            ) {
-                Row(
-                    modifier = Modifier.padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = PrimaryGreen,
-                        modifier = Modifier.size(34.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Default.AutoAwesome,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "AI Tutor",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            // Literature Novels
-            Surface(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(14.dp))
-                    .clickable(onClick = onNavigateToLibrary)
-                    .testTag("quick_action_novels"),
-                shape = RoundedCornerShape(14.dp),
-                color = SurfaceWhite,
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle)
-            ) {
-                Row(
-                    modifier = Modifier.padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = SoftPurpleBg,
-                        modifier = Modifier.size(34.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Outlined.AutoStories,
-                                contentDescription = null,
-                                tint = PurpleAccent,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "Literature",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
-                    )
-                }
-            }
-
-            // Bookmarked Questions
-            Surface(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(14.dp))
-                    .clickable(onClick = onNavigateToBookmarks)
-                    .testTag("quick_action_bookmarks"),
-                shape = RoundedCornerShape(14.dp),
-                color = SurfaceWhite,
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle)
-            ) {
-                Row(
-                    modifier = Modifier.padding(14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = SoftBlueBg,
-                        modifier = Modifier.size(34.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Outlined.BookmarkBorder,
-                                contentDescription = null,
-                                tint = BlueAccent,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "Saved",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        // Offline Packs Row
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .clickable(onClick = onNavigateToOfflineManager)
-                .testTag("quick_action_offline_packs"),
-            shape = RoundedCornerShape(14.dp),
-            color = PaleGreenBg,
-            border = androidx.compose.foundation.BorderStroke(1.dp, PrimaryGreenLight.copy(alpha = 0.4f))
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Surface(
-                        shape = CircleShape,
-                        color = PrimaryGreen,
-                        modifier = Modifier.size(28.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                imageVector = Icons.Default.CloudDone,
-                                contentDescription = null,
-                                tint = Color.White,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column {
-                        Text(
-                            text = "100% Offline Ready",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = PrimaryGreenDark
-                        )
-                        Text(
-                            text = "All 11 subject question banks stored on-device",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = TextSecondary,
-                            fontSize = 11.sp
-                        )
+                        Text("Resume", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
-                Text(
-                    text = "Manage →",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = PrimaryGreen
-                )
             }
         }
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        // 5. Search Bar
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = { Text("Search subjects...", color = TextMuted, fontSize = 14.sp) },
-            leadingIcon = {
-                Icon(
-                    imageVector = Icons.Default.Search,
-                    contentDescription = "Search",
-                    tint = TextSecondary,
-                    modifier = Modifier.size(18.dp)
-                )
-            },
-            trailingIcon = if (searchQuery.isNotEmpty()) {
-                {
-                    IconButton(onClick = { searchQuery = "" }) {
-                        Icon(Icons.Default.Clear, contentDescription = "Clear", tint = TextSecondary, modifier = Modifier.size(16.dp))
-                    }
-                }
-            } else null,
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("home_search_bar"),
-            shape = RoundedCornerShape(14.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = SurfaceWhite,
-                unfocusedContainerColor = SurfaceWhite,
-                focusedBorderColor = PrimaryGreen,
-                unfocusedBorderColor = BorderSubtle
-            ),
-            singleLine = true
+        // ==========================================
+        // 4. "UTME Mastery" SECTION TITLE
+        // ==========================================
+        Text(
+            text = "UTME Mastery",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.ExtraBold,
+            color = if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A),
+            fontSize = 24.sp
         )
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // 6. Category Filter Pills
+        // ==========================================
+        // 5. 2x2 FEATURE GRID (CBT Mock, AI Tutor, Literature, Saved)
+        // ==========================================
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // CBT Mock Card
+            Surface(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(68.dp)
+                    .clickable { showCbtSubjectDialog = true }
+                    .testTag("home_cbt_mock_card"),
+                shape = RoundedCornerShape(16.dp),
+                color = if (isDark) Color(0xFF16202E) else Color(0xFFFFFBEB),
+                border = BorderStroke(1.dp, if (isDark) Color(0xFF263345) else Color(0xFFFDE68A))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isDark) Color(0xFF451A03) else Color(0xFFFEF3C7)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Timer,
+                            contentDescription = "CBT Mock",
+                            tint = if (isDark) Color(0xFFF59E0B) else Color(0xFFD97706),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "CBT Mock",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isDark) Color.White else Color(0xFF1E293B),
+                        fontSize = 15.sp
+                    )
+                }
+            }
+
+            // AI Tutor Card
+            Surface(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(68.dp)
+                    .clickable { onNavigateToAiTutor() }
+                    .testTag("home_ai_tutor_card"),
+                shape = RoundedCornerShape(16.dp),
+                color = if (isDark) Color(0xFF063A29).copy(alpha = 0.5f) else Color(0xFFECFDF5),
+                border = BorderStroke(1.dp, if (isDark) Color(0xFF059669) else Color(0xFFA7F3D0))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isDark) Color(0xFF047857) else Color(0xFF065F46)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.AutoAwesome,
+                            contentDescription = "AI Tutor",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "AI Tutor",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isDark) Color.White else Color(0xFF1E293B),
+                        fontSize = 15.sp
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Literature Card
+            Surface(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(68.dp)
+                    .clickable { onNavigateToLibrary() }
+                    .testTag("home_literature_card"),
+                shape = RoundedCornerShape(16.dp),
+                color = if (isDark) Color(0xFF16202E) else Color(0xFFFAF5FF),
+                border = BorderStroke(1.dp, if (isDark) Color(0xFF263345) else Color(0xFFE9D5FF))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isDark) Color(0xFF3B0764) else Color(0xFFF3E8FF)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.MenuBook,
+                            contentDescription = "Literature",
+                            tint = if (isDark) Color(0xFFC084FC) else Color(0xFF9333EA),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Literature",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isDark) Color.White else Color(0xFF1E293B),
+                        fontSize = 15.sp
+                    )
+                }
+            }
+
+            // Saved Card
+            Surface(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(68.dp)
+                    .clickable { onNavigateToBookmarks() }
+                    .testTag("home_saved_card"),
+                shape = RoundedCornerShape(16.dp),
+                color = if (isDark) Color(0xFF16202E) else Color(0xFFEFF6FF),
+                border = BorderStroke(1.dp, if (isDark) Color(0xFF263345) else Color(0xFFBFDBFE))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isDark) Color(0xFF172554) else Color(0xFFDBEAFE)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Bookmark,
+                            contentDescription = "Saved",
+                            tint = if (isDark) Color(0xFF60A5FA) else Color(0xFF2563EB),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = "Saved",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isDark) Color.White else Color(0xFF1E293B),
+                        fontSize = 15.sp
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // ==========================================
+        // 6. 100% OFFLINE READY BANNER
+        // ==========================================
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onNavigateToOfflineManager() },
+            shape = RoundedCornerShape(16.dp),
+            color = if (isDark) Color(0xFF063A29).copy(alpha = 0.5f) else Color(0xFFF0FDF4),
+            border = BorderStroke(1.dp, if (isDark) Color(0xFF047857) else Color(0xFFBBF7D0))
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(if (isDark) Color(0xFF10B981) else Color(0xFF15803D)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.CloudDownload,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column {
+                        Text(
+                            text = "100% Offline Ready",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                            color = if (isDark) Color.White else Color(0xFF0F172A)
+                        )
+                        Text(
+                            text = "All 14 subject question banks stored on-device",
+                            fontSize = 11.sp,
+                            color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                        )
+                    }
+                }
+
+                Text(
+                    text = "Manage",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isDark) Color(0xFF34D399) else Color(0xFF15803D),
+                    maxLines = 1,
+                    softWrap = false
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(18.dp))
+
+        // ==========================================
+        // 7. SEARCH INPUT FIELD
+        // ==========================================
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            color = if (isDark) Color(0xFF16202E) else Color.White,
+            border = BorderStroke(1.dp, if (isDark) Color(0xFF263345) else Color(0xFFE2E8F0))
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Outlined.Search,
+                    contentDescription = "Search",
+                    tint = Color(0xFF94A3B8),
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                BasicTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    singleLine = true,
+                    textStyle = TextStyle(
+                        fontSize = 14.sp,
+                        color = if (isDark) Color.White else Color(0xFF1E293B)
+                    ),
+                    cursorBrush = SolidColor(if (isDark) Color(0xFF10B981) else Color(0xFF15803D)),
+                    modifier = Modifier.fillMaxWidth(),
+                    decorationBox = { innerTextField ->
+                        if (searchQuery.isEmpty()) {
+                            Text(
+                                text = "Search subjects...",
+                                fontSize = 14.sp,
+                                color = Color(0xFF94A3B8)
+                            )
+                        }
+                        innerTextField()
+                    }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // ==========================================
+        // 8. CATEGORY FILTER CHIPS
+        // ==========================================
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             items(categories) { cat ->
-                val isSelected = selectedCategoryFilter == cat
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = if (isSelected) PrimaryGreen else SurfaceWhite,
-                    border = androidx.compose.foundation.BorderStroke(
-                        1.dp,
-                        if (isSelected) PrimaryGreen else BorderSubtle
-                    ),
+                val isSelected = selectedCategory.equals(cat, ignoreCase = true)
+                Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(20.dp))
-                        .clickable { selectedCategoryFilter = cat }
-                        .testTag("category_pill_${cat.lowercase()}")
+                        .background(
+                            if (isSelected) {
+                                if (isDark) Color(0xFF10B981) else Color(0xFF15803D)
+                            } else {
+                                if (isDark) Color(0xFF16202E) else Color.White
+                            }
+                        )
+                        .border(
+                            1.dp,
+                            if (isSelected) {
+                                if (isDark) Color(0xFF10B981) else Color(0xFF15803D)
+                            } else {
+                                if (isDark) Color(0xFF263345) else Color(0xFFE2E8F0)
+                            },
+                            RoundedCornerShape(20.dp)
+                        )
+                        .clickable { selectedCategory = cat }
+                        .padding(horizontal = 18.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = cat,
-                        style = MaterialTheme.typography.labelMedium,
+                        fontSize = 13.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isSelected) Color.White else TextPrimary,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
+                        color = if (isSelected) Color.White else if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155)
                     )
                 }
             }
@@ -656,75 +785,81 @@ fun HomeScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 7. Subject Cards List
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        // ==========================================
+        // 9. SUBJECT LIST CARDS (Leads to Subject Learning Flow)
+        // ==========================================
+        Column(
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
             filteredSubjects.forEach { subj ->
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(14.dp))
-                        .clickable { onStartMiniCbt(subj.name) }
-                        .testTag("subject_card_${subj.name.lowercase().replace(" ", "_")}"),
-                    shape = RoundedCornerShape(14.dp),
-                    color = SurfaceWhite,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle)
+                        .clickable { onOpenSubject(subj.name) }
+                        .testTag("subject_card_${subj.id}"),
+                    shape = RoundedCornerShape(16.dp),
+                    color = if (isDark) Color(0xFF16202E) else Color.White,
+                    border = BorderStroke(1.dp, if (isDark) Color(0xFF263345) else Color(0xFFE2E8F0))
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Surface(
-                            shape = RoundedCornerShape(10.dp),
-                            color = SoftEmeraldBg,
-                            modifier = Modifier.size(38.dp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
                         ) {
-                            Box(contentAlignment = Alignment.Center) {
+                            // Rounded Square with green tint
+                            Box(
+                                modifier = Modifier
+                                    .size(46.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(if (isDark) Color(0xFF063A29) else Color(0xFFDCFCE7)),
+                                contentAlignment = Alignment.Center
+                            ) {
                                 Icon(
                                     imageVector = subj.icon,
-                                    contentDescription = null,
-                                    tint = PrimaryGreen,
-                                    modifier = Modifier.size(20.dp)
+                                    contentDescription = subj.name,
+                                    tint = if (isDark) Color(0xFF34D399) else Color(0xFF15803D),
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.width(14.dp))
+
+                            Column {
+                                Text(
+                                    text = subj.name,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A),
+                                    fontSize = 15.sp
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = subj.description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
+                                    fontSize = 12.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
                         }
 
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = subj.name,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Text(
-                                text = subj.syllabusSubtitle,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Start Mini CBT",
-                            tint = TextMuted,
-                            modifier = Modifier.size(16.dp)
+                            contentDescription = "Open ${subj.name}",
+                            tint = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(24.dp))
     }
 }
-
-private data class SubjectCardData(
-    val name: String,
-    val category: String,
-    val syllabusSubtitle: String,
-    val progress: Float,
-    val icon: ImageVector
-)

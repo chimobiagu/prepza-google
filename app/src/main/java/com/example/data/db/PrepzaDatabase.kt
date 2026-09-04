@@ -20,9 +20,13 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         LiteratureBookEntity::class,
         StudyTaskEntity::class,
         FriendChatMessageEntity::class,
-        QuestionExposureEntity::class
+        QuestionExposureEntity::class,
+        ActiveExamStateEntity::class,
+        TopicProgressEntity::class,
+        UserPersonalCardEntity::class,
+        CardBookmarkEntity::class
     ],
-    version = 11,
+    version = 13,
     exportSchema = false
 )
 abstract class PrepzaDatabase : RoomDatabase() {
@@ -38,6 +42,10 @@ abstract class PrepzaDatabase : RoomDatabase() {
     abstract fun studyTaskDao(): StudyTaskDao
     abstract fun friendChatMessageDao(): FriendChatMessageDao
     abstract fun questionExposureDao(): QuestionExposureDao
+    abstract fun activeExamStateDao(): ActiveExamStateDao
+    abstract fun topicProgressDao(): TopicProgressDao
+    abstract fun userPersonalCardDao(): UserPersonalCardDao
+    abstract fun cardBookmarkDao(): CardBookmarkDao
 
     companion object {
         @Volatile
@@ -122,6 +130,29 @@ abstract class PrepzaDatabase : RoomDatabase() {
             addColumnIfNotExists(db, "user_accounts", "referralCount", "INTEGER NOT NULL DEFAULT 0")
             addColumnIfNotExists(db, "user_accounts", "referredByCode", "TEXT")
             addColumnIfNotExists(db, "user_accounts", "freePlusRewardUnlocked", "INTEGER NOT NULL DEFAULT 0")
+
+            // Offline-first sync support & active CBT exam recovery
+            addColumnIfNotExists(db, "practice_sessions", "isSynced", "INTEGER NOT NULL DEFAULT 0")
+            addColumnIfNotExists(db, "practice_sessions", "syncedAtTimestamp", "INTEGER")
+            try {
+                db.execSQL("CREATE TABLE IF NOT EXISTS active_exam_state (id TEXT NOT NULL PRIMARY KEY, mode TEXT NOT NULL, subjectsCsv TEXT NOT NULL, questionIdsCsv TEXT NOT NULL, userAnswersJson TEXT NOT NULL, flaggedIndicesCsv TEXT NOT NULL DEFAULT '', currentQuestionIndex INTEGER NOT NULL DEFAULT 0, selectedSubject TEXT NOT NULL DEFAULT '', timerSecondsRemaining INTEGER NOT NULL DEFAULT 7200, totalDurationSeconds INTEGER NOT NULL DEFAULT 7200, isMiniCbt INTEGER NOT NULL DEFAULT 0, startTimestamp INTEGER NOT NULL, lastUpdatedTimestamp INTEGER NOT NULL, isCompleted INTEGER NOT NULL DEFAULT 0)")
+            } catch (_: Exception) {}
+
+            // Interactive Home & Learning System
+            try {
+                db.execSQL("CREATE TABLE IF NOT EXISTS topic_progress (id TEXT NOT NULL PRIMARY KEY, userId TEXT NOT NULL DEFAULT '', subject TEXT NOT NULL, topicName TEXT NOT NULL, currentCardIndex INTEGER NOT NULL DEFAULT 0, totalCards INTEGER NOT NULL DEFAULT 0, isLearningCompleted INTEGER NOT NULL DEFAULT 0, lastRecallScore INTEGER NOT NULL DEFAULT 0, recallTotal INTEGER NOT NULL DEFAULT 0, practiceCount INTEGER NOT NULL DEFAULT 0, practiceAccuracyPercent INTEGER NOT NULL DEFAULT 0, masteryState TEXT NOT NULL DEFAULT 'NOT_STARTED', lastStudiedTimestamp INTEGER NOT NULL DEFAULT 0, isBookmarked INTEGER NOT NULL DEFAULT 0, personalNotes TEXT)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_topic_progress_userId_subject ON topic_progress(userId, subject)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_topic_progress_userId_subject_topicName ON topic_progress(userId, subject, topicName)")
+            } catch (_: Exception) {}
+
+            try {
+                db.execSQL("CREATE TABLE IF NOT EXISTS user_personal_cards (id TEXT NOT NULL PRIMARY KEY, userId TEXT NOT NULL DEFAULT '', subject TEXT NOT NULL, topicName TEXT NOT NULL, frontText TEXT NOT NULL, backText TEXT NOT NULL, note TEXT, createdAt INTEGER NOT NULL DEFAULT 0)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_user_personal_cards_userId_subject_topicName ON user_personal_cards(userId, subject, topicName)")
+            } catch (_: Exception) {}
+
+            try {
+                db.execSQL("CREATE TABLE IF NOT EXISTS card_bookmarks (cardId TEXT NOT NULL, userId TEXT NOT NULL DEFAULT '', topicName TEXT NOT NULL, subject TEXT NOT NULL, timestamp INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(cardId, userId))")
+            } catch (_: Exception) {}
         }
 
         val MIGRATION_1_2 = object : Migration(1, 2) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
@@ -134,8 +165,12 @@ abstract class PrepzaDatabase : RoomDatabase() {
         val MIGRATION_8_9 = object : Migration(8, 9) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
         val MIGRATION_9_10 = object : Migration(9, 10) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
         val MIGRATION_10_11 = object : Migration(10, 11) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
-        val MIGRATION_1_11 = object : Migration(1, 11) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
-        val MIGRATION_9_11 = object : Migration(9, 11) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
+        val MIGRATION_11_12 = object : Migration(11, 12) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
+        val MIGRATION_12_13 = object : Migration(12, 13) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
+        val MIGRATION_1_12 = object : Migration(1, 12) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
+        val MIGRATION_1_13 = object : Migration(1, 13) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
+        val MIGRATION_10_12 = object : Migration(10, 12) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
+        val MIGRATION_10_13 = object : Migration(10, 13) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
 
         fun getDatabase(context: Context): PrepzaDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -146,7 +181,7 @@ abstract class PrepzaDatabase : RoomDatabase() {
                 )
                     .addMigrations(
                         MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
-                        MIGRATION_9_10, MIGRATION_10_11, MIGRATION_1_11, MIGRATION_9_11
+                        MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_1_12, MIGRATION_1_13, MIGRATION_10_12, MIGRATION_10_13
                     )
                     .fallbackToDestructiveMigration(true)
                     .fallbackToDestructiveMigrationOnDowngrade(true)

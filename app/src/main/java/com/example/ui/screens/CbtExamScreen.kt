@@ -47,7 +47,9 @@ fun CbtExamScreen(
     profile: UserProfileEntity?,
     onSelectQuestion: (index: Int) -> Unit,
     onAnswerSelected: (optionIndex: Int) -> Unit,
+    onAnswerSelectedForQuestion: ((questionId: String, optionIndex: Int) -> Unit)? = null,
     onToggleFlag: () -> Unit,
+    onFlagAndFix: (question: QuestionEntity, reason: String, notes: String) -> Unit = { _, _, _ -> onToggleFlag() },
     onSubmitExam: () -> Unit,
     onExitExam: () -> Unit
 ) {
@@ -56,6 +58,7 @@ fun CbtExamScreen(
     var showInstructionsDialog by remember { mutableStateOf(false) }
     var showSubmitConfirmation by remember { mutableStateOf(false) }
     var showExitConfirmation by remember { mutableStateOf(false) }
+    var showFlagReasonDialog by remember { mutableStateOf(false) }
 
     // Intercept hardware and gesture back presses to prompt the End Exam confirmation
     BackHandler(enabled = true) {
@@ -339,7 +342,7 @@ fun CbtExamScreen(
                         showSubmitConfirmation = false
                         onSubmitExam()
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = TextPrimary),
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen, contentColor = Color.White),
                     modifier = Modifier.testTag("cbt_confirm_final_submit_btn")
                 ) {
                     Text("Submit Exam Now", fontWeight = FontWeight.Bold)
@@ -353,14 +356,24 @@ fun CbtExamScreen(
         )
     }
 
+    if (showFlagReasonDialog) {
+        FlagQuestionDialog(
+            question = currentQuestion,
+            onDismiss = { showFlagReasonDialog = false },
+            onConfirmFlagAndFix = { reason, notes ->
+                onFlagAndFix(currentQuestion, reason, notes)
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(TextPrimary)
+                    .background(Color(0xFF13181F))
                     .windowInsetsPadding(WindowInsets.statusBars)
-                    .padding(top = 10.dp, bottom = 8.dp, start = 14.dp, end = 14.dp)
+                    .padding(top = 10.dp, bottom = 6.dp, start = 16.dp, end = 16.dp)
             ) {
                 // Top Row: Candidate info, Timer, Tools & End Exam Button
                 Row(
@@ -371,7 +384,10 @@ fun CbtExamScreen(
                     // Candidate mini profile badge
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable { showExitConfirmation = true }
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .clickable { showExitConfirmation = true }
+                            .padding(vertical = 2.dp)
                     ) {
                         Surface(
                             shape = CircleShape,
@@ -387,19 +403,20 @@ fun CbtExamScreen(
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.width(6.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
                                 text = candidateName,
                                 style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                fontWeight = FontWeight.SemiBold,
+                                color = Color.White,
+                                maxLines = 1
                             )
                             Text(
                                 text = "JAMB/2026/89402X",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = TextMuted,
-                                fontSize = 10.sp
+                                fontSize = 10.5.sp
                             )
                         }
                     }
@@ -409,13 +426,21 @@ fun CbtExamScreen(
                         color = when {
                             timerSeconds < 600 -> IncorrectRedBg
                             timerSeconds < 1800 -> WarningAmberBg
-                            else -> PaleGreenBg
+                            else -> Color.White.copy(alpha = 0.12f)
                         },
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(20.dp),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            when {
+                                timerSeconds < 600 -> IncorrectRed.copy(alpha = 0.5f)
+                                timerSeconds < 1800 -> WarningAmber.copy(alpha = 0.5f)
+                                else -> Color.White.copy(alpha = 0.2f)
+                            }
+                        )
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Timer,
@@ -423,62 +448,72 @@ fun CbtExamScreen(
                                 tint = when {
                                     timerSeconds < 600 -> IncorrectRed
                                     timerSeconds < 1800 -> WarningAmber
-                                    else -> PrimaryGreenDark
+                                    else -> Color.White
                                 },
-                                modifier = Modifier.size(14.dp)
+                                modifier = Modifier.size(13.dp)
                             )
-                            Spacer(modifier = Modifier.width(4.dp))
+                            Spacer(modifier = Modifier.width(5.dp))
                             Text(
                                 text = timerText,
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold,
+                                fontSize = 12.5.sp,
                                 color = when {
                                     timerSeconds < 600 -> IncorrectRed
                                     timerSeconds < 1800 -> WarningAmber
-                                    else -> PrimaryGreenDark
+                                    else -> Color.White
                                 }
                             )
                         }
                     }
 
                     // Quick Actions (Calculator, Palette, and End Exam Button)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { showCalculator = true }, modifier = Modifier.size(32.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        IconButton(
+                            onClick = { showCalculator = true },
+                            modifier = Modifier.size(34.dp)
+                        ) {
                             Icon(
                                 imageVector = Icons.Outlined.Calculate,
                                 contentDescription = "Calculator",
-                                tint = Color.White,
+                                tint = Color.White.copy(alpha = 0.9f),
                                 modifier = Modifier.size(18.dp)
                             )
                         }
-                        IconButton(onClick = { showPaletteSheet = true }, modifier = Modifier.size(32.dp)) {
+                        IconButton(
+                            onClick = { showPaletteSheet = true },
+                            modifier = Modifier.size(34.dp)
+                        ) {
                             Icon(
                                 imageVector = Icons.Outlined.GridView,
                                 contentDescription = "Palette",
-                                tint = Color.White,
+                                tint = Color.White.copy(alpha = 0.9f),
                                 modifier = Modifier.size(18.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(2.dp))
                         // Prominent "End Exam" Action Pill
                         Surface(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(10.dp))
+                                .clip(RoundedCornerShape(8.dp))
                                 .clickable { showExitConfirmation = true }
                                 .testTag("cbt_end_exam_topbar_btn"),
-                            color = SoftRed.copy(alpha = 0.25f),
-                            shape = RoundedCornerShape(10.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, SoftRed.copy(alpha = 0.6f))
+                            color = SoftRed.copy(alpha = 0.22f),
+                            shape = RoundedCornerShape(8.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SoftRed.copy(alpha = 0.5f))
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                                     contentDescription = "End Exam",
                                     tint = Color.White,
-                                    modifier = Modifier.size(14.dp)
+                                    modifier = Modifier.size(13.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
@@ -492,49 +527,61 @@ fun CbtExamScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 // Subject Navigation Tabs
                 ScrollableTabRow(
                     selectedTabIndex = subjects.indexOf(currentQuestion.subject).coerceAtLeast(0),
                     edgePadding = 0.dp,
                     containerColor = Color.Transparent,
-                    divider = {}
+                    divider = {},
+                    indicator = {}
                 ) {
                     subjects.forEach { subj ->
                         val isSelected = subj == currentQuestion.subject
                         val count = questions.count { it.subject == subj }
                         val answeredInSubject = questions.filter { it.subject == subj }.count { userAnswers.containsKey(it.id) }
 
-                        Tab(
-                            selected = isSelected,
-                            onClick = {
-                                val firstIdx = questions.indexOfFirst { it.subject == subj }
-                                if (firstIdx != -1) onSelectQuestion(firstIdx)
-                            },
-                            text = {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.padding(vertical = 4.dp)
-                                ) {
-                                    Text(
-                                        text = "$subj ($answeredInSubject/$count)",
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isSelected) PaleGreenBg else TextMuted,
-                                        fontSize = 12.sp
+                        Surface(
+                            modifier = Modifier
+                                .padding(end = 6.dp, bottom = 4.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable {
+                                    val firstIdx = questions.indexOfFirst { it.subject == subj }
+                                    if (firstIdx != -1) onSelectQuestion(firstIdx)
+                                },
+                            shape = RoundedCornerShape(8.dp),
+                            color = if (isSelected) Color.White.copy(alpha = 0.16f) else Color.Transparent,
+                            border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.25f)) else null
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = subj,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) Color.White else TextMuted,
+                                    fontSize = 12.sp
+                                )
+                                Spacer(modifier = Modifier.width(5.dp))
+                                Text(
+                                    text = "$answeredInSubject/$count",
+                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                    color = if (isSelected) PaleGreenBg else TextMuted.copy(alpha = 0.7f),
+                                    fontSize = 11.sp
+                                )
+                                if (answeredInSubject == count && count > 0) {
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.Check,
+                                        contentDescription = "Completed",
+                                        tint = PrimaryGreenLight,
+                                        modifier = Modifier.size(11.dp)
                                     )
-                                    if (answeredInSubject == count && count > 0) {
-                                        Spacer(modifier = Modifier.width(3.dp))
-                                        Icon(
-                                            imageVector = Icons.Default.Check,
-                                            contentDescription = "Completed",
-                                            tint = PrimaryGreenLight,
-                                            modifier = Modifier.size(12.dp)
-                                        )
-                                    }
                                 }
                             }
-                        )
+                        }
                     }
                 }
             }
@@ -542,14 +589,15 @@ fun CbtExamScreen(
         bottomBar = {
             Surface(
                 color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 8.dp,
+                shadowElevation = 4.dp,
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .windowInsetsPadding(WindowInsets.navigationBars)
-                        .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 14.dp),
+                        .padding(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 12.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -558,45 +606,75 @@ fun CbtExamScreen(
                         onClick = { if (currentIndex > 0) onSelectQuestion(currentIndex - 1) },
                         enabled = currentIndex > 0,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = BorderSubtle,
-                            contentColor = TextPrimary,
-                            disabledContainerColor = BorderSubtle.copy(alpha = 0.5f)
+                            containerColor = if (currentIndex > 0) MaterialTheme.colorScheme.surfaceVariant else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                         ),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                        modifier = Modifier.height(44.dp)
                     ) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Prev", fontWeight = FontWeight.Bold)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(15.dp))
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text("Prev", fontWeight = FontWeight.SemiBold, fontSize = 13.5.sp)
                     }
 
                     // Flag / Review Button
                     IconButton(
-                        onClick = onToggleFlag,
+                        onClick = {
+                            if (isFlagged) {
+                                onToggleFlag()
+                            } else {
+                                showFlagReasonDialog = true
+                            }
+                        },
                         modifier = Modifier.testTag("cbt_flag_question_btn")
                     ) {
                         Surface(
                             shape = CircleShape,
-                            color = if (isFlagged) WarningAmberBg else AppBackground,
+                            color = if (isFlagged) WarningAmberBg else MaterialTheme.colorScheme.surfaceVariant,
+                            border = if (isFlagged) androidx.compose.foundation.BorderStroke(1.dp, WarningAmber.copy(alpha = 0.4f)) else null,
                             modifier = Modifier.size(38.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = if (isFlagged) Icons.Filled.Flag else Icons.Outlined.Flag,
                                     contentDescription = "Flag for Review",
-                                    tint = if (isFlagged) WarningAmber else TextSecondary,
-                                    modifier = Modifier.size(18.dp)
+                                    tint = if (isFlagged) WarningAmber else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(17.dp)
                                 )
                             }
                         }
                     }
 
-                    // Palette Shortcut
-                    Button(
-                        onClick = { showPaletteSheet = true },
-                        colors = ButtonDefaults.buttonColors(containerColor = AppBackground, contentColor = TextPrimary),
-                        shape = RoundedCornerShape(12.dp)
+                    // Palette Shortcut / Progress
+                    Surface(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .clickable { showPaletteSheet = true },
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))
                     ) {
-                        Text("${userAnswers.size}/${questions.size}", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.GridView,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "${userAnswers.size}/${questions.size}",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.5.sp,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
 
                     // Next / Submit Button
@@ -609,21 +687,25 @@ fun CbtExamScreen(
                             }
                         },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (currentIndex == questions.size - 1) PrimaryGreen else TextPrimary,
+                            containerColor = if (currentIndex == questions.size - 1) PrimaryGreen else MaterialTheme.colorScheme.primary,
                             contentColor = Color.White
                         ),
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier.testTag("cbt_next_or_submit_btn")
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
+                        modifier = Modifier
+                            .height(44.dp)
+                            .testTag("cbt_next_or_submit_btn")
                     ) {
                         Text(
                             text = if (currentIndex < questions.size - 1) "Next" else "Submit",
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.5.sp
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(5.dp))
                         Icon(
                             imageVector = if (currentIndex < questions.size - 1) Icons.AutoMirrored.Filled.ArrowForward else Icons.Filled.Check,
                             contentDescription = null,
-                            modifier = Modifier.size(16.dp)
+                            modifier = Modifier.size(15.dp)
                         )
                     }
                 }
@@ -634,73 +716,125 @@ fun CbtExamScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(AppBackground)
+                .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp, vertical = 16.dp)
+                .padding(horizontal = 16.dp, vertical = 14.dp)
         ) {
+            // 5-Minute Warning Banner
+            AnimatedVisibility(visible = timerSeconds in 1..300) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    color = IncorrectRedBg,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, IncorrectRed.copy(alpha = 0.6f))
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.WarningAmber,
+                            contentDescription = null,
+                            tint = IncorrectRed,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "5-Minute Warning: Time is almost up!",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = IncorrectRed
+                            )
+                            Text(
+                                text = "Review your unanswered questions and submit before time expires.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = TextPrimary,
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+                }
+            }
+
             // Subject & Question indicator header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "${currentQuestion.subject} • Question ${indexInSubject + 1} of ${currentSubjectQuestions.size}",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = TextPrimary
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 15.5.sp
                     )
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Overall Question ${currentIndex + 1} of ${questions.size} • Topic: ${currentQuestion.topic}",
+                        text = "Total ${currentIndex + 1} of ${questions.size} • ${currentQuestion.topic}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 12.sp
                     )
                 }
 
-                if (isFlagged) {
-                    Surface(color = WarningAmberBg, shape = RoundedCornerShape(8.dp)) {
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    if (isFlagged) {
+                        Surface(
+                            color = WarningAmberBg,
+                            shape = RoundedCornerShape(6.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, WarningAmber.copy(alpha = 0.4f))
+                        ) {
+                            Text(
+                                text = "Flagged",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = WarningAmber,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                                fontSize = 11.sp
+                            )
+                        }
+                    }
+
+                    // Origin Badge
+                    val originDisplay = if (currentQuestion.year.isNotBlank()) {
+                        "JAMB ${currentQuestion.year}"
+                    } else {
+                        "UTME Standard"
+                    }
+                    Surface(
+                        color = PaleGreenBg,
+                        shape = RoundedCornerShape(6.dp),
+                        border = androidx.compose.foundation.BorderStroke(
+                            1.dp,
+                            PrimaryGreenLight.copy(alpha = 0.4f)
+                        )
+                    ) {
                         Text(
-                            text = "Flagged",
+                            text = originDisplay,
                             style = MaterialTheme.typography.labelSmall,
-                            color = WarningAmber,
+                            color = PrimaryGreenDark,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
+                            fontSize = 11.sp
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Origin Badge
-            val isAuthenticJamb = currentQuestion.originType == "JAMB_ORIGINAL" || currentQuestion.isVerifiedJamb
-            val originDisplay = if (isAuthenticJamb) {
-                currentQuestion.originLabel.ifBlank { "Official JAMB Past Question • ${currentQuestion.year}" }
-            } else {
-                "Prepza AI Generated • Syllabus Drill"
-            }
-            Surface(
-                color = if (isAuthenticJamb) PaleGreenBg else AppBackground,
-                shape = RoundedCornerShape(8.dp),
-                border = androidx.compose.foundation.BorderStroke(
-                    1.dp,
-                    if (isAuthenticJamb) PrimaryGreenLight.copy(alpha = 0.5f) else BorderSubtle
-                )
-            ) {
-                Text(
-                    text = originDisplay,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (isAuthenticJamb) PrimaryGreenDark else TextSecondary,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                )
-            }
-
             // Comprehension Passage Display & Interactive "View Passage" Link
             val effectivePassage = getEffectivePassageForQuestion(currentQuestion)
             if (!effectivePassage.isNullOrBlank()) {
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 ComprehensionPassageLink(
                     passageText = effectivePassage,
                     topic = currentQuestion.topic,
@@ -709,32 +843,34 @@ fun CbtExamScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Main Question Statement
+            // Main Question Statement Card
             Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = SurfaceWhite,
-                border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+                shape = RoundedCornerShape(14.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = QuestionMediaDetector.cleanQuestionDisplayText(currentQuestion.questionText),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextPrimary,
-                    lineHeight = 26.sp,
-                    modifier = Modifier.padding(18.dp)
+                FormattedText(
+                    text = currentQuestion.questionText,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    lineHeight = 24.sp,
+                    fontSize = 16.sp,
+                    modifier = Modifier.padding(16.dp),
+                    isQuestionStem = true
                 )
             }
 
             // Question Image / Diagram Display if present
             QuestionImageViewer(
                 question = currentQuestion,
-                modifier = Modifier.padding(top = 14.dp, bottom = 2.dp)
+                modifier = Modifier.padding(top = 10.dp, bottom = 2.dp)
             )
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             // 4 Options A, B, C, D
             val options = listOf(
@@ -750,55 +886,64 @@ fun CbtExamScreen(
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 12.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .clickable { onAnswerSelected(optIdx) }
+                        .padding(bottom = 10.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .clickable {
+                            if (onAnswerSelectedForQuestion != null) {
+                                onAnswerSelectedForQuestion(currentQuestion.id, optIdx)
+                            } else {
+                                onAnswerSelected(optIdx)
+                            }
+                        }
                         .testTag("cbt_option_${letter.lowercase()}"),
-                    shape = RoundedCornerShape(14.dp),
-                    color = if (isSelected) PaleGreenBg else SurfaceWhite,
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
                     border = androidx.compose.foundation.BorderStroke(
-                        width = if (isSelected) 2.dp else 1.dp,
-                        color = if (isSelected) PrimaryGreen else BorderSubtle
+                        width = if (isSelected) 1.5.dp else 1.dp,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)
                     )
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(horizontal = 14.dp, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Surface(
                             shape = CircleShape,
-                            color = if (isSelected) PrimaryGreen else BorderSubtle,
-                            modifier = Modifier.size(32.dp)
+                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier.size(30.dp)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Text(
                                     text = letter,
-                                    style = MaterialTheme.typography.labelLarge,
+                                    style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
-                                    color = if (isSelected) Color.White else TextPrimary
+                                    fontSize = 13.sp,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
 
-                        Spacer(modifier = Modifier.width(14.dp))
+                        Spacer(modifier = Modifier.width(13.dp))
 
-                        Text(
+                        FormattedText(
                             text = text,
                             style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            color = TextPrimary,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                            color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.weight(1f),
-                            lineHeight = 20.sp
+                            lineHeight = 21.sp,
+                            fontSize = 14.5.sp
                         )
 
                         if (isSelected) {
+                            Spacer(modifier = Modifier.width(8.dp))
                             Icon(
                                 imageVector = Icons.Default.CheckCircle,
                                 contentDescription = "Selected",
-                                tint = PrimaryGreen,
-                                modifier = Modifier.size(20.dp)
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(19.dp)
                             )
                         }
                     }

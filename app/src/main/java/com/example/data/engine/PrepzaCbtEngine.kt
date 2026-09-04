@@ -35,7 +35,11 @@ object PrepzaCbtEngine {
 
         // Ensure 3 distinct elective subjects
         val electives = normalizedUserSubjects.filter { !it.equals(compulsory, ignoreCase = true) }.take(3).toMutableList()
-        val defaultFallbacks = listOf("Mathematics", "Physics", "Chemistry", "Biology", "Economics", "Government", "Literature in English", "CRS", "Commerce", "Principles of Accounts")
+        val defaultFallbacks = listOf(
+            "Mathematics", "Physics", "Chemistry", "Biology", "Economics",
+            "Government", "Literature in English", "CRS", "Commerce",
+            "Principles of Accounts", "Geography", "History", "Islamic Religious Studies (IRS)"
+        )
         for (fallback in defaultFallbacks) {
             if (electives.size >= 3) break
             if (!electives.contains(fallback) && !fallback.equals(compulsory, ignoreCase = true)) {
@@ -98,10 +102,11 @@ object PrepzaCbtEngine {
     }
 
     /**
-     * Generates a Mini CBT Session of exactly 20 diverse, non-repeating questions for a single subject.
+     * Generates a Mini CBT Session of diverse, non-repeating questions for a single subject.
      */
     fun generateMiniCbtExam(
         subject: String,
+        targetCount: Int = CbtBlueprint.MINI_CBT_QUESTIONS,
         availablePool: List<QuestionEntity>,
         userExposures: List<QuestionExposureEntity> = emptyList(),
         excludedSessionIds: Set<String> = emptySet()
@@ -113,7 +118,7 @@ object PrepzaCbtEngine {
 
         val questions = generateSubjectSection(
             subject = normSubject,
-            targetCount = CbtBlueprint.MINI_CBT_QUESTIONS,
+            targetCount = targetCount,
             availablePool = availablePool,
             exposureMap = exposureMap,
             excludedIds = excludedIds,
@@ -122,14 +127,14 @@ object PrepzaCbtEngine {
 
         val report = CbtQualityController.inspectExam(
             questions = questions,
-            expectedTotalCount = CbtBlueprint.MINI_CBT_QUESTIONS,
-            expectedSubjectCounts = mapOf(normSubject to CbtBlueprint.MINI_CBT_QUESTIONS)
+            expectedTotalCount = targetCount,
+            expectedSubjectCounts = mapOf(normSubject to targetCount)
         )
 
         return if (!report.isValid) {
             CbtQualityController.autoRepairSection(
                 subject = normSubject,
-                targetCount = CbtBlueprint.MINI_CBT_QUESTIONS,
+                targetCount = targetCount,
                 currentQuestions = questions,
                 replacementPool = availablePool,
                 excludedIds = excludedSessionIds,
@@ -141,8 +146,8 @@ object PrepzaCbtEngine {
     }
 
     /**
-     * Generates an individual subject section with authentic balance, exposure tracking,
-     * topic breadth, and safe option shuffling.
+     * Generates an individual subject section with authentic balance, weighted exposure tracking,
+     * topic breadth, and safe option shuffling using [CbtWeightedRandomizer].
      */
     private fun generateSubjectSection(
         subject: String,
@@ -152,112 +157,24 @@ object PrepzaCbtEngine {
         excludedIds: Set<String>,
         excludedStems: Set<String>
     ): List<QuestionEntity> {
-        val isEnglish = subject.equals("English Language", ignoreCase = true)
-        
         // 1. Gather all candidates from database pool + verified static question banks
         val subjectPool = availablePool.filter { it.subject.equals(subject, ignoreCase = true) }
             .ifEmpty { QuestionBankGenerator.getAllSeedQuestions().filter { it.subject.equals(subject, ignoreCase = true) } }
 
-        // Deduplicate candidates
-        val uniqueCandidates = QuestionDeduplicator.deduplicateQuestions(subjectPool)
+        // 2. Run Weighted Randomizer Algorithm with 'last seen' tracking & authenticity weighting
+        val selected = CbtWeightedRandomizer.selectWeightedQuestions(
+            subject = subject,
+            targetCount = targetCount,
+            pool = subjectPool,
+            exposures = exposureMap,
+            excludedIds = excludedIds,
+            excludedStems = excludedStems
+        ).toMutableList()
 
-        // 2. Score and partition by exposure:
-        // Tier 1: Unseen questions (exposureCount == 0, not in excludedIds or excludedStems)
-        // Tier 2: Least recently seen questions (sorted by lastExposedTimestamp ASC)
-        val unseen = mutableListOf<QuestionEntity>()
-        val seen = mutableListOf<Pair<QuestionEntity, Long>>()
+        val currentIds = (excludedIds + selected.map { it.id }).toMutableSet()
+        val currentStems = (excludedStems + selected.map { QuestionDeduplicator.normalizeText(it.questionText) }).toMutableSet()
 
-        for (q in uniqueCandidates) {
-            val stem = QuestionDeduplicator.normalizeText(q.questionText)
-            if (q.id in excludedIds || stem in excludedStems) {
-                continue
-            }
-            val exposure = exposureMap[q.id]
-            if (exposure == null || exposure.exposureCount == 0) {
-                unseen.add(q)
-            } else {
-                seen.add(Pair(q, exposure.lastExposedTimestamp))
-            }
-        }
-
-        // Sort seen candidates by least recently exposed
-        val leastRecentlySeen = seen.sortedBy { it.second }.map { it.first }
-
-        val orderedCandidates = unseen.shuffled() + leastRecentlySeen
-
-        val selected = mutableListOf<QuestionEntity>()
-        val currentStems = excludedStems.toMutableSet()
-        val currentIds = excludedIds.toMutableSet()
-
-        if (isEnglish) {
-            // Balance comprehension vs non-comprehension items
-            val maxComprehension = if (targetCount >= 50) 6 else 2
-            val compCandidates = orderedCandidates.filter { CbtBlueprint.isComprehensionQuestion(it) }
-            val nonCompCandidates = orderedCandidates.filter { !CbtBlueprint.isComprehensionQuestion(it) }
-
-            // Pick comprehension items
-            for (q in compCandidates) {
-                val stem = QuestionDeduplicator.normalizeText(q.questionText)
-                if (q.id !in currentIds && stem !in currentStems && CbtQualityController.isQuestionStructurallyValid(q)) {
-                    selected.add(q)
-                    currentIds.add(q.id)
-                    currentStems.add(stem)
-                }
-                if (selected.size >= maxComprehension) break
-            }
-
-            // Pick non-comprehension items (grammar, lexis, antonyms, oral English)
-            val neededNonComp = targetCount - selected.size
-            for (q in nonCompCandidates) {
-                val stem = QuestionDeduplicator.normalizeText(q.questionText)
-                if (q.id !in currentIds && stem !in currentStems && CbtQualityController.isQuestionStructurallyValid(q)) {
-                    selected.add(q)
-                    currentIds.add(q.id)
-                    currentStems.add(stem)
-                }
-                if (selected.size >= targetCount) break
-            }
-        } else {
-            // Multi-topic balanced selection
-            val topicGroups = orderedCandidates.groupBy { it.topic }
-            val topics = topicGroups.keys.toList().shuffled()
-
-            if (topics.isNotEmpty()) {
-                var topicIndex = 0
-                val topicIterators = topicGroups.mapValues { it.value.toMutableList() }.toMutableMap()
-
-                // Round-robin selection across topics for diverse coverage
-                while (selected.size < targetCount && topicIterators.values.any { it.isNotEmpty() }) {
-                    val topic = topics[topicIndex % topics.size]
-                    val topicList = topicIterators[topic]
-                    if (topicList != null && topicList.isNotEmpty()) {
-                        val candidate = topicList.removeAt(0)
-                        val stem = QuestionDeduplicator.normalizeText(candidate.questionText)
-                        if (candidate.id !in currentIds && stem !in currentStems && CbtQualityController.isQuestionStructurallyValid(candidate)) {
-                            selected.add(candidate)
-                            currentIds.add(candidate.id)
-                            currentStems.add(stem)
-                        }
-                    }
-                    topicIndex++
-                }
-            }
-
-            // If still need more, take remaining ordered candidates
-            if (selected.size < targetCount) {
-                for (q in orderedCandidates) {
-                    val stem = QuestionDeduplicator.normalizeText(q.questionText)
-                    if (q.id !in currentIds && stem !in currentStems && CbtQualityController.isQuestionStructurallyValid(q)) {
-                        selected.add(q)
-                        currentIds.add(q.id)
-                        currentStems.add(stem)
-                    }
-                    if (selected.size >= targetCount) break
-                }
-            }
-        }
-
-        // 3. If authentic candidates are completely exhausted, use controlled AI fallback
+        // 3. If authentic candidates are completely exhausted, use controlled syllabus fallback
         var fallbackSeed = 0
         while (selected.size < targetCount) {
             val fallback = PrepzaAiQuestionEngine.generateFallbackQuestion(

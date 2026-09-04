@@ -35,6 +35,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.db.LiteratureBookEntity
+import com.example.data.literature.LiteratureBookStudyData
+import com.example.data.literature.LiteratureRegistry
+import com.example.ui.screens.literature.*
 import com.example.ui.theme.*
 
 enum class LibraryCategory(val label: String) {
@@ -60,24 +63,131 @@ fun LibraryScreen(
     onOpenBook: (LiteratureBookEntity) -> Unit,
     onSelectChapter: (Int) -> Unit,
     onCloseReader: () -> Unit,
+    onProgressUpdated: ((bookId: String, chapterIndex: Int, progressPercent: Int) -> Unit)? = null,
     onAskAiTutor: ((prompt: String) -> Unit)? = null,
     onBack: (() -> Unit)? = null
 ) {
     if (activeBook != null) {
-        if (activeBook.id == "book_she_walks_in_beauty" || activeBook.title.contains("She Walks in Beauty", ignoreCase = true) || activeBook.title.contains("Poem", ignoreCase = true)) {
-            PoemDedicatedReaderView(
-                book = activeBook,
-                onClose = onCloseReader,
-                onAskAiTutor = onAskAiTutor
-            )
-        } else {
-            GeneralLiteratureReaderView(
-                book = activeBook,
-                chapterIndex = activeChapterIndex,
-                onSelectChapter = onSelectChapter,
-                onClose = onCloseReader,
-                onAskAiTutor = onAskAiTutor
-            )
+        val studyData = remember(activeBook.id, activeBook.title) {
+            LiteratureRegistry.getBookByIdOrTitle(activeBook.id, activeBook.title)
+        }
+        var activeSection by remember(activeBook.id) { mutableStateOf(LiteratureSection.OVERVIEW) }
+        var currentChapterIdx by remember(activeBook.id, activeChapterIndex) {
+            mutableStateOf(if (activeChapterIndex >= 0) activeChapterIndex else activeBook.lastReadChapterIndex)
+        }
+
+        BackHandler(enabled = true) {
+            if (activeSection != LiteratureSection.OVERVIEW) {
+                activeSection = LiteratureSection.OVERVIEW
+            } else {
+                onCloseReader()
+            }
+        }
+
+        when (activeSection) {
+            LiteratureSection.OVERVIEW -> {
+                BookOverviewScreen(
+                    bookData = studyData,
+                    currentProgressPercent = activeBook.readingProgressPercent,
+                    lastReadChapterIndex = currentChapterIdx,
+                    onBackToLibrary = onCloseReader,
+                    onOpenSection = { section ->
+                        activeSection = section
+                    },
+                    onContinueReading = { chIdx ->
+                        currentChapterIdx = chIdx
+                        onSelectChapter(chIdx)
+                        activeSection = LiteratureSection.READER
+                    },
+                    onAskAiTutor = { title ->
+                        onAskAiTutor?.invoke("Can you provide an in-depth UTME Literature study guide for $title?")
+                    }
+                )
+            }
+            LiteratureSection.READER -> {
+                LiteratureReaderScreen(
+                    bookData = studyData,
+                    initialChapterIndex = currentChapterIdx,
+                    onBackToOverview = { activeSection = LiteratureSection.OVERVIEW },
+                    onProgressUpdated = { chIdx, percent ->
+                        currentChapterIdx = chIdx
+                        onSelectChapter(chIdx)
+                        onProgressUpdated?.invoke(activeBook.id, chIdx, percent)
+                    }
+                )
+            }
+            LiteratureSection.SUMMARIES -> {
+                ChapterSummariesScreen(
+                    bookData = studyData,
+                    initialChapterIndex = currentChapterIdx,
+                    onBackToOverview = { activeSection = LiteratureSection.OVERVIEW },
+                    onOpenFullChapter = { chIdx ->
+                        currentChapterIdx = chIdx
+                        onSelectChapter(chIdx)
+                        activeSection = LiteratureSection.READER
+                    }
+                )
+            }
+            LiteratureSection.BACKGROUND -> {
+                LiteratureBackgroundScreen(
+                    bookData = studyData,
+                    onBackToOverview = { activeSection = LiteratureSection.OVERVIEW }
+                )
+            }
+            LiteratureSection.PLOT -> {
+                LiteraturePlotScreen(
+                    bookData = studyData,
+                    onBackToOverview = { activeSection = LiteratureSection.OVERVIEW }
+                )
+            }
+            LiteratureSection.CHARACTERS -> {
+                LiteratureCharactersScreen(
+                    bookData = studyData,
+                    onBackToOverview = { activeSection = LiteratureSection.OVERVIEW }
+                )
+            }
+            LiteratureSection.THEMES -> {
+                LiteratureThemesScreen(
+                    bookData = studyData,
+                    onBackToOverview = { activeSection = LiteratureSection.OVERVIEW }
+                )
+            }
+            LiteratureSection.LITERARY_DEVICES -> {
+                LiteratureDevicesScreen(
+                    bookData = studyData,
+                    onBackToOverview = { activeSection = LiteratureSection.OVERVIEW }
+                )
+            }
+            LiteratureSection.AUTHOR -> {
+                LiteratureAuthorScreen(
+                    bookData = studyData,
+                    onBackToOverview = { activeSection = LiteratureSection.OVERVIEW }
+                )
+            }
+            LiteratureSection.SETTING -> {
+                LiteratureSettingScreen(
+                    bookData = studyData,
+                    onBackToOverview = { activeSection = LiteratureSection.OVERVIEW }
+                )
+            }
+            LiteratureSection.EXAM_PREP -> {
+                LiteratureExamPrepScreen(
+                    bookData = studyData,
+                    onBackToOverview = { activeSection = LiteratureSection.OVERVIEW }
+                )
+            }
+            LiteratureSection.IMPORTANT_FACTS -> {
+                LiteratureImportantFactsScreen(
+                    bookData = studyData,
+                    onBackToOverview = { activeSection = LiteratureSection.OVERVIEW }
+                )
+            }
+            LiteratureSection.QUICK_REVISION -> {
+                LiteratureQuickRevisionScreen(
+                    bookData = studyData,
+                    onBackToOverview = { activeSection = LiteratureSection.OVERVIEW }
+                )
+            }
         }
         return
     }
@@ -87,61 +197,64 @@ fun LibraryScreen(
     val fallbackBooks = remember {
         listOf(
             LiteratureBookEntity(
-                id = "book_she_walks_in_beauty",
-                title = "She Walks in Beauty",
-                author = "Lord Byron (George Gordon)",
-                category = "Selected UTME Poems",
-                description = "Prescribed UTME Poem. Complete text, background summary, stanza breakdown, poetic devices, themes, and past questions.",
-                chaptersJson = "[]",
-                readingProgressPercent = 85
-            ),
-            LiteratureBookEntity(
                 id = "book_1",
                 title = "The Life Changer",
-                author = "Khadija Abubakar Jalli",
-                category = "Compulsory Prose",
-                description = "A compulsory UTME novel about tertiary education realities, morals, and life lessons.",
+                author = "Khadijat Abubakar Jalli",
+                category = "Compulsory UTME Prose",
+                description = "Official general UTME text on university life, moral challenges, exams, and youthful decisions.",
                 chaptersJson = "[]",
-                readingProgressPercent = 45
+                readingProgressPercent = 55
             ),
             LiteratureBookEntity(
-                id = "book_2",
-                title = "Selected UTME Poems",
-                author = "Various African & Non-African Poets",
-                category = "Selected UTME Poems",
-                description = "Comprehensive guide and analysis of official prescribed poems for JAMB UTME Literature.",
+                id = "book_second_class_citizen",
+                title = "Second-Class Citizen",
+                author = "Buchi Emecheta",
+                category = "African Prose",
+                description = "Adah's heroic struggle for education and self-actualization against patriarchy and racial discrimination in London.",
                 chaptersJson = "[]",
                 readingProgressPercent = 40
             ),
             LiteratureBookEntity(
-                id = "book_sweet_sixteen",
-                title = "Sweet Sixteen",
-                author = "Bolaji Abdullahi",
-                category = "Compulsory Prose",
-                description = "Aliya's journey into adulthood, exploring self-identity, friendship, and family values.",
+                id = "book_look_back_in_anger",
+                title = "Look Back in Anger",
+                author = "John Osborne",
+                category = "Non-African Drama",
+                description = "Post-war British realist drama centered on Jimmy Porter's disillusionment, marital conflict, and social alienation.",
                 chaptersJson = "[]",
-                readingProgressPercent = 25
+                readingProgressPercent = 20
             ),
             LiteratureBookEntity(
                 id = "book_lion_jewel",
                 title = "The Lion and the Jewel",
                 author = "Wole Soyinka",
-                category = "UTME Drama",
-                description = "Classic UTME drama pitting traditional African culture against modern western arrogance.",
+                category = "African Drama",
+                description = "Wole Soyinka's satirical masterpiece exploring the contest between Baroka and Lakunle for the village belle Sidi.",
+                chaptersJson = "[]",
+                readingProgressPercent = 35
+            ),
+            LiteratureBookEntity(
+                id = "book_wuthering_heights",
+                title = "Wuthering Heights",
+                author = "Emily Brontë",
+                category = "Non-African Prose",
+                description = "19th century gothic novel exploring the intense, destructive passion and vengeance of Heathcliff and Catherine Earnshaw.",
                 chaptersJson = "[]",
                 readingProgressPercent = 15
+            ),
+            LiteratureBookEntity(
+                id = "book_she_walks_in_beauty",
+                title = "She Walks in Beauty",
+                author = "Lord Byron (George Gordon)",
+                category = "Selected UTME Poems",
+                description = "Prescribed Romantic lyric poem with full text, stanza-by-stanza analysis, poetic devices, themes, and past questions.",
+                chaptersJson = "[]",
+                readingProgressPercent = 90
             )
         )
     }
 
     val displayBooks = if (books.isNotEmpty()) {
-        // Ensure "She Walks in Beauty" is in the display list if missing
-        val hasSheWalks = books.any { it.id == "book_she_walks_in_beauty" || it.title.contains("She Walks in Beauty", ignoreCase = true) }
-        if (!hasSheWalks) {
-            listOf(fallbackBooks.first()) + books
-        } else {
-            books
-        }
+        books
     } else {
         fallbackBooks
     }
@@ -153,10 +266,10 @@ fun LibraryScreen(
                 it.category.contains("Poem", ignoreCase = true) || it.title.contains("Poem", ignoreCase = true) || it.title.contains("She Walks", ignoreCase = true)
             }
             LibraryCategory.PROSE -> displayBooks.filter { 
-                it.category.contains("Prose", ignoreCase = true) || it.category.contains("Novel", ignoreCase = true) || it.id.contains("changer") || it.id.contains("sixteen")
+                it.category.contains("Prose", ignoreCase = true) || it.category.contains("Novel", ignoreCase = true) || it.id.contains("changer") || it.id.contains("citizen") || it.id.contains("heights")
             }
             LibraryCategory.DRAMA -> displayBooks.filter { 
-                it.category.contains("Drama", ignoreCase = true) || it.category.contains("Play", ignoreCase = true) || it.id.contains("lion")
+                it.category.contains("Drama", ignoreCase = true) || it.category.contains("Play", ignoreCase = true) || it.id.contains("lion") || it.id.contains("anger")
             }
         }
     }
@@ -201,123 +314,143 @@ fun LibraryScreen(
                 Spacer(modifier = Modifier.width(12.dp))
             }
 
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = "UTME Library & Literature",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-                Text(
-                    text = "Prescribed texts, poems & poetic device breakdowns",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = TextSecondary
-                )
-            }
+            Text(
+                text = "UTME Library",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = TextPrimary
+            )
         }
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Featured Hero Card for "She Walks in Beauty"
+        // Featured Card: The Life Changer
+        val featuredLifeChanger = displayBooks.find { it.id == "book_1" || it.title.contains("The Life Changer", ignoreCase = true) }
+            ?: LiteratureBookEntity(
+                id = "book_1",
+                title = "The Life Changer",
+                author = "Khadijat Abubakar Jalli",
+                category = "UTME Mandatory Prose",
+                description = "Complete novel and analysis.",
+                chaptersJson = "[]",
+                readingProgressPercent = 0,
+                lastReadChapterIndex = 0
+            )
+
         val featuredPoem = displayBooks.find { it.id == "book_she_walks_in_beauty" || it.title.contains("She Walks in Beauty", ignoreCase = true) }
             ?: fallbackBooks.first()
 
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(18.dp))
-                .clickable { onOpenBook(featuredPoem) }
-                .testTag("featured_poem_card"),
-            colors = CardDefaults.cardColors(containerColor = PrimaryGreen),
-            shape = RoundedCornerShape(18.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .clickable { onOpenBook(featuredLifeChanger) }
+                .testTag("featured_life_changer_card"),
+            colors = CardDefaults.cardColors(containerColor = PrimaryGreenDark),
+            shape = RoundedCornerShape(16.dp)
         ) {
-            Column(
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(18.dp)
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Surface(
-                        color = Color.White.copy(alpha = 0.2f),
-                        shape = RoundedCornerShape(20.dp)
+                        color = AmberAccent,
+                        shape = RoundedCornerShape(6.dp)
                     ) {
                         Text(
-                            text = "SELECTED UTME POEM",
+                            text = "NOVEL",
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            color = TextPrimary,
+                            fontSize = 9.sp,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
                     }
-
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = "3 Stanzas • 18 Lines",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.85f),
-                        fontWeight = FontWeight.Medium
+                        text = "The Life Changer",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Text(
+                        text = "Khadijat Abubakar Jalli",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.85f)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Text(
-                    text = "She Walks in Beauty",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-
-                Text(
-                    text = "By Lord Byron (George Gordon) • 1788–1824",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.White.copy(alpha = 0.9f)
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "“She walks in beauty, like the night / Of cloudless climes and starry skies…”",
-                    style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
-                    color = Color.White.copy(alpha = 0.8f)
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Button(
+                    onClick = { onOpenBook(featuredLifeChanger) },
+                    colors = ButtonDefaults.buttonColors(containerColor = AmberAccent, contentColor = TextPrimary),
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                    modifier = Modifier.height(34.dp)
                 ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        listOf("Simile", "Antithesis", "ABABAB", "Iambic").forEach { tag ->
-                            Surface(
-                                color = Color.White.copy(alpha = 0.15f),
-                                shape = RoundedCornerShape(6.dp)
-                            ) {
-                                Text(
-                                    text = tag,
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                    color = Color.White,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-                    }
+                    Text("Read", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                }
+            }
+        }
 
-                    Button(
-                        onClick = { onOpenBook(featuredPoem) },
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = PrimaryGreen),
-                        shape = RoundedCornerShape(10.dp),
-                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                        modifier = Modifier.height(34.dp)
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Featured Card: She Walks in Beauty
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .clickable { onOpenBook(featuredPoem) }
+                .testTag("featured_poem_card"),
+            colors = CardDefaults.cardColors(containerColor = PrimaryGreen),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Surface(
+                        color = Color.White.copy(alpha = 0.2f),
+                        shape = RoundedCornerShape(6.dp)
                     ) {
-                        Text("Study Guide", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                        Text(
+                            text = "POEM",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            fontSize = 9.sp,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
                     }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = "She Walks in Beauty",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                    Text(
+                        text = "Lord Byron",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.85f)
+                    )
+                }
+
+                Button(
+                    onClick = { onOpenBook(featuredPoem) },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = PrimaryGreen),
+                    shape = RoundedCornerShape(10.dp),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                    modifier = Modifier.height(34.dp)
+                ) {
+                    Text("Read", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
                 }
             }
         }

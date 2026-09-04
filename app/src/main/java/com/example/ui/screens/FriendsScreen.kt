@@ -11,8 +11,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
@@ -67,6 +69,8 @@ fun FriendsScreen(
     val context = LocalContext.current
     var showAddDialog by remember { mutableStateOf(false) }
     var showReferralInputDialog by remember { mutableStateOf(false) }
+    var showHowItWorksDialog by remember { mutableStateOf(false) }
+    var showStudyPassDialog by remember { mutableStateOf(false) }
     var friendInput by remember { mutableStateOf("") }
     var addFriendError by remember { mutableStateOf<String?>(null) }
     var referralInputCode by remember { mutableStateOf("") }
@@ -337,6 +341,362 @@ fun FriendsScreen(
         )
     }
 
+    // Comprehensive "How Referrals Work" Modal Dialog
+    if (showHowItWorksDialog) {
+        AlertDialog(
+            onDismissRequest = { showHowItWorksDialog = false },
+            shape = RoundedCornerShape(24.dp),
+            containerColor = SurfaceWhite,
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        shape = CircleShape,
+                        color = SoftEmeraldBg,
+                        modifier = Modifier.size(38.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.CardGiftcard, contentDescription = null, tint = PrimaryGreen, modifier = Modifier.size(22.dp))
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text("How Referrals Work", fontWeight = FontWeight.Bold, color = TextPrimary, fontSize = 18.sp)
+                        Text("Earn Free Prepza Plus & Study Together", style = MaterialTheme.typography.labelSmall, color = TextSecondary)
+                    }
+                }
+            },
+            text = {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 420.dp)
+                        .verticalScroll(androidx.compose.foundation.rememberScrollState())
+                ) {
+                    // Step 1
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = AppBackground,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
+                            Surface(
+                                shape = CircleShape,
+                                color = PrimaryGreen,
+                                modifier = Modifier.size(26.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text("1", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text("Share Your Study Code", fontWeight = FontWeight.Bold, color = TextPrimary, fontSize = 14.sp)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    "Share your unique code ($userStudyCode) or invite link with classmates, tutorial groups, and friends preparing for JAMB UTME.",
+                                    color = TextSecondary,
+                                    fontSize = 12.sp,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Step 2
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = AppBackground,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
+                            Surface(
+                                shape = CircleShape,
+                                color = PrimaryGreen,
+                                modifier = Modifier.size(26.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text("2", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text("Friends Join & Get +3 Days Trial", fontWeight = FontWeight.Bold, color = TextPrimary, fontSize = 14.sp)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    "When your friend registers or enters your code, they get +3 Bonus Days of Prepza Plus Trial & +100 XP, and you become connected Study Buddies!",
+                                    color = TextSecondary,
+                                    fontSize = 12.sp,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Step 3
+                    Surface(
+                        shape = RoundedCornerShape(14.dp),
+                        color = SoftAmberBg,
+                        border = BorderStroke(1.dp, AmberAccent.copy(alpha = 0.3f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.Top) {
+                            Surface(
+                                shape = CircleShape,
+                                color = AmberAccent,
+                                modifier = Modifier.size(26.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text("3", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text("Unlock Milestones & Free Plus", fontWeight = FontWeight.Bold, color = TextPrimary, fontSize = 14.sp)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    "Each referral advances your milestone. At 10 candidates, you unlock 1 Full Month / Lifetime Free Prepza Plus (Unlimited AI explanations & offline CBT mocks)!",
+                                    color = TextSecondary,
+                                    fontSize = 12.sp,
+                                    lineHeight = 16.sp
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Text("Milestone Tier Rewards", fontWeight = FontWeight.Bold, color = TextPrimary, fontSize = 13.sp)
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // Milestone chips
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("🥉 1 Referral", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                            Text("+3 Extra Trial Days + Buddy Badge", fontSize = 11.sp, color = PrimaryGreen, fontWeight = FontWeight.Bold)
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("🥈 3 Referrals", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                            Text("+7 Extra Trial Days + Ambassador", fontSize = 11.sp, color = PrimaryGreen, fontWeight = FontWeight.Bold)
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("🥇 5 Referrals", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                            Text("+14 Extra Trial Days + XP Boost", fontSize = 11.sp, color = PrimaryGreen, fontWeight = FontWeight.Bold)
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text("🏆 10 Referrals", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = AmberAccent)
+                            Text("1 Month Full Prepza Plus Free!", fontSize = 11.sp, color = AmberAccent, fontWeight = FontWeight.ExtraBold)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    // FAQ Snippet
+                    Text("Frequently Asked Questions", fontWeight = FontWeight.Bold, color = TextPrimary, fontSize = 13.sp)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "• Where do friends enter the code? On the signup page or under Study Buddies -> 'Enter Referee Code'.\n• When do I get the reward? Rewards and extra trial days are applied automatically in real-time.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary,
+                        fontSize = 11.sp,
+                        lineHeight = 15.sp
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val sendIntent = Intent().apply {
+                            action = Intent.ACTION_SEND
+                            putExtra(
+                                Intent.EXTRA_TEXT,
+                                "Hey! Let's practice JAMB UTME past questions and smash 300+ on Prepza! Use my Study/Referral code: $userStudyCode to get 3 extra days of free Prepza Plus!"
+                            )
+                            type = "text/plain"
+                        }
+                        val shareIntent = Intent.createChooser(sendIntent, "Share Study Invite")
+                        context.startActivity(shareIntent)
+                        showHowItWorksDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Share Study Invite", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showHowItWorksDialog = false }) {
+                    Text("Close", color = TextSecondary)
+                }
+            }
+        )
+    }
+
+    // Digital Study Pass Card Dialog
+    if (showStudyPassDialog) {
+        AlertDialog(
+            onDismissRequest = { showStudyPassDialog = false },
+            shape = RoundedCornerShape(24.dp),
+            containerColor = SurfaceWhite,
+            text = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Study Pass Header
+                    Surface(
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color(0xFF0F172A),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(18.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Surface(
+                                        shape = CircleShape,
+                                        color = PrimaryGreen,
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Box(contentAlignment = Alignment.Center) {
+                                            Text("P", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text("PREPZA UTME", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp, letterSpacing = 1.sp)
+                                }
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = PrimaryGreen.copy(alpha = 0.2f)
+                                ) {
+                                    Text(
+                                        "CANDIDATE PASS",
+                                        color = PrimaryGreen,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 9.sp,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Surface(
+                                shape = CircleShape,
+                                color = getAvatarColorForName(userName),
+                                modifier = Modifier.size(54.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(userInitial, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 24.sp)
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = userName,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+
+                            Text(
+                                text = "Target: ${profile?.targetScore ?: 320} • ${profile?.dreamCourse ?: "UTME Candidate"}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = TextMuted,
+                                fontSize = 11.sp
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Code Display Box
+                            Surface(
+                                shape = RoundedCornerShape(10.dp),
+                                color = Color.White.copy(alpha = 0.08f),
+                                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.15f)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(vertical = 10.dp, horizontal = 12.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text("STUDY & REFERRAL CODE", color = TextMuted, fontSize = 9.sp, fontWeight = FontWeight.SemiBold)
+                                    Text(
+                                        text = userStudyCode,
+                                        color = AmberAccent,
+                                        fontSize = 22.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        letterSpacing = 2.sp
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "Show this pass to classmates or share your code to study together & earn 1 Month of Free Prepza Plus.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = TextSecondary,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                        fontSize = 11.sp
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                        val clip = ClipData.newPlainText("Prepza Study Code", userStudyCode)
+                        clipboard.setPrimaryClip(clip)
+                        Toast.makeText(context, "Study Code copied: $userStudyCode", Toast.LENGTH_SHORT).show()
+                        showStudyPassDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Copy Study Code", fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showStudyPassDialog = false }, modifier = Modifier.fillMaxWidth()) {
+                    Text("Close", color = TextSecondary)
+                }
+            }
+        )
+    }
+
     // Delete Confirmation Dialog
     if (friendToDelete != null) {
         val target = friendToDelete!!
@@ -578,7 +938,7 @@ fun FriendsScreen(
                 }
             }
 
-            // Referral Reward Milestone Section (Refer 10 active users -> Free 1 Month Prepza Plus)
+            // Referral Reward Milestone Section
             item {
                 Surface(
                     modifier = Modifier
@@ -613,13 +973,13 @@ fun FriendsScreen(
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
                                     Text(
-                                        text = "Referral Reward Program",
+                                        text = "Referral Rewards",
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.Bold,
                                         color = TextPrimary
                                     )
                                     Text(
-                                        text = "Refer 10 active users = 1 Month Prepza Plus Free",
+                                        text = "Earn Free Prepza Plus with study invites",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = TextSecondary,
                                         fontSize = 11.sp
@@ -627,25 +987,98 @@ fun FriendsScreen(
                                 }
                             }
 
-                            if (isRewardUnlocked) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Surface(
                                     shape = RoundedCornerShape(8.dp),
-                                    color = SoftAmberBg,
-                                    border = BorderStroke(1.dp, AmberAccent.copy(alpha = 0.4f))
+                                    color = SoftEmeraldBg,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .clickable { showHowItWorksDialog = true }
+                                        .testTag("referral_how_it_works_btn")
                                 ) {
                                     Text(
-                                        text = "REWARD UNLOCKED",
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = AmberAccent,
-                                        fontSize = 10.sp
+                                        text = "Info",
+                                        color = PrimaryGreen,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
                                     )
                                 }
                             }
                         }
 
                         Spacer(modifier = Modifier.height(14.dp))
+
+                        // Milestone Tier Roadmap Badges
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            val milestones = listOf(
+                                Triple(1, "+3d", "1 Ref"),
+                                Triple(3, "+7d", "3 Refs"),
+                                Triple(5, "+14d", "5 Refs"),
+                                Triple(10, "1 Mo Free", "10 Refs")
+                            )
+
+                            milestones.forEach { (target, rewardLabel, stepTitle) ->
+                                val reached = referralCount >= target
+                                val isGrand = target == 10
+                                Surface(
+                                    shape = RoundedCornerShape(10.dp),
+                                    color = when {
+                                        reached && isGrand -> SoftAmberBg
+                                        reached -> SoftEmeraldBg
+                                        else -> AppBackground
+                                    },
+                                    border = BorderStroke(
+                                        1.dp,
+                                        when {
+                                            reached && isGrand -> AmberAccent
+                                            reached -> PrimaryGreen
+                                            else -> BorderSubtle
+                                        }
+                                    ),
+                                    modifier = Modifier.weight(1f).padding(horizontal = 2.dp)
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(vertical = 6.dp, horizontal = 4.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            if (reached) {
+                                                Icon(
+                                                    Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    tint = if (isGrand) AmberAccent else PrimaryGreen,
+                                                    modifier = Modifier.size(11.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(2.dp))
+                                            }
+                                            Text(
+                                                text = stepTitle,
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 10.sp,
+                                                color = if (reached) TextPrimary else TextMuted
+                                            )
+                                        }
+                                        Text(
+                                            text = rewardLabel,
+                                            fontSize = 9.sp,
+                                            fontWeight = if (reached) FontWeight.ExtraBold else FontWeight.Normal,
+                                            color = when {
+                                                reached && isGrand -> AmberAccent
+                                                reached -> PrimaryGreen
+                                                else -> TextSecondary
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
 
                         // Progress Bar & Count
                         val progressFraction = (referralCount / 10f).coerceIn(0f, 1f)
@@ -655,16 +1088,16 @@ fun FriendsScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Referral Progress",
+                                text = "Progress",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.SemiBold,
                                 color = TextPrimary
                             )
                             Text(
-                                text = "$referralCount / 10 Active Aspirants",
+                                text = "$referralCount / 10 Referrals",
                                 style = MaterialTheme.typography.bodySmall,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isRewardUnlocked) CorrectGreen else PrimaryGreen
+                                color = if (isRewardUnlocked) AmberAccent else PrimaryGreen
                             )
                         }
 
@@ -692,23 +1125,28 @@ fun FriendsScreen(
                                     modifier = Modifier.padding(12.dp),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = CorrectGreen, modifier = Modifier.size(20.dp))
+                                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = CorrectGreen, modifier = Modifier.size(18.dp))
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = "Congratulations! You've referred 10+ active candidates and unlocked 1 Month of Free Prepza Plus!",
+                                        text = "1 Month Free Prepza Plus unlocked!",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = TextPrimary,
-                                        fontWeight = FontWeight.Medium,
-                                        lineHeight = 16.sp
+                                        fontWeight = FontWeight.Bold
                                     )
                                 }
                             }
                         } else {
+                            val nextMilestone = when {
+                                referralCount < 1 -> "Next reward: +3 trial days at 1 referral"
+                                referralCount < 3 -> "Next reward: +7 trial days at 3 referrals"
+                                referralCount < 5 -> "Next reward: +14 trial days at 5 referrals"
+                                else -> "Next reward: 1 Month Prepza Plus Free at 10 referrals"
+                            }
                             Text(
-                                text = "🎯 Refer ${10 - referralCount} more candidate(s) who register using your study code ($userStudyCode) to automatically receive 1 Month of Prepza Plus with unlimited AI explanations and offline CBT mocks.",
+                                text = nextMilestone,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = TextSecondary,
-                                lineHeight = 17.sp
+                                fontSize = 12.sp
                             )
                         }
 
@@ -726,13 +1164,13 @@ fun FriendsScreen(
                                         showReferralInputDialog = true
                                     },
                                     shape = RoundedCornerShape(12.dp),
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .testTag("enter_referral_code_btn"),
                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryGreen),
                                     border = BorderStroke(1.dp, PrimaryGreen.copy(alpha = 0.5f))
                                 ) {
-                                    Icon(Icons.Default.CardGiftcard, contentDescription = null, modifier = Modifier.size(14.dp))
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text("Enter Referee Code", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                                    Text("Enter Code", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                                 }
                             } else {
                                 Surface(
@@ -756,20 +1194,29 @@ fun FriendsScreen(
                                 }
                             }
 
-                            // Interactive Demo/Simulate Referral Button to allow instant user testing
-                            OutlinedButton(
+                            // Share Invite Link / Code with Real Friends
+                            Button(
                                 onClick = {
-                                    onSimulateReferral()
-                                    Toast.makeText(context, "+1 Active Referral Recorded! Total: ${referralCount + 1}", Toast.LENGTH_SHORT).show()
+                                    val sendIntent = Intent().apply {
+                                        action = Intent.ACTION_SEND
+                                        putExtra(
+                                            Intent.EXTRA_TEXT,
+                                            "Hey! Let's practice JAMB UTME past questions and study together on Prepza! Use my Study/Referral code: $userStudyCode to get bonus free trial days!"
+                                        )
+                                        type = "text/plain"
+                                    }
+                                    val shareIntent = Intent.createChooser(sendIntent, "Invite Friends to Prepza")
+                                    context.startActivity(shareIntent)
                                 },
                                 shape = RoundedCornerShape(12.dp),
-                                colors = ButtonDefaults.outlinedButtonColors(contentColor = AmberAccent),
-                                border = BorderStroke(1.dp, AmberAccent.copy(alpha = 0.4f)),
-                                modifier = Modifier.testTag("simulate_referral_btn")
+                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen, contentColor = Color.White),
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .testTag("invite_friends_btn")
                             ) {
-                                Icon(Icons.Default.AddReaction, contentDescription = null, modifier = Modifier.size(14.dp))
+                                Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
-                                Text("+1 Referral Test", fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                Text("Invite Friends", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             }
                         }
                     }
