@@ -51,8 +51,15 @@ fun CbtExamScreen(
     onToggleFlag: () -> Unit,
     onFlagAndFix: (question: QuestionEntity, reason: String, notes: String) -> Unit = { _, _, _ -> onToggleFlag() },
     onSubmitExam: () -> Unit,
-    onExitExam: () -> Unit
+    onExitExam: () -> Unit,
+    onQuestion1Interactive: (() -> Unit)? = null
 ) {
+    LaunchedEffect(questions.isNotEmpty()) {
+        if (questions.isNotEmpty()) {
+            onQuestion1Interactive?.invoke()
+        }
+    }
+
     var showPaletteSheet by remember { mutableStateOf(false) }
     var showCalculator by remember { mutableStateOf(false) }
     var showInstructionsDialog by remember { mutableStateOf(false) }

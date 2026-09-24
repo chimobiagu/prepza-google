@@ -174,24 +174,49 @@ object PrepzaCbtEngine {
         val currentIds = (excludedIds + selected.map { it.id }).toMutableSet()
         val currentStems = (excludedStems + selected.map { QuestionDeduplicator.normalizeText(it.questionText) }).toMutableSet()
 
-        // 3. If authentic candidates are completely exhausted, use controlled syllabus fallback
-        var fallbackSeed = 0
-        while (selected.size < targetCount) {
-            val fallback = PrepzaAiQuestionEngine.generateFallbackQuestion(
-                subject = subject,
-                indexSeed = fallbackSeed++
-            )
-            val stem = QuestionDeduplicator.normalizeText(fallback.questionText)
-            if (fallback.id !in currentIds && stem !in currentStems) {
-                selected.add(fallback)
-                currentIds.add(fallback.id)
-                currentStems.add(stem)
+        // 3. If authentic candidates from current available pool are exhausted, draw from verified master bank
+        if (selected.size < targetCount) {
+            val masterPool = QuestionBankGenerator.getAllSeedQuestions().filter {
+                it.subject.equals(subject, ignoreCase = true) ||
+                        QuestionBankGenerator.normalizeSubjectName(it.subject).equals(subject, ignoreCase = true)
+            }
+            for (candidate in masterPool) {
+                val stem = QuestionDeduplicator.normalizeText(candidate.questionText)
+                if (candidate.id !in currentIds && stem !in currentStems && CbtQualityController.isQuestionStructurallyValid(candidate)) {
+                    selected.add(candidate)
+                    currentIds.add(candidate.id)
+                    currentStems.add(stem)
+                }
+                if (selected.size >= targetCount) break
             }
         }
 
         // 4. Randomize question order and safely randomize option mapping
         val finalShuffled = selected.take(targetCount).shuffled()
         return SmartOptionShuffler.safeRandomizeOptionList(finalShuffled)
+    }
+
+    /**
+     * Locks the selected questions into an immutable cryptographic snapshot.
+     */
+    fun createSessionSnapshot(
+        sessionId: String,
+        mode: String,
+        subjects: List<String>,
+        orderedQuestions: List<QuestionEntity>,
+        totalDurationSeconds: Long,
+        isMiniCbt: Boolean
+    ): CbtSessionSnapshot {
+        require(orderedQuestions.isNotEmpty()) { "Cannot create session snapshot with empty questions" }
+        return CbtSessionSnapshot.create(
+            sessionId = sessionId,
+            mode = mode,
+            subjects = subjects,
+            orderedQuestionIds = orderedQuestions.map { it.id },
+            totalDurationSeconds = totalDurationSeconds,
+            isMiniCbt = isMiniCbt,
+            initialQuestion = orderedQuestions.first()
+        )
     }
 
     /**

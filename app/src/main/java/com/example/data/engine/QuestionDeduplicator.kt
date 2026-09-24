@@ -70,16 +70,61 @@ object QuestionDeduplicator {
     fun isNearDuplicateStem(stem1: String, stem2: String, threshold: Double = 0.85): Boolean {
         if (stem1 == stem2) return true
         if (stem1.isBlank() || stem2.isBlank()) return false
-        val tokens1 = stem1.split(" ").filter { it.length > 1 }.toSet()
-        val tokens2 = stem2.split(" ").filter { it.length > 1 }.toSet()
+        val lenDiff = Math.abs(stem1.length - stem2.length)
+        val maxLen = Math.max(stem1.length, stem2.length)
+        if (maxLen > 0 && lenDiff.toDouble() / maxLen > (1.0 - threshold)) return false
+
+        val tokens1 = extractTokens(stem1)
+        val tokens2 = extractTokens(stem2)
         if (tokens1.isEmpty() || tokens2.isEmpty()) return false
         if (tokens1.size < 4 && tokens2.size < 4) {
             return stem1 == stem2
         }
-        val intersectionSize = tokens1.intersect(tokens2).size
-        val unionSize = tokens1.union(tokens2).size
-        val similarity = intersectionSize.toDouble() / unionSize.toDouble()
-        return similarity >= threshold
+        return calculateJaccard(tokens1, tokens2) >= threshold
+    }
+
+    /**
+     * Extracts non-trivial words (length > 1) without regex or intermediate list allocations.
+     */
+    fun extractTokens(text: String): Set<String> {
+        if (text.isBlank()) return emptySet()
+        val tokens = HashSet<String>()
+        var start = -1
+        for (i in 0 until text.length) {
+            val c = text[i]
+            if (c != ' ') {
+                if (start == -1) start = i
+            } else {
+                if (start != -1) {
+                    if (i - start > 1) {
+                        tokens.add(text.substring(start, i))
+                    }
+                    start = -1
+                }
+            }
+        }
+        if (start != -1 && text.length - start > 1) {
+            tokens.add(text.substring(start))
+        }
+        return tokens
+    }
+
+    /**
+     * Fast Jaccard similarity calculation with zero Set allocations.
+     */
+    fun calculateJaccard(tokens1: Set<String>, tokens2: Set<String>): Double {
+        if (tokens1.isEmpty() || tokens2.isEmpty()) return 0.0
+        val minSize = Math.min(tokens1.size, tokens2.size)
+        val maxSize = Math.max(tokens1.size, tokens2.size)
+        if (minSize.toDouble() / maxSize < 0.70) return 0.0
+
+        var intersection = 0
+        val (smaller, larger) = if (tokens1.size <= tokens2.size) tokens1 to tokens2 else tokens2 to tokens1
+        for (token in smaller) {
+            if (token in larger) intersection++
+        }
+        val union = tokens1.size + tokens2.size - intersection
+        return if (union == 0) 0.0 else intersection.toDouble() / union.toDouble()
     }
 
     /**
@@ -87,34 +132,46 @@ object QuestionDeduplicator {
      * 1. Unique Question ID
      * 2. Canonical normalized text stem
      * 3. Content fingerprint
-     * 4. High-confidence fuzzy near-duplicate stem match
+     * 4. High-confidence fuzzy near-duplicate stem match with length-bucketing
      */
     fun deduplicateQuestions(questions: List<QuestionEntity>): List<QuestionEntity> {
-        val seenIds = mutableSetOf<String>()
-        val seenStems = mutableSetOf<String>()
-        val seenContentFingerprints = mutableSetOf<String>()
-        val uniqueList = mutableListOf<QuestionEntity>()
+        val seenIds = HashSet<String>(questions.size)
+        val seenStems = HashSet<String>(questions.size)
+        val seenContentFingerprints = HashSet<String>(questions.size)
+        val acceptedStemTokens = ArrayList<Pair<String, Set<String>>>()
+        val uniqueList = ArrayList<QuestionEntity>(questions.size)
 
         for (q in questions) {
             val trimmedId = q.id.trim()
             val normStem = normalizeText(q.questionText)
             val contentFp = getContentFingerprint(q)
 
-            if (trimmedId.isNotBlank() && trimmedId in seenIds) {
+            if (trimmedId.isNotEmpty() && trimmedId in seenIds) {
                 continue
             }
-            if (normStem.isNotBlank() && normStem in seenStems) {
+            if (normStem.isNotEmpty() && normStem in seenStems) {
                 continue
             }
-            if (contentFp.isNotBlank() && contentFp in seenContentFingerprints) {
+            if (contentFp.isNotEmpty() && contentFp in seenContentFingerprints) {
                 continue
             }
 
-            // Check fuzzy similarity against previously accepted stems in the same subject
+            // Check fuzzy similarity against previously accepted stems with length filter
             var isFuzzyDuplicate = false
             if (normStem.length > 25) {
-                for (existingStem in seenStems) {
-                    if (isNearDuplicateStem(normStem, existingStem, threshold = 0.88)) {
+                var candidateTokens: Set<String>? = null
+                val normLen = normStem.length
+                for (i in 0 until acceptedStemTokens.size) {
+                    val (existingStem, existingTokens) = acceptedStemTokens[i]
+                    val lenDiff = Math.abs(normLen - existingStem.length)
+                    val maxLen = Math.max(normLen, existingStem.length)
+                    if (maxLen > 0 && lenDiff.toDouble() / maxLen > 0.15) {
+                        continue
+                    }
+                    if (candidateTokens == null) {
+                        candidateTokens = extractTokens(normStem)
+                    }
+                    if (calculateJaccard(candidateTokens, existingTokens) >= 0.88) {
                         isFuzzyDuplicate = true
                         break
                     }
@@ -124,9 +181,14 @@ object QuestionDeduplicator {
                 continue
             }
 
-            if (trimmedId.isNotBlank()) seenIds.add(trimmedId)
-            if (normStem.isNotBlank()) seenStems.add(normStem)
-            if (contentFp.isNotBlank()) seenContentFingerprints.add(contentFp)
+            if (trimmedId.isNotEmpty()) seenIds.add(trimmedId)
+            if (normStem.isNotEmpty()) {
+                seenStems.add(normStem)
+                if (normStem.length > 25) {
+                    acceptedStemTokens.add(normStem to extractTokens(normStem))
+                }
+            }
+            if (contentFp.isNotEmpty()) seenContentFingerprints.add(contentFp)
             uniqueList.add(q)
         }
 
@@ -145,8 +207,19 @@ object QuestionDeduplicator {
         val normStem = normalizeText(candidate.questionText)
         if (normStem in existingNormalizedTexts) return true
         if (normStem.length > 25) {
+            var candidateTokens: Set<String>? = null
+            val normLen = normStem.length
             for (existingStem in existingNormalizedTexts) {
-                if (isNearDuplicateStem(normStem, existingStem, threshold = 0.88)) {
+                val lenDiff = Math.abs(normLen - existingStem.length)
+                val maxLen = Math.max(normLen, existingStem.length)
+                if (maxLen > 0 && lenDiff.toDouble() / maxLen > 0.15) {
+                    continue
+                }
+                if (candidateTokens == null) {
+                    candidateTokens = extractTokens(normStem)
+                }
+                val existingTokens = extractTokens(existingStem)
+                if (calculateJaccard(candidateTokens, existingTokens) >= 0.88) {
                     return true
                 }
             }

@@ -171,19 +171,25 @@ object CbtQualityController {
             }
         }
 
-        // 3. If still short, generate syllabus fallback questions
-        var seed = 0
-        while (validList.size < targetCount) {
-            val fallback = PrepzaAiQuestionEngine.generateFallbackQuestion(
-                subject = subject,
-                indexSeed = seed++
-            )
-            val normStem = QuestionDeduplicator.normalizeText(fallback.questionText)
-            if (fallback.id !in seenIds && normStem !in seenStems) {
-                validList.add(fallback)
-                seenIds.add(fallback.id)
-                seenStems.add(normStem)
+        // 3. If still short, draw from static verified seed questions exclusively (NEVER generate synthetic AI questions)
+        if (validList.size < targetCount) {
+            val masterPool = com.example.data.repository.QuestionBankGenerator.getAllSeedQuestions()
+            for (candidate in masterPool) {
+                if (candidate.subject.equals(subject, ignoreCase = true) ||
+                    com.example.data.repository.QuestionBankGenerator.normalizeSubjectName(candidate.subject).equals(subject, ignoreCase = true)) {
+                    val normStem = QuestionDeduplicator.normalizeText(candidate.questionText)
+                    if (isQuestionStructurallyValid(candidate) && candidate.id !in seenIds && normStem !in seenStems) {
+                        validList.add(candidate)
+                        seenIds.add(candidate.id)
+                        seenStems.add(normStem)
+                    }
+                }
+                if (validList.size >= targetCount) break
             }
+        }
+
+        if (validList.size < targetCount) {
+            android.util.Log.e("CbtQualityController", "Integrity warning: Insufficient verified questions for subject '$subject': needed $targetCount, available ${validList.size}")
         }
 
         return validList.take(targetCount)
