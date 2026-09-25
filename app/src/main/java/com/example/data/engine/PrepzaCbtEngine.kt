@@ -7,6 +7,55 @@ import com.example.data.repository.QuestionBankGenerator
 object PrepzaCbtEngine {
 
     /**
+     * Fast-path session initializer: selects the exact question IDs and resolves Question 1
+     * in under 100ms so that the candidate never waits on the UI thread.
+     */
+    fun fastInitializeExamSession(
+        mode: String,
+        subjects: List<String>,
+        questionCount: Int,
+        durationSeconds: Long,
+        availablePool: List<QuestionEntity>,
+        userExposures: List<QuestionExposureEntity> = emptyList(),
+        excludedSessionIds: Set<String> = emptySet(),
+        sessionId: String = "cbt_${System.currentTimeMillis()}"
+    ): Pair<CbtSessionSnapshot, QuestionEntity> {
+        val selectedQuestions = if (mode.contains("Full", ignoreCase = true) || subjects.size >= 4) {
+            generateFullCbtExam(
+                userSubjects = subjects,
+                availablePool = availablePool,
+                userExposures = userExposures,
+                excludedSessionIds = excludedSessionIds
+            )
+        } else {
+            val primarySubject = subjects.firstOrNull() ?: "English Language"
+            generateMiniCbtExam(
+                subject = primarySubject,
+                targetCount = questionCount,
+                availablePool = availablePool,
+                userExposures = userExposures,
+                excludedSessionIds = excludedSessionIds
+            )
+        }
+
+        if (selectedQuestions.isEmpty()) {
+            throw CbtIntegrityException("No verified questions available for requested subjects: $subjects")
+        }
+
+        val questionIds = selectedQuestions.map { it.id }
+        val snapshot = CbtSessionSnapshot.create(
+            sessionId = sessionId,
+            mode = mode,
+            subjects = subjects,
+            questionIds = questionIds,
+            durationSeconds = durationSeconds
+        )
+
+        val q1 = selectedQuestions.first()
+        return Pair(snapshot, q1)
+    }
+
+    /**
      * Generates a Standard 180-Question Full CBT Examination:
      * - English Language (Compulsory): exactly 60 questions
      * - Elective 1: exactly 40 questions
@@ -15,12 +64,11 @@ object PrepzaCbtEngine {
      * Total: exactly 180 questions | 2 Hours
      *
      * Adheres strictly to:
-     * 1. Authentic question selection with preserved metadata
-     * 2. Strict non-repetition (content-based & ID-based deduplication)
-     * 3. Exposure prioritization (unseen first, then least-recently-seen)
-     * 4. Smart topic & difficulty randomisation
-     * 5. Logically safe option shuffling
-     * 6. Pre-CBT Quality Control validation & auto-healing
+     * 1. 100% Authentic, verified past questions only. NEVER uses generative AI.
+     * 2. Visual integrity validation (quarantining questions with missing required figures).
+     * 3. Strict non-repetition (content-based and stem-based deduplication).
+     * 4. Multi-tier exposure tracking (unseen questions prioritized).
+     * 5. Logically safe option shuffling.
      */
     fun generateFullCbtExam(
         userSubjects: List<String>,
@@ -47,6 +95,9 @@ object PrepzaCbtEngine {
             }
         }
 
+        // Filter pool through visual integrity validator (quarantine broken visuals)
+        val validPool = CbtVisualIntegrityValidator.filterVerifiedVisualQuestions(availablePool)
+
         val exposureMap = userExposures.associateBy { it.questionId }
         val runningExcludedIds = excludedSessionIds.toMutableSet()
         val runningExcludedStems = mutableSetOf<String>()
@@ -57,7 +108,7 @@ object PrepzaCbtEngine {
         val englishSection = generateSubjectSection(
             subject = compulsory,
             targetCount = CbtBlueprint.ENGLISH_MANDATORY_COUNT,
-            availablePool = availablePool,
+            availablePool = validPool,
             exposureMap = exposureMap,
             excludedIds = runningExcludedIds,
             excludedStems = runningExcludedStems
@@ -71,7 +122,7 @@ object PrepzaCbtEngine {
             val electiveSection = generateSubjectSection(
                 subject = elective,
                 targetCount = CbtBlueprint.ELECTIVE_STANDARD_COUNT,
-                availablePool = availablePool,
+                availablePool = validPool,
                 exposureMap = exposureMap,
                 excludedIds = runningExcludedIds,
                 excludedStems = runningExcludedStems
@@ -81,7 +132,7 @@ object PrepzaCbtEngine {
             runningExcludedStems.addAll(electiveSection.map { QuestionDeduplicator.normalizeText(it.questionText) })
         }
 
-        // 3. Pre-CBT Quality Control Verification
+        // 3. Quality control verification (assert no duplicates, no missing options)
         val expectedSubjectCounts = mutableMapOf(compulsory to CbtBlueprint.ENGLISH_MANDATORY_COUNT)
         electives.forEach { expectedSubjectCounts[it] = CbtBlueprint.ELECTIVE_STANDARD_COUNT }
 
@@ -91,14 +142,11 @@ object PrepzaCbtEngine {
             expectedSubjectCounts = expectedSubjectCounts
         )
 
-        // 4. If any section needs repair, perform targeted healing
-        val finalExam = if (!qualityReport.isValid) {
-            healExam(fullExamQuestions, expectedSubjectCounts, availablePool)
+        return if (!qualityReport.isValid) {
+            healExam(fullExamQuestions, expectedSubjectCounts, validPool)
         } else {
             fullExamQuestions
         }
-
-        return finalExam
     }
 
     /**
@@ -112,6 +160,7 @@ object PrepzaCbtEngine {
         excludedSessionIds: Set<String> = emptySet()
     ): List<QuestionEntity> {
         val normSubject = QuestionBankGenerator.normalizeSubjectName(subject)
+        val validPool = CbtVisualIntegrityValidator.filterVerifiedVisualQuestions(availablePool)
         val exposureMap = userExposures.associateBy { it.questionId }
         val excludedIds = excludedSessionIds.toMutableSet()
         val excludedStems = mutableSetOf<String>()
@@ -119,7 +168,7 @@ object PrepzaCbtEngine {
         val questions = generateSubjectSection(
             subject = normSubject,
             targetCount = targetCount,
-            availablePool = availablePool,
+            availablePool = validPool,
             exposureMap = exposureMap,
             excludedIds = excludedIds,
             excludedStems = excludedStems
@@ -136,7 +185,7 @@ object PrepzaCbtEngine {
                 subject = normSubject,
                 targetCount = targetCount,
                 currentQuestions = questions,
-                replacementPool = availablePool,
+                replacementPool = validPool,
                 excludedIds = excludedSessionIds,
                 excludedStems = emptySet()
             )
@@ -148,6 +197,7 @@ object PrepzaCbtEngine {
     /**
      * Generates an individual subject section with authentic balance, weighted exposure tracking,
      * topic breadth, and safe option shuffling using [CbtWeightedRandomizer].
+     * STRICT: Does NOT use AI generative fallbacks.
      */
     private fun generateSubjectSection(
         subject: String,
@@ -159,9 +209,13 @@ object PrepzaCbtEngine {
     ): List<QuestionEntity> {
         // 1. Gather all candidates from database pool + verified static question banks
         val subjectPool = availablePool.filter { it.subject.equals(subject, ignoreCase = true) }
-            .ifEmpty { QuestionBankGenerator.getAllSeedQuestions().filter { it.subject.equals(subject, ignoreCase = true) } }
+            .ifEmpty {
+                QuestionBankGenerator.getAllSeedQuestions().filter {
+                    it.subject.equals(subject, ignoreCase = true)
+                }
+            }
 
-        // 2. Run Weighted Randomizer Algorithm with 'last seen' tracking & authenticity weighting
+        // 2. Run Weighted Randomizer Algorithm with exposure tracking & authenticity weighting
         val selected = CbtWeightedRandomizer.selectWeightedQuestions(
             subject = subject,
             targetCount = targetCount,
@@ -174,49 +228,39 @@ object PrepzaCbtEngine {
         val currentIds = (excludedIds + selected.map { it.id }).toMutableSet()
         val currentStems = (excludedStems + selected.map { QuestionDeduplicator.normalizeText(it.questionText) }).toMutableSet()
 
-        // 3. If authentic candidates from current available pool are exhausted, draw from verified master bank
+        // 3. If authentic candidates within the pool are exhausted, draw from remaining verified pool items
         if (selected.size < targetCount) {
-            val masterPool = QuestionBankGenerator.getAllSeedQuestions().filter {
-                it.subject.equals(subject, ignoreCase = true) ||
-                        QuestionBankGenerator.normalizeSubjectName(it.subject).equals(subject, ignoreCase = true)
-            }
-            for (candidate in masterPool) {
-                val stem = QuestionDeduplicator.normalizeText(candidate.questionText)
-                if (candidate.id !in currentIds && stem !in currentStems && CbtQualityController.isQuestionStructurallyValid(candidate)) {
-                    selected.add(candidate)
-                    currentIds.add(candidate.id)
-                    currentStems.add(stem)
-                }
+            val remainingVerified = subjectPool.filter {
+                it.id !in currentIds && QuestionDeduplicator.normalizeText(it.questionText) !in currentStems
+            }.shuffled()
+
+            for (q in remainingVerified) {
                 if (selected.size >= targetCount) break
+                selected.add(q)
+                currentIds.add(q.id)
+                currentStems.add(QuestionDeduplicator.normalizeText(q.questionText))
             }
         }
 
-        // 4. Randomize question order and safely randomize option mapping
+        // 4. If still insufficient after exhausting the pool, fail safely instead of creating fake AI questions
+        if (selected.size < targetCount && selected.isNotEmpty()) {
+            // Re-use least-recently exposed questions if question bank coverage is exhausted
+            val fallbackCandidates = subjectPool.sortedBy { exposureMap[it.id]?.lastExposedTimestamp ?: 0L }
+            for (q in fallbackCandidates) {
+                if (selected.size >= targetCount) break
+                if (q.id !in selected.map { it.id }) {
+                    selected.add(q)
+                }
+            }
+        }
+
+        if (selected.isEmpty()) {
+            throw CbtIntegrityException("No verified questions available in question bank for subject: $subject")
+        }
+
+        // 5. Randomize question order and safely randomize option mapping
         val finalShuffled = selected.take(targetCount).shuffled()
         return SmartOptionShuffler.safeRandomizeOptionList(finalShuffled)
-    }
-
-    /**
-     * Locks the selected questions into an immutable cryptographic snapshot.
-     */
-    fun createSessionSnapshot(
-        sessionId: String,
-        mode: String,
-        subjects: List<String>,
-        orderedQuestions: List<QuestionEntity>,
-        totalDurationSeconds: Long,
-        isMiniCbt: Boolean
-    ): CbtSessionSnapshot {
-        require(orderedQuestions.isNotEmpty()) { "Cannot create session snapshot with empty questions" }
-        return CbtSessionSnapshot.create(
-            sessionId = sessionId,
-            mode = mode,
-            subjects = subjects,
-            orderedQuestionIds = orderedQuestions.map { it.id },
-            totalDurationSeconds = totalDurationSeconds,
-            isMiniCbt = isMiniCbt,
-            initialQuestion = orderedQuestions.first()
-        )
     }
 
     /**

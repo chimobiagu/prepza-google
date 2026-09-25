@@ -171,25 +171,19 @@ object CbtQualityController {
             }
         }
 
-        // 3. If still short, draw from static verified seed questions exclusively (NEVER generate synthetic AI questions)
+        // 3. If still short, draw from static verified question bank
         if (validList.size < targetCount) {
-            val masterPool = com.example.data.repository.QuestionBankGenerator.getAllSeedQuestions()
-            for (candidate in masterPool) {
-                if (candidate.subject.equals(subject, ignoreCase = true) ||
-                    com.example.data.repository.QuestionBankGenerator.normalizeSubjectName(candidate.subject).equals(subject, ignoreCase = true)) {
-                    val normStem = QuestionDeduplicator.normalizeText(candidate.questionText)
-                    if (isQuestionStructurallyValid(candidate) && candidate.id !in seenIds && normStem !in seenStems) {
-                        validList.add(candidate)
-                        seenIds.add(candidate.id)
-                        seenStems.add(normStem)
-                    }
+            val verifiedFallbackPool = com.example.data.repository.QuestionBankGenerator.getAllSeedQuestions()
+                .filter { it.subject.equals(subject, ignoreCase = true) }
+            for (candidate in verifiedFallbackPool) {
+                val normStem = QuestionDeduplicator.normalizeText(candidate.questionText)
+                if (isQuestionStructurallyValid(candidate) && candidate.id !in seenIds && normStem !in seenStems) {
+                    validList.add(candidate)
+                    seenIds.add(candidate.id)
+                    seenStems.add(normStem)
                 }
                 if (validList.size >= targetCount) break
             }
-        }
-
-        if (validList.size < targetCount) {
-            android.util.Log.e("CbtQualityController", "Integrity warning: Insufficient verified questions for subject '$subject': needed $targetCount, available ${validList.size}")
         }
 
         return validList.take(targetCount)

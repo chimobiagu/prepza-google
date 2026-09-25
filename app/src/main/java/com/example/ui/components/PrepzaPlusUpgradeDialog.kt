@@ -23,9 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.data.security.PaystackPaymentManager
-import com.example.data.security.PaystackPaymentState
-import com.example.data.security.PaystackVerifyResult
+import com.example.data.security.PaymentState
+import com.example.data.security.SquadPaymentManager
+import com.example.data.security.SquadVerifyResult
 import com.example.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -45,7 +45,7 @@ fun PrepzaPlusUpgradeDialog(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
 
-    var paymentState by remember { mutableStateOf(PaystackPaymentState.IDLE) }
+    var paymentState by remember { mutableStateOf(PaymentState.IDLE) }
     var activeReference by remember { mutableStateOf("") }
     var userEmailState by remember {
         mutableStateOf(
@@ -54,18 +54,19 @@ fun PrepzaPlusUpgradeDialog(
     }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    val paystackBlue = Color(0xFF0BA4DB)
-    val paystackDark = Color(0xFF092540)
+    val squadCoral = Color(0xFFE84E36)
+    val squadDark = Color(0xFF1E293B)
+    val squadBlue = Color(0xFF2563EB)
 
     Dialog(
         onDismissRequest = {
-            if (paymentState != PaystackPaymentState.VERIFYING) {
+            if (paymentState != PaymentState.VERIFYING) {
                 onDismiss()
             }
         },
         properties = DialogProperties(
-            dismissOnBackPress = paymentState != PaystackPaymentState.VERIFYING,
-            dismissOnClickOutside = paymentState != PaystackPaymentState.VERIFYING,
+            dismissOnBackPress = paymentState != PaymentState.VERIFYING,
+            dismissOnClickOutside = paymentState != PaymentState.VERIFYING,
             usePlatformDefaultWidth = false
         )
     ) {
@@ -80,7 +81,7 @@ fun PrepzaPlusUpgradeDialog(
         ) {
             when (paymentState) {
                 // 1. SUCCESSFUL STATE
-                PaystackPaymentState.SUCCESSFUL -> {
+                PaymentState.SUCCESSFUL -> {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -111,7 +112,7 @@ fun PrepzaPlusUpgradeDialog(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Your Prepza Premium subscription is active. You now have full access to all questions, full literature texts, AI tutoring, and mock exams.",
+                            text = "Your Prepza Plus subscription is active. You now have full unlimited access to all verified questions, full literature texts, 24/7 AI tutoring, and timed CBT mocks.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = TextSecondary,
                             textAlign = TextAlign.Center
@@ -155,7 +156,7 @@ fun PrepzaPlusUpgradeDialog(
                 }
 
                 // 2. VERIFYING STATE
-                PaystackPaymentState.VERIFYING -> {
+                PaymentState.VERIFYING -> {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -163,13 +164,13 @@ fun PrepzaPlusUpgradeDialog(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         CircularProgressIndicator(
-                            color = paystackBlue,
+                            color = squadCoral,
                             strokeWidth = 3.dp,
                             modifier = Modifier.size(56.dp)
                         )
                         Spacer(modifier = Modifier.height(20.dp))
                         Text(
-                            text = "Verifying with Paystack...",
+                            text = "Verifying with Squad...",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary,
@@ -177,7 +178,7 @@ fun PrepzaPlusUpgradeDialog(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Confirming your transaction with Paystack. Please wait a moment...",
+                            text = "Connecting to Squad API to confirm your payment. Please wait a moment...",
                             style = MaterialTheme.typography.bodySmall,
                             color = TextSecondary,
                             textAlign = TextAlign.Center
@@ -185,8 +186,8 @@ fun PrepzaPlusUpgradeDialog(
                     }
                 }
 
-                // 3. WAITING FOR PAYMENT (Checkout opened in Paystack)
-                PaystackPaymentState.WAITING_FOR_PAYMENT, PaystackPaymentState.INITIATING -> {
+                // 3. WAITING FOR PAYMENT (Checkout opened in Squad)
+                PaymentState.WAITING_FOR_PAYMENT, PaymentState.INITIATING -> {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -201,14 +202,14 @@ fun PrepzaPlusUpgradeDialog(
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Surface(
                                     shape = CircleShape,
-                                    color = paystackBlue.copy(alpha = 0.15f),
+                                    color = squadCoral.copy(alpha = 0.15f),
                                     modifier = Modifier.size(34.dp)
                                 ) {
                                     Box(contentAlignment = Alignment.Center) {
                                         Icon(
                                             imageVector = Icons.Default.CreditCard,
                                             contentDescription = null,
-                                            tint = paystackBlue,
+                                            tint = squadCoral,
                                             modifier = Modifier.size(18.dp)
                                         )
                                     }
@@ -216,7 +217,7 @@ fun PrepzaPlusUpgradeDialog(
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
                                     Text(
-                                        text = "Paystack Checkout",
+                                        text = "Squad Checkout",
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = TextPrimary
@@ -224,14 +225,14 @@ fun PrepzaPlusUpgradeDialog(
                                     Text(
                                         text = "₦500 • Full UTME Access",
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = paystackBlue,
+                                        color = squadCoral,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
                             }
 
                             IconButton(onClick = {
-                                paymentState = PaystackPaymentState.CANCELLED
+                                paymentState = PaymentState.CANCELLED
                             }) {
                                 Icon(Icons.Default.Close, contentDescription = "Close", tint = TextSecondary)
                             }
@@ -248,69 +249,102 @@ fun PrepzaPlusUpgradeDialog(
                         ) {
                             Column(modifier = Modifier.padding(16.dp)) {
                                 Text(
-                                    text = "Checkout Opened",
+                                    text = "Squad Payment Link Opened",
                                     fontWeight = FontWeight.Bold,
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = TextPrimary
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "Complete your ₦500 payment on the Paystack checkout page. Once payment is done, tap the button below to confirm automatically.",
+                                    text = "Complete your ₦500 payment on the Squad checkout page. Once payment is confirmed by Squad, your account will be activated immediately.",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = TextSecondary
-                                )
-                                Spacer(modifier = Modifier.height(10.dp))
-                                Text(
-                                    text = "Reference: $activeReference",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Medium,
-                                    color = paystackBlue
                                 )
                             }
                         }
 
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        // Transaction Reference Input (Pre-filled, editable)
+                        OutlinedTextField(
+                            value = activeReference,
+                            onValueChange = { activeReference = it },
+                            label = { Text("Squad Transaction Reference") },
+                            placeholder = { Text("e.g. SQD-PRPZ-...") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp),
+                            singleLine = true,
+                            leadingIcon = {
+                                Icon(Icons.Default.Tag, contentDescription = null, tint = squadCoral)
+                            }
+                        )
+
                         if (errorMessage != null) {
                             Spacer(modifier = Modifier.height(10.dp))
-                            Text(
-                                text = errorMessage ?: "",
-                                color = IncorrectRed,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Medium
-                            )
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = IncorrectRed.copy(alpha = 0.08f),
+                                border = BorderStroke(1.dp, IncorrectRed.copy(alpha = 0.3f)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.ErrorOutline,
+                                        contentDescription = null,
+                                        tint = IncorrectRed,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = errorMessage ?: "",
+                                        color = IncorrectRed,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
                         }
 
-                        Spacer(modifier = Modifier.height(20.dp))
+                        Spacer(modifier = Modifier.height(18.dp))
 
-                        // Automated Verification Trigger
+                        // Strict Automated Verification Trigger
                         Button(
                             onClick = {
-                                paymentState = PaystackPaymentState.VERIFYING
+                                errorMessage = null
+                                paymentState = PaymentState.VERIFYING
                                 coroutineScope.launch {
-                                    val result = PaystackPaymentManager.verifyTransaction(
+                                    val userId = if (studentPhone.isNotBlank()) studentPhone else "student_${studentName.filter { it.isLetterOrDigit() }.take(10)}"
+                                    val result = SquadPaymentManager.verifyPaymentWithBackend(
                                         context = context,
-                                        rawReference = activeReference
+                                        rawReference = activeReference,
+                                        userId = userId
                                     )
                                     when (result) {
-                                        is PaystackVerifyResult.Success -> {
-                                            paymentState = PaystackPaymentState.SUCCESSFUL
+                                        is SquadVerifyResult.Success -> {
+                                            // STRICT: Only grant access upon verified backend success
+                                            onUpgradeSuccess()
+                                            paymentState = PaymentState.SUCCESSFUL
                                         }
-                                        is PaystackVerifyResult.AlreadyClaimed -> {
+                                        is SquadVerifyResult.AlreadyClaimed -> {
                                             errorMessage = result.message
-                                            paymentState = PaystackPaymentState.FAILED
+                                            paymentState = PaymentState.WAITING_FOR_PAYMENT
                                         }
-                                        is PaystackVerifyResult.Failed -> {
+                                        is SquadVerifyResult.Failed -> {
                                             errorMessage = result.message
-                                            paymentState = PaystackPaymentState.FAILED
+                                            paymentState = PaymentState.WAITING_FOR_PAYMENT
                                         }
-                                        is PaystackVerifyResult.Pending -> {
+                                        is SquadVerifyResult.Pending -> {
                                             errorMessage = result.message
-                                            paymentState = PaystackPaymentState.WAITING_FOR_PAYMENT
+                                            paymentState = PaymentState.WAITING_FOR_PAYMENT
                                         }
                                     }
                                 }
                             },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = paystackBlue,
+                                containerColor = squadCoral,
                                 contentColor = Color.White
                             ),
                             shape = RoundedCornerShape(12.dp),
@@ -319,10 +353,10 @@ fun PrepzaPlusUpgradeDialog(
                                 .height(48.dp)
                                 .testTag("verify_payment_button")
                         ) {
-                            Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Icon(Icons.Default.Verified, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "I Have Completed Payment",
+                                text = "Confirm & Activate Prepza Plus",
                                 fontWeight = FontWeight.Bold
                             )
                         }
@@ -332,7 +366,7 @@ fun PrepzaPlusUpgradeDialog(
                         // Re-open checkout option if student closed tab
                         OutlinedButton(
                             onClick = {
-                                PaystackPaymentManager.openPaystackCheckout(
+                                SquadPaymentManager.openSquadCheckout(
                                     context = context,
                                     reference = activeReference,
                                     customerEmail = userEmailState
@@ -343,14 +377,14 @@ fun PrepzaPlusUpgradeDialog(
                         ) {
                             Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Re-open Paystack Checkout")
+                            Text("Re-open Squad Payment Page")
                         }
 
                         Spacer(modifier = Modifier.height(8.dp))
 
                         TextButton(
                             onClick = {
-                                paymentState = PaystackPaymentState.CANCELLED
+                                paymentState = PaymentState.CANCELLED
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -360,7 +394,7 @@ fun PrepzaPlusUpgradeDialog(
                 }
 
                 // 4. FAILED STATE
-                PaystackPaymentState.FAILED -> {
+                PaymentState.FAILED -> {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -391,7 +425,7 @@ fun PrepzaPlusUpgradeDialog(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = errorMessage ?: "Your payment could not be confirmed. If you completed payment, please check your network connection and try again.",
+                            text = errorMessage ?: "Your payment could not be confirmed. If you completed payment, please check your connection and try again.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = TextSecondary,
                             textAlign = TextAlign.Center
@@ -400,7 +434,7 @@ fun PrepzaPlusUpgradeDialog(
                         Button(
                             onClick = {
                                 errorMessage = null
-                                paymentState = PaystackPaymentState.IDLE
+                                paymentState = PaymentState.IDLE
                             },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = PrimaryGreen,
@@ -424,7 +458,7 @@ fun PrepzaPlusUpgradeDialog(
                 }
 
                 // 5. CANCELLED STATE
-                PaystackPaymentState.CANCELLED -> {
+                PaymentState.CANCELLED -> {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -464,10 +498,10 @@ fun PrepzaPlusUpgradeDialog(
                         Button(
                             onClick = {
                                 errorMessage = null
-                                paymentState = PaystackPaymentState.IDLE
+                                paymentState = PaymentState.IDLE
                             },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = paystackBlue,
+                                containerColor = squadCoral,
                                 contentColor = Color.White
                             ),
                             shape = RoundedCornerShape(12.dp),
@@ -480,8 +514,8 @@ fun PrepzaPlusUpgradeDialog(
                     }
                 }
 
-                // 6. DEFAULT IDLE STATE (Paystack Plan & Checkout Initiation)
-                PaystackPaymentState.IDLE -> {
+                // 6. DEFAULT IDLE STATE (Squad Plan & Checkout Initiation)
+                PaymentState.IDLE -> {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -512,15 +546,15 @@ fun PrepzaPlusUpgradeDialog(
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Column {
                                     Text(
-                                        text = PaystackPaymentManager.PLAN_NAME,
+                                        text = SquadPaymentManager.PLAN_NAME,
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = TextPrimary
                                     )
                                     Text(
-                                        text = "Official Paystack Payment",
+                                        text = "Official Squad (HabariPay) Checkout",
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = paystackBlue,
+                                        color = squadCoral,
                                         fontWeight = FontWeight.Bold
                                     )
                                 }
@@ -533,7 +567,7 @@ fun PrepzaPlusUpgradeDialog(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Plan Details Card (Part 28)
+                        // Plan Details Card
                         Surface(
                             shape = RoundedCornerShape(16.dp),
                             color = SoftEmeraldBg,
@@ -547,19 +581,19 @@ fun PrepzaPlusUpgradeDialog(
                             ) {
                                 Column {
                                     Text(
-                                        text = PaystackPaymentManager.PLAN_DURATION,
+                                        text = SquadPaymentManager.PLAN_DURATION,
                                         fontWeight = FontWeight.Bold,
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = PrimaryGreenDark
                                     )
                                     Text(
-                                        text = "One-time payment • No recurring charges",
+                                        text = "One-time payment • Instant activation",
                                         style = MaterialTheme.typography.labelSmall,
                                         color = TextSecondary
                                     )
                                 }
                                 Text(
-                                    text = "₦${PaystackPaymentManager.PLAN_PRICE_NGN}",
+                                    text = "₦${SquadPaymentManager.PLAN_PRICE_NGN}",
                                     style = MaterialTheme.typography.headlineSmall,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = PrimaryGreenDark
@@ -580,7 +614,7 @@ fun PrepzaPlusUpgradeDialog(
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        PaystackPaymentManager.PLAN_FEATURES.forEach { feature ->
+                        SquadPaymentManager.PLAN_FEATURES.forEach { feature ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -608,47 +642,73 @@ fun PrepzaPlusUpgradeDialog(
                         OutlinedTextField(
                             value = userEmailState,
                             onValueChange = { userEmailState = it },
-                            label = { Text("Student Email (for Paystack Receipt)") },
+                            label = { Text("Student Email (for Squad Receipt)") },
                             placeholder = { Text("student@example.com") },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(10.dp),
                             singleLine = true,
                             leadingIcon = {
-                                Icon(Icons.Default.Email, contentDescription = null, tint = paystackBlue)
+                                Icon(Icons.Default.Email, contentDescription = null, tint = squadCoral)
                             }
                         )
 
                         Spacer(modifier = Modifier.height(18.dp))
 
-                        // Paystack Pay Now Button (Automated Flow)
+                        // Squad Pay Now Button
                         Button(
                             onClick = {
                                 val emailToUse = if (userEmailState.isNotBlank()) userEmailState.trim() else "student@prepza.app"
-                                val newRef = PaystackPaymentManager.generateTransactionReference()
-                                activeReference = newRef
-                                paymentState = PaystackPaymentState.WAITING_FOR_PAYMENT
-                                PaystackPaymentManager.openPaystackCheckout(
-                                    context = context,
-                                    reference = newRef,
-                                    customerEmail = emailToUse
-                                )
+                                val userId = if (studentPhone.isNotBlank()) studentPhone else "student_${studentName.filter { it.isLetterOrDigit() }.take(10)}"
+                                paymentState = PaymentState.INITIATING
+
+                                coroutineScope.launch {
+                                    val session = SquadPaymentManager.createPaymentSession(
+                                        context = context,
+                                        customerEmail = emailToUse,
+                                        userId = userId
+                                    )
+                                    activeReference = session.reference
+                                    paymentState = PaymentState.WAITING_FOR_PAYMENT
+                                    SquadPaymentManager.openSquadCheckout(
+                                        context = context,
+                                        reference = session.reference,
+                                        customerEmail = emailToUse
+                                    )
+                                }
                             },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = paystackBlue,
+                                containerColor = squadCoral,
                                 contentColor = Color.White
                             ),
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(50.dp)
-                                .testTag("paystack_pay_now_button")
+                                .testTag("squad_pay_now_button")
                         ) {
                             Icon(Icons.Default.CreditCard, contentDescription = null, modifier = Modifier.size(20.dp))
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
-                                text = "Pay Now with Paystack",
+                                text = "Pay ₦500 via Squad",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(6.dp))
+
+                        // Recovery verification link for students who already completed payment
+                        TextButton(
+                            onClick = {
+                                activeReference = SquadPaymentManager.getPendingReference(context) ?: ""
+                                paymentState = PaymentState.WAITING_FOR_PAYMENT
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = "Already paid? Confirm with receipt reference",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = squadCoral
                             )
                         }
 
@@ -667,7 +727,7 @@ fun PrepzaPlusUpgradeDialog(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "Secured 256-bit automated encryption by Paystack",
+                                text = "Secured 256-bit encrypted checkout by Squad (GTCO)",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = TextSecondary,
                                 fontSize = 11.sp

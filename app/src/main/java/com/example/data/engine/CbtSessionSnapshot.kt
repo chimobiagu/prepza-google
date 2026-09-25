@@ -4,61 +4,67 @@ import com.example.data.db.QuestionEntity
 import java.security.MessageDigest
 
 /**
- * Immutable session snapshot locking the exact question sequence, duration,
- * subjects, and cryptographic integrity verification.
- *
- * Once created and locked, the active CBT session must ONLY read from this snapshot.
- * No questions may be dynamically substituted, rewritten, or AI-generated.
+ * Immutable session snapshot that serves as the SINGLE SOURCE OF TRUTH for an active CBT exam.
+ * Once created, question IDs, ordering, options, and answer keys are mathematically locked.
  */
 data class CbtSessionSnapshot(
     val sessionId: String,
     val mode: String,
     val subjects: List<String>,
-    val orderedQuestionIds: List<String>,
-    val totalDurationSeconds: Long,
-    val isMiniCbt: Boolean,
-    val initialQuestion: QuestionEntity,
-    val createdTimestamp: Long,
-    val integrityHash: String
+    val lockedQuestionIds: List<String>,
+    val durationSeconds: Long,
+    val startTimestamp: Long,
+    val snapshotHash: String,
+    val questionCount: Int = lockedQuestionIds.size
 ) {
+    /**
+     * Verifies that candidate questions match the immutable snapshot integrity hash.
+     */
+    fun verifyIntegrity(candidateQuestions: List<QuestionEntity>): Boolean {
+        if (candidateQuestions.size != lockedQuestionIds.size) return false
+        for (i in candidateQuestions.indices) {
+            if (candidateQuestions[i].id != lockedQuestionIds[i]) return false
+        }
+        val computedHash = computeSnapshotHash(sessionId, lockedQuestionIds, durationSeconds)
+        return computedHash == snapshotHash
+    }
+
     companion object {
         fun create(
             sessionId: String,
             mode: String,
             subjects: List<String>,
-            orderedQuestionIds: List<String>,
-            totalDurationSeconds: Long,
-            isMiniCbt: Boolean,
-            initialQuestion: QuestionEntity,
-            createdTimestamp: Long = System.currentTimeMillis()
+            questionIds: List<String>,
+            durationSeconds: Long,
+            startTimestamp: Long = System.currentTimeMillis()
         ): CbtSessionSnapshot {
-            val raw = "$sessionId|$mode|${subjects.joinToString(",")}|${orderedQuestionIds.joinToString(",")}|$totalDurationSeconds|$createdTimestamp"
-            val digest = MessageDigest.getInstance("SHA-256")
-            val hashBytes = digest.digest(raw.toByteArray(Charsets.UTF_8))
-            val hash = hashBytes.joinToString("") { "%02x".format(it) }
-
+            require(questionIds.isNotEmpty()) { "Cannot create CBT snapshot with 0 question IDs" }
+            val hash = computeSnapshotHash(sessionId, questionIds, durationSeconds)
             return CbtSessionSnapshot(
                 sessionId = sessionId,
                 mode = mode,
                 subjects = subjects,
-                orderedQuestionIds = orderedQuestionIds,
-                totalDurationSeconds = totalDurationSeconds,
-                isMiniCbt = isMiniCbt,
-                initialQuestion = initialQuestion,
-                createdTimestamp = createdTimestamp,
-                integrityHash = hash
+                lockedQuestionIds = questionIds.toList(), // Defensive copy for immutability
+                durationSeconds = durationSeconds,
+                startTimestamp = startTimestamp,
+                snapshotHash = hash
             )
         }
-    }
 
-    /**
-     * Verifies cryptographic integrity of the session snapshot.
-     */
-    fun verifyIntegrity(): Boolean {
-        val raw = "$sessionId|$mode|${subjects.joinToString(",")}|${orderedQuestionIds.joinToString(",")}|$totalDurationSeconds|$createdTimestamp"
-        val digest = MessageDigest.getInstance("SHA-256")
-        val hashBytes = digest.digest(raw.toByteArray(Charsets.UTF_8))
-        val currentHash = hashBytes.joinToString("") { "%02x".format(it) }
-        return currentHash == integrityHash
+        private fun computeSnapshotHash(
+            sessionId: String,
+            questionIds: List<String>,
+            durationSeconds: Long
+        ): String {
+            val content = "$sessionId::${questionIds.joinToString(",")}::$durationSeconds"
+            val digest = MessageDigest.getInstance("SHA-256")
+            val bytes = digest.digest(content.toByteArray(Charsets.UTF_8))
+            return bytes.joinToString("") { "%02x".format(it) }
+        }
     }
 }
+
+/**
+ * Exception raised when active session questions fail integrity verification against the snapshot.
+ */
+class CbtIntegrityException(message: String) : IllegalStateException(message)

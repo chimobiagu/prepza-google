@@ -324,15 +324,13 @@ object CbtWeightedRandomizer {
         }.sortedByDescending { it.second }
 
         val selected = mutableListOf<QuestionEntity>()
-        val selectedIds = mutableSetOf<String>()
 
         for ((questions, _) in scoredPassages) {
             if (selected.size >= targetComprehensionCount) break
             for (q in questions) {
                 val stem = QuestionDeduplicator.normalizeText(q.questionText)
-                if (q.id !in currentIds && stem !in currentStems && q.id !in selectedIds) {
+                if (q.id !in currentIds && stem !in currentStems && q.id !in selected.map { it.id }) {
                     selected.add(q)
-                    selectedIds.add(q.id)
                 }
                 if (selected.size >= targetComprehensionCount) break
             }

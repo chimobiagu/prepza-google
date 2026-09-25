@@ -5,14 +5,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.data.ai.GeminiTutorService
 import com.example.data.db.*
-import com.example.data.engine.CbtSessionSnapshot
-import com.example.data.engine.CbtStartupBenchmark
-import com.example.data.engine.CbtStartupMetrics
-import com.example.data.engine.PrepzaCbtEngine
-import com.example.data.engine.QuestionDeduplicator
 import com.example.data.repository.PrepzaRepository
 import com.example.data.repository.QuestionBankGenerator
-import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -94,6 +88,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // Database Initialization & Network Sync Listener
     init {
+        // Pre-warm in-memory question pools for instant CBT launch
+        com.example.data.engine.SubjectQuestionPoolCache.prewarm(repository)
+
         viewModelScope.launch {
             repository.initializeDatabaseIfEmpty()
             // Schedule background study reminders (12 PM Practice & 6 PM Streak)
@@ -968,173 +965,103 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private val _totalExamDurationSeconds = MutableStateFlow(1200L)
-    private var activeSessionSnapshot: CbtSessionSnapshot? = null
-    private var currentStartupMetrics: CbtStartupMetrics = CbtStartupMetrics()
+
+    val latestStartupProfile: StateFlow<com.example.data.engine.CbtStartupProfile?> =
+        com.example.data.engine.StartupProfiler.latestProfileFlow
 
     // Mini CBT / Subject Practice Session: customizable question count and time limit
-    fun startMiniCbtExam(subject: String, questionCount: Int = 20, timeLimitMinutes: Int = 20) {
-        val tapTime = System.currentTimeMillis()
+    fun startMiniCbtExam(subject: String, questionCount: Int = 20, timeLimitMinutes: Int = 20, tapNanos: Long = System.nanoTime()) {
         val normSubject = QuestionBankGenerator.normalizeSubjectName(subject)
+        val mode = "Mini CBT: $normSubject"
+        val sessionId = com.example.data.engine.StartupProfiler.recordTap(mode = mode, tapNanos = tapNanos)
+        com.example.data.engine.StartupProfiler.recordViewModelInit(sessionId, "ViewModel received start intent")
+
         _isMiniCbtSession.value = true
         _practiceModeName.value = "Practice: $normSubject"
         _selectedCbtSubject.value = normSubject
 
         val durationSeconds = if (timeLimitMinutes > 0) timeLimitMinutes * 60L else 1200L
         _totalExamDurationSeconds.value = durationSeconds
-        _cbtTimerSeconds.value = durationSeconds
-        _activeQuestionIndex.value = 0
-        _userAnswers.value = emptyMap()
-        _cbtFlaggedQuestions.value = emptySet()
-        _cbtResult.value = null
 
-        val startSelectionTime = System.currentTimeMillis()
-        // Fast instant selection using in-memory verified cache
-        val memoryPool = QuestionBankGenerator.getAllSeedQuestions().filter {
-            it.subject.equals(normSubject, ignoreCase = true) ||
-            QuestionBankGenerator.normalizeSubjectName(it.subject).equals(normSubject, ignoreCase = true)
-        }
-        val endSelectionTime = System.currentTimeMillis()
+        viewModelScope.launch {
+            com.example.data.engine.CbtStartupOrchestrator.startInstantSession(
+                mode = mode,
+                subjects = listOf(normSubject),
+                questionCount = questionCount,
+                durationSeconds = durationSeconds,
+                repository = repository,
+                seenQuestionIds = _seenCbtQuestionIds.value,
+                customSessionId = sessionId,
+                onSessionLocked = { snapshot, q1 ->
+                    _activePracticeQuestions.value = listOf(q1)
+                    _activeQuestionIndex.value = 0
+                    _userAnswers.value = emptyMap()
+                    _cbtFlaggedQuestions.value = emptySet()
+                    _cbtTimerSeconds.value = durationSeconds
+                    _cbtResult.value = null
+                    _selectedCbtSubject.value = q1.subject
 
-        val miniQuestions = PrepzaCbtEngine.generateMiniCbtExam(
-            subject = normSubject,
-            targetCount = questionCount,
-            availablePool = memoryPool,
-            userExposures = emptyList(),
-            excludedSessionIds = _seenCbtQuestionIds.value
-        )
+                    val updatedIds = (_seenCbtQuestionIds.value + snapshot.lockedQuestionIds).toList().takeLast(3000).toSet()
+                    _seenCbtQuestionIds.value = updatedIds
 
-        val q1AvailableTime = System.currentTimeMillis()
-
-        // Lock snapshot immediately with cryptographic integrity hash
-        val sessionId = UUID.randomUUID().toString()
-        val snapshot = PrepzaCbtEngine.createSessionSnapshot(
-            sessionId = sessionId,
-            mode = "Practice: $normSubject",
-            subjects = listOf(normSubject),
-            orderedQuestions = miniQuestions,
-            totalDurationSeconds = durationSeconds,
-            isMiniCbt = true
-        )
-        val snapshotLockedTime = System.currentTimeMillis()
-        activeSessionSnapshot = snapshot
-
-        // Set active practice questions immediately so Question 1 is rendered at t=0
-        _activePracticeQuestions.value = miniQuestions
-
-        val navTime = System.currentTimeMillis()
-        currentStartupMetrics = CbtStartupMetrics(
-            tapTimestamp = tapTime,
-            snapshotLockedTimestamp = snapshotLockedTime,
-            navigationTimestamp = navTime,
-            q1DataAvailableTimestamp = q1AvailableTime,
-            questionSelectionTimeMs = (endSelectionTime - startSelectionTime).coerceAtLeast(1),
-            snapshotCreationTimeMs = (snapshotLockedTime - q1AvailableTime).coerceAtLeast(1)
-        )
-
-        // Non-blocking background persistence & exposure recording
-        viewModelScope.launch(Dispatchers.IO) {
-            persistCurrentExamState()
-            repository.recordQuestionExposures(miniQuestions)
-            val updatedIds = (_seenCbtQuestionIds.value + miniQuestions.map { it.id }).toList().takeLast(3000).toSet()
-            val updatedTexts = (_seenCbtQuestionTexts.value + miniQuestions.map { QuestionDeduplicator.normalizeText(it.questionText) }).toList().takeLast(3000).toSet()
-            _seenCbtQuestionIds.value = updatedIds
-            _seenCbtQuestionTexts.value = updatedTexts
+                    if (timeLimitMinutes > 0) {
+                        startCbtTimer()
+                    }
+                },
+                onQuestionsProgressiveUpdate = { allLoadedQuestions ->
+                    _activePracticeQuestions.value = allLoadedQuestions
+                }
+            )
         }
     }
 
     // Full 4-Subject CBT Mock (60 English + 40 for each of 3 subjects = 180 Questions)
-    fun startCbtMockExam(customSubjects: List<String>? = null) {
-        val tapTime = System.currentTimeMillis()
+    fun startCbtMockExam(customSubjects: List<String>? = null, tapNanos: Long = System.nanoTime()) {
+        val mode = "Full CBT Mock Exam"
+        val sessionId = com.example.data.engine.StartupProfiler.recordTap(mode = mode, tapNanos = tapNanos)
+        com.example.data.engine.StartupProfiler.recordViewModelInit(sessionId, "ViewModel received start intent")
+
         _isMiniCbtSession.value = false
-        _practiceModeName.value = "Full CBT Mock Exam"
+        _practiceModeName.value = mode
 
         val userSubjects = customSubjects ?: (userProfile.value?.jambSubjectsCsv ?: "English Language,Mathematics,Physics,Chemistry")
             .split(",").map { it.trim() }.filter { it.isNotBlank() }
 
-        val startSelectionTime = System.currentTimeMillis()
-        val memoryPool = QuestionBankGenerator.getAllSeedQuestions().filter {
-            userSubjects.any { s ->
-                it.subject.equals(s, ignoreCase = true) ||
-                QuestionBankGenerator.normalizeSubjectName(it.subject).equals(s, ignoreCase = true)
-            }
-        }
-        val endSelectionTime = System.currentTimeMillis()
+        val durationSeconds = 7200L // 2 hours
+        _totalExamDurationSeconds.value = durationSeconds
 
-        val cbtQuestions = PrepzaCbtEngine.generateFullCbtExam(
-            userSubjects = userSubjects,
-            availablePool = memoryPool,
-            userExposures = emptyList(),
-            excludedSessionIds = _seenCbtQuestionIds.value
-        )
+        viewModelScope.launch {
+            com.example.data.engine.CbtStartupOrchestrator.startInstantSession(
+                mode = mode,
+                subjects = userSubjects,
+                questionCount = 180,
+                durationSeconds = durationSeconds,
+                repository = repository,
+                seenQuestionIds = _seenCbtQuestionIds.value,
+                customSessionId = sessionId,
+                onSessionLocked = { snapshot, q1 ->
+                    _activePracticeQuestions.value = listOf(q1)
+                    _activeQuestionIndex.value = 0
+                    _userAnswers.value = emptyMap()
+                    _cbtFlaggedQuestions.value = emptySet()
+                    _cbtTimerSeconds.value = durationSeconds
+                    _cbtResult.value = null
+                    _selectedCbtSubject.value = q1.subject
 
-        val q1AvailableTime = System.currentTimeMillis()
+                    val updatedIds = (_seenCbtQuestionIds.value + snapshot.lockedQuestionIds).toList().takeLast(5000).toSet()
+                    _seenCbtQuestionIds.value = updatedIds
 
-        val sessionId = UUID.randomUUID().toString()
-        val snapshot = PrepzaCbtEngine.createSessionSnapshot(
-            sessionId = sessionId,
-            mode = "Full CBT Mock Exam",
-            subjects = userSubjects,
-            orderedQuestions = cbtQuestions,
-            totalDurationSeconds = 7200L,
-            isMiniCbt = false
-        )
-        val snapshotLockedTime = System.currentTimeMillis()
-        activeSessionSnapshot = snapshot
-
-        _activePracticeQuestions.value = cbtQuestions
-        _activeQuestionIndex.value = 0
-        _userAnswers.value = emptyMap()
-        _cbtFlaggedQuestions.value = emptySet()
-        _cbtTimerSeconds.value = 7200L
-        _cbtResult.value = null
-        _selectedCbtSubject.value = if (cbtQuestions.isNotEmpty()) cbtQuestions[0].subject else "English Language"
-
-        val navTime = System.currentTimeMillis()
-        currentStartupMetrics = CbtStartupMetrics(
-            tapTimestamp = tapTime,
-            snapshotLockedTimestamp = snapshotLockedTime,
-            navigationTimestamp = navTime,
-            q1DataAvailableTimestamp = q1AvailableTime,
-            questionSelectionTimeMs = (endSelectionTime - startSelectionTime).coerceAtLeast(1),
-            snapshotCreationTimeMs = (snapshotLockedTime - q1AvailableTime).coerceAtLeast(1)
-        )
-
-        // Non-blocking background persistence & exposure recording
-        viewModelScope.launch(Dispatchers.IO) {
-            persistCurrentExamState()
-            repository.recordQuestionExposures(cbtQuestions)
-            val updatedIds = (_seenCbtQuestionIds.value + cbtQuestions.map { it.id }).toList().takeLast(5000).toSet()
-            val updatedTexts = (_seenCbtQuestionTexts.value + cbtQuestions.map { QuestionDeduplicator.normalizeText(it.questionText) }).toList().takeLast(5000).toSet()
-            _seenCbtQuestionIds.value = updatedIds
-            _seenCbtQuestionTexts.value = updatedTexts
+                    startCbtTimer()
+                },
+                onQuestionsProgressiveUpdate = { allLoadedQuestions ->
+                    _activePracticeQuestions.value = allLoadedQuestions
+                }
+            )
         }
     }
 
-    fun startCbtMockExamWithSubjects(selected4Subjects: List<String>) {
-        startCbtMockExam(selected4Subjects)
-    }
-
-    fun onQuestion1Interactive() {
-        val now = System.currentTimeMillis()
-        val navTime = currentStartupMetrics.navigationTimestamp
-        val tapTime = currentStartupMetrics.tapTimestamp
-        val uiRenderTime = if (navTime > 0) (now - navTime).coerceAtLeast(0) else 0L
-        val totalMs = if (tapTime > 0) (now - tapTime).coerceAtLeast(0) else 0L
-
-        val finalizedMetrics = currentStartupMetrics.copy(
-            q1RenderedTimestamp = now,
-            q1InteractiveTimestamp = now,
-            composeUiRenderingTimeMs = uiRenderTime,
-            navigationTimeMs = if (navTime > currentStartupMetrics.snapshotLockedTimestamp) (navTime - currentStartupMetrics.snapshotLockedTimestamp).coerceAtLeast(0) else 0L,
-            totalStartupToInteractiveMs = totalMs
-        )
-        currentStartupMetrics = finalizedMetrics
-        CbtStartupBenchmark.recordMetrics(finalizedMetrics)
-
-        // Start countdown timer strictly when Question 1 is interactive on screen
-        if (_cbtTimerSeconds.value > 0 && timerJob?.isActive != true) {
-            startCbtTimer()
-        }
+    fun startCbtMockExamWithSubjects(selected4Subjects: List<String>, tapNanos: Long = System.nanoTime()) {
+        startCbtMockExam(selected4Subjects, tapNanos)
     }
 
     private fun startCbtTimer() {

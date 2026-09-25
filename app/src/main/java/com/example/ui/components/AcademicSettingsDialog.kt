@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.db.UserAccountEntity
 import com.example.data.db.UserProfileEntity
 import com.example.data.notifications.NotificationScheduler
@@ -136,6 +137,9 @@ fun AcademicSettingsDialog(
     var dailyPracticeReminderEnabled by remember { mutableStateOf(notifPrefs.getBoolean(NotificationScheduler.KEY_DAILY_PRACTICE_ENABLED, true)) }
     var streakReminderEnabled by remember { mutableStateOf(notifPrefs.getBoolean(NotificationScheduler.KEY_DAILY_STREAK_ENABLED, true)) }
     var cbtMockReminderEnabled by remember { mutableStateOf(notifPrefs.getBoolean(NotificationScheduler.KEY_CBT_MOCK_ENABLED, true)) }
+    var showStartupProfilerDialog by remember { mutableStateOf(false) }
+
+    val startupProfile by com.example.data.engine.StartupProfiler.latestProfileFlow.collectAsStateWithLifecycle()
 
     // Master list of Nigerian Institutions with category classification
     val masterInstitutions = remember {
@@ -1453,6 +1457,42 @@ fun AcademicSettingsDialog(
                                 }
                             }
 
+                            // CBT Startup Profiler & Latency Inspector
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = ElevatedSurface,
+                                border = BorderStroke(1.dp, BorderSubtle),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .clickable { showStartupProfilerDialog = true }
+                                    .testTag("settings_startup_profiler_btn")
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Icon(Icons.Default.Speed, contentDescription = null, tint = AmberAccent, modifier = Modifier.size(20.dp))
+                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Column {
+                                            Text("CBT Startup Profiler (nanoTime)", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                                            val prof = startupProfile
+                                            Text(
+                                                text = if (prof != null) "Latest: ${String.format("%.1f ms", prof.totalElapsedMs)} (5 checkpoints)" else "Inspect Tap -> Q1 render latency breakdown",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = TextSecondary
+                                            )
+                                        }
+                                    }
+                                    Icon(Icons.Default.ChevronRight, contentDescription = null, tint = TextMuted, modifier = Modifier.size(18.dp))
+                                }
+                            }
+
                             // Sync & App Update Actions
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -1547,6 +1587,13 @@ fun AcademicSettingsDialog(
                 }
             }
         }
+    }
+
+    if (showStartupProfilerDialog) {
+        StartupProfilerDialog(
+            profile = startupProfile,
+            onDismiss = { showStartupProfilerDialog = false }
+        )
     }
 }
 

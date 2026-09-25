@@ -57,6 +57,9 @@ object QuestionBankGenerator {
 
         // Additional static expanded questions
         questions.addAll(ExpandedQuestionBank.getExpandedQuestions())
+        
+        // New questions from PDF
+        questions.addAll(NewQuestionBank.getNewQuestions())
 
         // Complete 100-Question Authentic 2010 Use of English Exam
         questions.addAll(JambEnglish2010CompleteQuestionBank.getEnglish2010Questions())
@@ -317,10 +320,6 @@ object QuestionBankGenerator {
         questions.addAll(JambGovernmentPt1to5ExamBank.getQuestions())
         questions.addAll(JambHistory2012ExamBank.getQuestions())
         questions.addAll(JambIrs2011ExamBank.getQuestions())
-        
-        // Add new ingested questions
-        questions.addAll(Literature2015Ingestion.getQuestions())
-        questions.addAll(Geography2015Ingestion.getQuestions())
 
         // Authentic Verified 20,000+ Master Series Question Banks (2000 - 2024 Exam Series)
         questions.addAll(JambEnglishComprehensionClozeMasterBank.getQuestions())

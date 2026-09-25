@@ -451,9 +451,6 @@ fun PrepzaApp(viewModel: MainViewModel = viewModel()) {
                 },
                 onExitExam = {
                     activeScreen = ActiveScreen.MAIN_TABS
-                },
-                onQuestion1Interactive = {
-                    viewModel.onQuestion1Interactive()
                 }
             )
         }

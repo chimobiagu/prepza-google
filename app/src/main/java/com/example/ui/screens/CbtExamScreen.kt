@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.db.QuestionEntity
 import com.example.data.db.UserProfileEntity
 import com.example.ui.components.*
@@ -51,21 +52,17 @@ fun CbtExamScreen(
     onToggleFlag: () -> Unit,
     onFlagAndFix: (question: QuestionEntity, reason: String, notes: String) -> Unit = { _, _, _ -> onToggleFlag() },
     onSubmitExam: () -> Unit,
-    onExitExam: () -> Unit,
-    onQuestion1Interactive: (() -> Unit)? = null
+    onExitExam: () -> Unit
 ) {
-    LaunchedEffect(questions.isNotEmpty()) {
-        if (questions.isNotEmpty()) {
-            onQuestion1Interactive?.invoke()
-        }
-    }
-
     var showPaletteSheet by remember { mutableStateOf(false) }
     var showCalculator by remember { mutableStateOf(false) }
     var showInstructionsDialog by remember { mutableStateOf(false) }
     var showSubmitConfirmation by remember { mutableStateOf(false) }
     var showExitConfirmation by remember { mutableStateOf(false) }
     var showFlagReasonDialog by remember { mutableStateOf(false) }
+    var showStartupProfilerDialog by remember { mutableStateOf(false) }
+
+    val startupProfile by com.example.data.engine.StartupProfiler.latestProfileFlow.collectAsStateWithLifecycle()
 
     // Intercept hardware and gesture back presses to prompt the End Exam confirmation
     BackHandler(enabled = true) {
@@ -86,6 +83,18 @@ fun CbtExamScreen(
     val currentQuestion = questions[currentIndex.coerceIn(questions.indices)]
     val selectedOptionIndex = userAnswers[currentQuestion.id]
     val isFlagged = flaggedQuestions.contains(currentIndex)
+
+    // CBT Startup Latency Instrumentation: Record exact Q1 Interactive timestamp in StartupProfiler
+    LaunchedEffect(currentQuestion.id) {
+        if (currentIndex == 0) {
+            com.example.data.engine.StartupProfiler.recordQ1Render(details = "Q1 rendered and interactive on screen")
+            com.example.data.engine.CbtStartupLogger.getLastMetrics()?.let { metrics ->
+                if (metrics.q1InteractiveTimestamp == 0L) {
+                    com.example.data.engine.CbtStartupLogger.recordQ1Interactive(metrics)
+                }
+            }
+        }
+    }
 
     val subjects = remember(questions) {
         questions.map { it.subject }.distinct()
@@ -373,6 +382,13 @@ fun CbtExamScreen(
         )
     }
 
+    if (showStartupProfilerDialog) {
+        StartupProfilerDialog(
+            profile = startupProfile,
+            onDismiss = { showStartupProfilerDialog = false }
+        )
+    }
+
     Scaffold(
         topBar = {
             Column(
@@ -474,11 +490,16 @@ fun CbtExamScreen(
                         }
                     }
 
-                    // Quick Actions (Calculator, Palette, and End Exam Button)
+                    // Quick Actions (Startup Profiler Badge, Calculator, Palette, and End Exam Button)
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
+                        StartupProfilerBadge(
+                            profile = startupProfile,
+                            onClick = { showStartupProfilerDialog = true }
+                        )
+
                         IconButton(
                             onClick = { showCalculator = true },
                             modifier = Modifier.size(34.dp)
@@ -873,11 +894,21 @@ fun CbtExamScreen(
                 )
             }
 
-            // Question Image / Diagram Display if present
-            QuestionImageViewer(
-                question = currentQuestion,
-                modifier = Modifier.padding(top = 10.dp, bottom = 2.dp)
-            )
+            // First-Class Visual / Diagram / Graph / Table Renderer
+            val hasRegisteredVisual = remember(currentQuestion.id, currentQuestion.imageUrl) {
+                com.example.data.engine.CbtVisualRegistry.getVisualForQuestion(currentQuestion.id, currentQuestion.imageUrl) != null
+            }
+            if (hasRegisteredVisual) {
+                CbtVisualContentRenderer(
+                    question = currentQuestion,
+                    modifier = Modifier.padding(top = 10.dp, bottom = 2.dp)
+                )
+            } else {
+                QuestionImageViewer(
+                    question = currentQuestion,
+                    modifier = Modifier.padding(top = 10.dp, bottom = 2.dp)
+                )
+            }
 
             Spacer(modifier = Modifier.height(14.dp))
 
