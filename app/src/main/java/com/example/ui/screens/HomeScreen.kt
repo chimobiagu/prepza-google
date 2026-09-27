@@ -152,8 +152,7 @@ fun HomeScreen(
             .fillMaxSize()
             .background(if (isDark) RawAppBackgroundDark else RawAppBackgroundLight)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp)
-            .padding(top = 16.dp, bottom = 32.dp)
+            .padding(horizontal = 20.dp, vertical = 14.dp)
     ) {
         // ==========================================
         // 1. TOP PROFILE HEADER
@@ -166,10 +165,10 @@ fun HomeScreen(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Circle Avatar
+                // Circle Avatar - matching 40dp compact sizing
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(40.dp)
                         .clip(CircleShape)
                         .background(if (isDark) Color(0xFF0F5132) else Color(0xFF0F5132)),
                     contentAlignment = Alignment.Center
@@ -177,24 +176,26 @@ fun HomeScreen(
                     Text(
                         text = studentInitial,
                         color = Color.White,
-                        fontSize = 18.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(10.dp))
 
                 Column {
                     Text(
                         text = studentName,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
-                        color = if (isDark) Color(0xFFF8FAFC) else Color(0xFF1E293B)
+                        color = if (isDark) Color(0xFFF8FAFC) else Color(0xFF1E293B),
+                        fontSize = 15.sp
                     )
                     Text(
                         text = "Target: $targetScore • ${streakDays}d streak",
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B)
+                        color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
+                        fontSize = 11.5.sp
                     )
                 }
             }
@@ -207,7 +208,7 @@ fun HomeScreen(
                 // Friends button
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(36.dp)
                         .clip(CircleShape)
                         .border(1.dp, if (isDark) Color(0xFF263345) else Color(0xFFE2E8F0), CircleShape)
                         .background(if (isDark) Color(0xFF16202E) else Color.White)
@@ -219,14 +220,14 @@ fun HomeScreen(
                         imageVector = Icons.Outlined.People,
                         contentDescription = "Friends",
                         tint = if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155),
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
 
                 // Settings button
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(36.dp)
                         .clip(CircleShape)
                         .border(1.dp, if (isDark) Color(0xFF263345) else Color(0xFFE2E8F0), CircleShape)
                         .background(if (isDark) Color(0xFF16202E) else Color.White)
@@ -238,13 +239,13 @@ fun HomeScreen(
                         imageVector = Icons.Outlined.Settings,
                         contentDescription = "Settings",
                         tint = if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155),
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // ==========================================
         // 2. CLOUD SYNCED PILL BANNER
@@ -253,47 +254,47 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable(enabled = isOnline && !isSyncingCloud, onClick = onSyncNow),
-            shape = RoundedCornerShape(24.dp),
+            shape = RoundedCornerShape(14.dp),
             color = if (isDark) Color(0xFF063A29).copy(alpha = 0.5f) else Color(0xFFF0FDF4),
             border = BorderStroke(1.dp, if (isDark) Color(0xFF047857) else Color(0xFFBBF7D0))
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
                     imageVector = if (!isOnline) Icons.Outlined.CloudOff else Icons.Outlined.CloudQueue,
                     contentDescription = null,
                     tint = if (isDark) Color(0xFF10B981) else Color(0xFF15803D),
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
                     text = if (!isOnline) "Offline Mode • Stored locally" else if (isSyncingCloud) "Cloud Syncing in progress..." else "Cloud Synced • Automatic background sync enabled",
-                    fontSize = 12.sp,
+                    fontSize = 11.5.sp,
                     color = if (isDark) Color(0xFF34D399) else Color(0xFF166534),
                     fontWeight = FontWeight.Medium
                 )
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         // ==========================================
-        // 3. PREPZA PLUS UPGRADE CARD
+        // 3. PREPZA PLUS UPGRADE CARD (Compact & Proportionate)
         // ==========================================
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onUpgradeClick() },
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(14.dp),
             color = if (isDark) Color(0xFF063A29).copy(alpha = 0.5f) else Color(0xFFF0FDF4),
-            border = BorderStroke(1.5.dp, if (isDark) Color(0xFF059669) else Color(0xFF22C55E))
+            border = BorderStroke(1.dp, if (isDark) Color(0xFF059669) else Color(0xFF22C55E))
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(14.dp),
+                    .padding(horizontal = 14.dp, vertical = 11.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -301,10 +302,9 @@ fun HomeScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.weight(1f)
                 ) {
-                    // Green circular lightning icon
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
+                            .size(34.dp)
                             .clip(CircleShape)
                             .background(if (isDark) Color(0xFF10B981) else Color(0xFF15803D)),
                         contentAlignment = Alignment.Center
@@ -313,38 +313,39 @@ fun HomeScreen(
                             imageVector = Icons.Default.Bolt,
                             contentDescription = null,
                             tint = Color.White,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
 
                     Column {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 text = "Prepza Plus",
-                                style = MaterialTheme.typography.titleMedium,
+                                style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold,
-                                color = if (isDark) Color.White else Color(0xFF1E293B)
+                                color = if (isDark) Color.White else Color(0xFF1E293B),
+                                fontSize = 13.5.sp
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Box(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
+                                    .clip(RoundedCornerShape(4.dp))
                                     .background(if (isDark) Color(0xFF065F46) else Color(0xFF14532D))
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                                    .padding(horizontal = 5.dp, vertical = 1.5.dp)
                             ) {
                                 Text(
-                                    text = "₦500 LIFETIME",
+                                    text = "₦500/mo",
                                     color = Color.White,
-                                    fontSize = 10.sp,
+                                    fontSize = 9.5.sp,
                                     fontWeight = FontWeight.Bold
                                 )
                             }
                         }
-                        Spacer(modifier = Modifier.height(2.dp))
+                        Spacer(modifier = Modifier.height(1.dp))
                         Text(
-                            text = "30 days left in free trial • Paystack & Transfer",
+                            text = "30-day free trial • Paystack & Card",
                             style = MaterialTheme.typography.bodySmall,
                             color = if (isDark) Color(0xFF94A3B8) else Color(0xFF475569),
                             fontSize = 11.sp
@@ -354,19 +355,18 @@ fun HomeScreen(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // Upgrade Button
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(8.dp))
                         .background(if (isDark) Color(0xFF065F46) else Color(0xFF14532D))
                         .clickable { onUpgradeClick() }
-                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = "Upgrade",
                         color = Color.White,
-                        fontSize = 12.sp,
+                        fontSize = 11.5.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         softWrap = false
@@ -377,7 +377,7 @@ fun HomeScreen(
 
         // Active exam resumption if needed
         if (activeExamState != null) {
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             Surface(
                 shape = RoundedCornerShape(14.dp),
                 color = if (isDark) Color(0xFF382910) else Color(0xFFFFFBEB),
@@ -385,7 +385,7 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth().testTag("unfinished_cbt_banner")
             ) {
                 Row(
-                    modifier = Modifier.padding(14.dp),
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
@@ -397,14 +397,14 @@ fun HomeScreen(
                             imageVector = Icons.Default.Timer,
                             contentDescription = null,
                             tint = Color(0xFFF59E0B),
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
                                 text = "Unfinished CBT",
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 13.sp,
+                                fontSize = 12.5.sp,
                                 color = if (isDark) Color(0xFFFDE68A) else Color(0xFF92400E)
                             )
                             Text(
@@ -417,7 +417,7 @@ fun HomeScreen(
 
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         OutlinedButton(
                             onClick = onDiscardActiveExam,
@@ -426,69 +426,69 @@ fun HomeScreen(
                             ),
                             border = BorderStroke(1.dp, if (isDark) Color(0xFFD97706) else Color(0xFFF59E0B)),
                             shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                            modifier = Modifier.testTag("cancel_active_exam_btn")
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+                            modifier = Modifier.height(34.dp).testTag("cancel_active_exam_btn")
                         ) {
-                            Text("Cancel", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text("Cancel", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                         }
 
                         Button(
                             onClick = onResumeActiveExam,
                             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
                             shape = RoundedCornerShape(8.dp),
-                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                            modifier = Modifier.testTag("continue_active_exam_btn")
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                            modifier = Modifier.height(34.dp).testTag("continue_active_exam_btn")
                         ) {
-                            Text("Continue", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Text("Continue", fontSize = 11.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         // ==========================================
         // 4. "UTME Mastery" SECTION TITLE
         // ==========================================
         Text(
             text = "UTME Mastery",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.ExtraBold,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
             color = if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A),
-            fontSize = 24.sp
+            fontSize = 18.sp
         )
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         // ==========================================
         // 5. 2x2 FEATURE GRID (CBT Mock, AI Tutor, Literature, Saved)
         // ==========================================
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // CBT Mock Card
             Surface(
                 modifier = Modifier
                     .weight(1f)
-                    .height(68.dp)
+                    .height(52.dp)
                     .clickable { showCbtSubjectDialog = true }
                     .testTag("home_cbt_mock_card"),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(14.dp),
                 color = if (isDark) Color(0xFF16202E) else Color(0xFFFFFBEB),
                 border = BorderStroke(1.dp, if (isDark) Color(0xFF263345) else Color(0xFFFDE68A))
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 14.dp),
+                        .padding(horizontal = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
-                            .clip(RoundedCornerShape(10.dp))
+                            .size(32.dp)
+                            .clip(RoundedCornerShape(8.dp))
                             .background(if (isDark) Color(0xFF451A03) else Color(0xFFFEF3C7)),
                         contentAlignment = Alignment.Center
                     ) {
@@ -496,16 +496,16 @@ fun HomeScreen(
                             imageVector = Icons.Outlined.Timer,
                             contentDescription = "CBT Mock",
                             tint = if (isDark) Color(0xFFF59E0B) else Color(0xFFD97706),
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "CBT Mock",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = if (isDark) Color.White else Color(0xFF1E293B),
-                        fontSize = 15.sp
+                        fontSize = 13.5.sp
                     )
                 }
             }
@@ -514,23 +514,23 @@ fun HomeScreen(
             Surface(
                 modifier = Modifier
                     .weight(1f)
-                    .height(68.dp)
+                    .height(52.dp)
                     .clickable { onNavigateToAiTutor() }
                     .testTag("home_ai_tutor_card"),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(14.dp),
                 color = if (isDark) Color(0xFF063A29).copy(alpha = 0.5f) else Color(0xFFECFDF5),
                 border = BorderStroke(1.dp, if (isDark) Color(0xFF059669) else Color(0xFFA7F3D0))
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 14.dp),
+                        .padding(horizontal = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
-                            .clip(RoundedCornerShape(10.dp))
+                            .size(32.dp)
+                            .clip(RoundedCornerShape(8.dp))
                             .background(if (isDark) Color(0xFF047857) else Color(0xFF065F46)),
                         contentAlignment = Alignment.Center
                     ) {
@@ -538,48 +538,48 @@ fun HomeScreen(
                             imageVector = Icons.Filled.AutoAwesome,
                             contentDescription = "AI Tutor",
                             tint = Color.White,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(15.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "AI Tutor",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = if (isDark) Color.White else Color(0xFF1E293B),
-                        fontSize = 15.sp
+                        fontSize = 13.5.sp
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Literature Card
             Surface(
                 modifier = Modifier
                     .weight(1f)
-                    .height(68.dp)
+                    .height(52.dp)
                     .clickable { onNavigateToLibrary() }
                     .testTag("home_literature_card"),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(14.dp),
                 color = if (isDark) Color(0xFF16202E) else Color(0xFFFAF5FF),
                 border = BorderStroke(1.dp, if (isDark) Color(0xFF263345) else Color(0xFFE9D5FF))
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 14.dp),
+                        .padding(horizontal = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
-                            .clip(RoundedCornerShape(10.dp))
+                            .size(32.dp)
+                            .clip(RoundedCornerShape(8.dp))
                             .background(if (isDark) Color(0xFF3B0764) else Color(0xFFF3E8FF)),
                         contentAlignment = Alignment.Center
                     ) {
@@ -587,16 +587,16 @@ fun HomeScreen(
                             imageVector = Icons.Outlined.MenuBook,
                             contentDescription = "Literature",
                             tint = if (isDark) Color(0xFFC084FC) else Color(0xFF9333EA),
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Literature",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = if (isDark) Color.White else Color(0xFF1E293B),
-                        fontSize = 15.sp
+                        fontSize = 13.5.sp
                     )
                 }
             }
@@ -605,23 +605,23 @@ fun HomeScreen(
             Surface(
                 modifier = Modifier
                     .weight(1f)
-                    .height(68.dp)
+                    .height(52.dp)
                     .clickable { onNavigateToBookmarks() }
                     .testTag("home_saved_card"),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(14.dp),
                 color = if (isDark) Color(0xFF16202E) else Color(0xFFEFF6FF),
                 border = BorderStroke(1.dp, if (isDark) Color(0xFF263345) else Color(0xFFBFDBFE))
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 14.dp),
+                        .padding(horizontal = 10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(38.dp)
-                            .clip(RoundedCornerShape(10.dp))
+                            .size(32.dp)
+                            .clip(RoundedCornerShape(8.dp))
                             .background(if (isDark) Color(0xFF172554) else Color(0xFFDBEAFE)),
                         contentAlignment = Alignment.Center
                     ) {
@@ -629,22 +629,22 @@ fun HomeScreen(
                             imageVector = Icons.Outlined.Bookmark,
                             contentDescription = "Saved",
                             tint = if (isDark) Color(0xFF60A5FA) else Color(0xFF2563EB),
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "Saved",
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = if (isDark) Color.White else Color(0xFF1E293B),
-                        fontSize = 15.sp
+                        fontSize = 13.5.sp
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         // ==========================================
         // 6. 100% OFFLINE READY BANNER
@@ -653,14 +653,14 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .clickable { onNavigateToOfflineManager() },
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(14.dp),
             color = if (isDark) Color(0xFF063A29).copy(alpha = 0.5f) else Color(0xFFF0FDF4),
             border = BorderStroke(1.dp, if (isDark) Color(0xFF047857) else Color(0xFFBBF7D0))
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 12.dp),
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -670,7 +670,7 @@ fun HomeScreen(
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(32.dp)
                             .clip(CircleShape)
                             .background(if (isDark) Color(0xFF10B981) else Color(0xFF15803D)),
                         contentAlignment = Alignment.Center
@@ -679,17 +679,17 @@ fun HomeScreen(
                             imageVector = Icons.Filled.CloudDownload,
                             contentDescription = null,
                             tint = Color.White,
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(17.dp)
                         )
                     }
 
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
 
                     Column {
                         Text(
                             text = "100% Offline Ready",
                             fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
+                            fontSize = 13.sp,
                             color = if (isDark) Color.White else Color(0xFF0F172A)
                         )
                         Text(
@@ -702,7 +702,7 @@ fun HomeScreen(
 
                 Text(
                     text = "Manage",
-                    fontSize = 13.sp,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (isDark) Color(0xFF34D399) else Color(0xFF15803D),
                     maxLines = 1,
@@ -711,30 +711,30 @@ fun HomeScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(18.dp))
+        Spacer(modifier = Modifier.height(14.dp))
 
         // ==========================================
         // 7. SEARCH INPUT FIELD
         // ==========================================
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(14.dp),
             color = if (isDark) Color(0xFF16202E) else Color.White,
-            border = BorderStroke(1.dp, if (isDark) Color(0xFF263345) else Color(0xFFE2E8F0))
+            border = BorderStroke(1.dp, if (isDark) Color(0xFF263345) else BorderSubtle)
         ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                    .padding(horizontal = 14.dp, vertical = 11.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Search,
                     contentDescription = "Search",
-                    tint = Color(0xFF94A3B8),
-                    modifier = Modifier.size(20.dp)
+                    tint = TextSecondary,
+                    modifier = Modifier.size(18.dp)
                 )
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(10.dp))
                 BasicTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
@@ -750,7 +750,7 @@ fun HomeScreen(
                             Text(
                                 text = "Search subjects...",
                                 fontSize = 14.sp,
-                                color = Color(0xFF94A3B8)
+                                color = TextMuted
                             )
                         }
                         innerTextField()
@@ -759,20 +759,20 @@ fun HomeScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // ==========================================
         // 8. CATEGORY FILTER CHIPS
         // ==========================================
         LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             items(categories) { cat ->
                 val isSelected = selectedCategory.equals(cat, ignoreCase = true)
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(16.dp))
                         .background(
                             if (isSelected) {
                                 if (isDark) Color(0xFF10B981) else Color(0xFF15803D)
@@ -785,17 +785,17 @@ fun HomeScreen(
                             if (isSelected) {
                                 if (isDark) Color(0xFF10B981) else Color(0xFF15803D)
                             } else {
-                                if (isDark) Color(0xFF263345) else Color(0xFFE2E8F0)
+                                if (isDark) Color(0xFF263345) else BorderSubtle
                             },
-                            RoundedCornerShape(20.dp)
+                            RoundedCornerShape(16.dp)
                         )
                         .clickable { selectedCategory = cat }
-                        .padding(horizontal = 18.dp, vertical = 8.dp),
+                        .padding(horizontal = 14.dp, vertical = 6.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = cat,
-                        fontSize = 13.sp,
+                        fontSize = 12.sp,
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                         color = if (isSelected) Color.White else if (isDark) Color(0xFFCBD5E1) else Color(0xFF334155)
                     )
@@ -803,29 +803,30 @@ fun HomeScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         // ==========================================
         // 9. SUBJECT LIST CARDS (Leads to Subject Learning Flow)
         // ==========================================
         Column(
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             filteredSubjects.forEach { subj ->
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
                         .clickable { onOpenSubject(subj.name) }
                         .testTag("subject_card_${subj.id}"),
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(14.dp),
                     color = if (isDark) Color(0xFF16202E) else Color.White,
-                    border = BorderStroke(1.dp, if (isDark) Color(0xFF263345) else Color(0xFFE2E8F0))
+                    border = BorderStroke(1.dp, if (isDark) Color(0xFF263345) else BorderSubtle)
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
+                            .padding(horizontal = 14.dp, vertical = 11.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -833,11 +834,11 @@ fun HomeScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.weight(1f)
                         ) {
-                            // Rounded Square with green tint
+                            // Rounded Square with green tint - matched to practice screen 38dp
                             Box(
                                 modifier = Modifier
-                                    .size(46.dp)
-                                    .clip(RoundedCornerShape(12.dp))
+                                    .size(38.dp)
+                                    .clip(RoundedCornerShape(10.dp))
                                     .background(if (isDark) Color(0xFF063A29) else Color(0xFFDCFCE7)),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -845,26 +846,26 @@ fun HomeScreen(
                                     imageVector = subj.icon,
                                     contentDescription = subj.name,
                                     tint = if (isDark) Color(0xFF34D399) else Color(0xFF15803D),
-                                    modifier = Modifier.size(24.dp)
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
 
-                            Spacer(modifier = Modifier.width(14.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
 
                             Column {
                                 Text(
                                     text = subj.name,
-                                    style = MaterialTheme.typography.titleMedium,
+                                    style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = if (isDark) Color(0xFFF8FAFC) else Color(0xFF0F172A),
-                                    fontSize = 15.sp
+                                    fontSize = 14.sp
                                 )
-                                Spacer(modifier = Modifier.height(2.dp))
+                                Spacer(modifier = Modifier.height(1.dp))
                                 Text(
                                     text = subj.description,
                                     style = MaterialTheme.typography.bodySmall,
                                     color = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
-                                    fontSize = 12.sp,
+                                    fontSize = 11.5.sp,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -875,7 +876,7 @@ fun HomeScreen(
                             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                             contentDescription = "Open ${subj.name}",
                             tint = if (isDark) Color(0xFF94A3B8) else Color(0xFF64748B),
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(16.dp)
                         )
                     }
                 }

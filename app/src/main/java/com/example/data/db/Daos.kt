@@ -41,28 +41,31 @@ interface UserAccountDao {
 
 @Dao
 interface QuestionDao {
-    @Query("SELECT * FROM questions")
+    @Query("SELECT * FROM questions WHERE isDisabled = 0")
     fun getAllQuestions(): Flow<List<QuestionEntity>>
 
-    @Query("SELECT * FROM questions")
+    @Query("SELECT * FROM questions WHERE isDisabled = 0")
     suspend fun getAllQuestionsOnce(): List<QuestionEntity>
 
-    @Query("SELECT * FROM questions WHERE subject = :subject")
+    @Query("SELECT * FROM questions")
+    suspend fun getAllQuestionsIncludingDisabled(): List<QuestionEntity>
+
+    @Query("SELECT * FROM questions WHERE subject = :subject AND isDisabled = 0")
     fun getQuestionsBySubject(subject: String): Flow<List<QuestionEntity>>
 
-    @Query("SELECT * FROM questions WHERE subject = :subject")
+    @Query("SELECT * FROM questions WHERE subject = :subject AND isDisabled = 0")
     suspend fun getQuestionsBySubjectOnce(subject: String): List<QuestionEntity>
 
-    @Query("SELECT * FROM questions WHERE subject IN (:subjects)")
+    @Query("SELECT * FROM questions WHERE subject IN (:subjects) AND isDisabled = 0")
     fun getQuestionsBySubjects(subjects: List<String>): Flow<List<QuestionEntity>>
 
-    @Query("SELECT * FROM questions WHERE subject IN (:subjects)")
+    @Query("SELECT * FROM questions WHERE subject IN (:subjects) AND isDisabled = 0")
     suspend fun getQuestionsBySubjectsOnce(subjects: List<String>): List<QuestionEntity>
 
-    @Query("SELECT * FROM questions WHERE subject = :subject AND topic = :topic")
+    @Query("SELECT * FROM questions WHERE subject = :subject AND topic = :topic AND isDisabled = 0")
     fun getQuestionsBySubjectAndTopic(subject: String, topic: String): Flow<List<QuestionEntity>>
 
-    @Query("SELECT * FROM questions WHERE questionText LIKE '%' || :query || '%' OR topic LIKE '%' || :query || '%' OR subject LIKE '%' || :query || '%'")
+    @Query("SELECT * FROM questions WHERE (questionText LIKE '%' || :query || '%' OR topic LIKE '%' || :query || '%' OR subject LIKE '%' || :query || '%') AND isDisabled = 0")
     fun searchQuestions(query: String): Flow<List<QuestionEntity>>
 
     @Query("SELECT * FROM questions WHERE id IN (:ids)")
@@ -71,29 +74,41 @@ interface QuestionDao {
     @Query("SELECT * FROM questions WHERE id = :id")
     suspend fun getQuestionById(id: String): QuestionEntity?
 
-    @Query("SELECT DISTINCT topic FROM questions WHERE subject = :subject")
+    @Query("SELECT DISTINCT topic FROM questions WHERE subject = :subject AND isDisabled = 0")
     fun getTopicsForSubject(subject: String): Flow<List<String>>
 
-    @Query("SELECT COUNT(*) FROM questions WHERE subject = :subject")
+    @Query("SELECT COUNT(*) FROM questions WHERE subject = :subject AND isDisabled = 0")
     suspend fun getQuestionCountForSubject(subject: String): Int
 
-    @Query("SELECT COUNT(*) FROM questions")
+    @Query("SELECT COUNT(*) FROM questions WHERE isDisabled = 0")
     suspend fun getTotalQuestionCount(): Int
 
-    @Query("SELECT DISTINCT year FROM questions WHERE subject = :subject ORDER BY year DESC")
+    @Query("SELECT DISTINCT year FROM questions WHERE subject = :subject AND isDisabled = 0 ORDER BY year DESC")
     fun getYearsForSubject(subject: String): Flow<List<String>>
 
-    @Query("SELECT * FROM questions WHERE subject = :subject ORDER BY RANDOM() LIMIT :limit")
+    @Query("SELECT * FROM questions WHERE subject = :subject AND isDisabled = 0 ORDER BY RANDOM() LIMIT :limit")
     suspend fun getRandomQuestionsForSubject(subject: String, limit: Int): List<QuestionEntity>
 
-    @Query("SELECT * FROM questions WHERE subject = :subject AND topic = :topic ORDER BY RANDOM() LIMIT :limit")
+    @Query("SELECT * FROM questions WHERE subject = :subject AND topic = :topic AND isDisabled = 0 ORDER BY RANDOM() LIMIT :limit")
     suspend fun getRandomQuestionsForSubjectAndTopic(subject: String, topic: String, limit: Int): List<QuestionEntity>
+
+    @Query("SELECT MAX(contentVersion) FROM questions")
+    suspend fun getHighestContentVersion(): Int?
+
+    @Query("UPDATE questions SET isDisabled = 1, updatedAt = :timestamp WHERE id = :id")
+    suspend fun disableQuestion(id: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE questions SET isDisabled = 0, updatedAt = :timestamp WHERE id = :id")
+    suspend fun enableQuestion(id: String, timestamp: Long = System.currentTimeMillis())
 
     @Query("DELETE FROM questions")
     suspend fun deleteAllQuestions()
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(questions: List<QuestionEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertQuestion(question: QuestionEntity)
 
     @Update
     suspend fun updateQuestion(question: QuestionEntity)
@@ -440,11 +455,23 @@ interface FlaggedQuestionDao {
     @Query("SELECT COUNT(*) FROM flagged_questions WHERE status = 'PENDING'")
     fun getPendingFlagCount(): Flow<Int>
 
+    @Query("SELECT * FROM flagged_questions WHERE isSyncedToSupabase = 0 ORDER BY timestamp ASC")
+    suspend fun getUnsyncedFlags(): List<FlaggedQuestionEntity>
+
+    @Query("UPDATE flagged_questions SET isSyncedToSupabase = 1 WHERE id = :id")
+    suspend fun markFlagSynced(id: String)
+
+    @Query("UPDATE flagged_questions SET isSyncedToSupabase = 1 WHERE id IN (:ids)")
+    suspend fun markFlagsSynced(ids: List<String>)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertFlag(flag: FlaggedQuestionEntity)
 
     @Update
     suspend fun updateFlag(flag: FlaggedQuestionEntity)
+
+    @Query("UPDATE flagged_questions SET status = :status, adminDecision = :decision, adminNotes = :notes, resolutionAction = :action, resolvedAt = :timestamp WHERE id = :id")
+    suspend fun resolveFlag(id: String, status: String, decision: String, notes: String, action: String, timestamp: Long = System.currentTimeMillis())
 
     @Query("UPDATE flagged_questions SET status = :status, resolutionAction = :action, resolvedAt = :timestamp WHERE id = :id")
     suspend fun updateFlagStatus(id: String, status: String, action: String, timestamp: Long = System.currentTimeMillis())

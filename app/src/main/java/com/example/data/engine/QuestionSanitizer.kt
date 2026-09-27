@@ -28,7 +28,7 @@ object QuestionSanitizer {
         val cleanAnswerIndex = q.correctAnswerIndex.coerceIn(0, 3)
 
         val cleanExplanation = if (q.explanation.isBlank()) {
-            "Option ${'A' + cleanAnswerIndex} is the correct answer according to official UTME $cleanSubject syllabus."
+            "Concept: Master the core syllabus principles of $cleanTopic in $cleanSubject to analyze and solve this problem accurately."
         } else {
             cleanTextGeneric(q.explanation)
         }
@@ -95,6 +95,10 @@ object QuestionSanitizer {
 
         // Strip leading numbering: "1.", "1)", "Q1:", "Question 1:", "Question 1.", "(1)", "No. 1:"
         text = text.replace(Regex("^(?:\\d{1,3}[.)\\-:]|q\\d{1,3}[.:]|question\\s+\\d{1,3}[.:]|no\\.?\\s*\\d{1,3}[.:])\\s*", RegexOption.IGNORE_CASE), "").trim()
+
+        // Strip leading bracketed topics or metadata headers like "[Lexis and Structure] ", "[Genetics] "
+        text = text.replace(Regex("^\\[[^\\]]+\\]\\s*"), "")
+        text = text.replace(Regex("^(?:topic|subject)\\s*:\\s*[^\\n.]+[.\\n]\\s*", RegexOption.IGNORE_CASE), "").trim()
 
         // Ensure fill-in-the-gap blanks (e.g. 3+ underscores) are neat and visible
         if (text.contains("___")) {

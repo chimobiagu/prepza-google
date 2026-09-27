@@ -423,6 +423,9 @@ fun PrepzaApp(viewModel: MainViewModel = viewModel()) {
                     contextQuestionForAi = contextText
                     viewModel.askAiTutor("Explain step by step how to solve this and why the answer is correct.", contextText)
                     activeScreen = ActiveScreen.AI_TUTOR
+                },
+                onReportQuestion = { question, reason, notes ->
+                    viewModel.reportQuestion(question, reason, notes)
                 }
             )
         }
@@ -443,7 +446,7 @@ fun PrepzaApp(viewModel: MainViewModel = viewModel()) {
                 onAnswerSelectedForQuestion = { qId, optionIndex -> viewModel.answerQuestion(qId, optionIndex) },
                 onToggleFlag = { viewModel.toggleFlagCurrentQuestion() },
                 onFlagAndFix = { question, reason, notes ->
-                    viewModel.flagAndAutoFixQuestion(question, reason, notes)
+                    viewModel.reportQuestion(question, reason, notes)
                 },
                 onSubmitExam = {
                     viewModel.submitCbtExam()
@@ -733,11 +736,8 @@ fun PrepzaApp(viewModel: MainViewModel = viewModel()) {
             AdminReviewQueueScreen(
                 flaggedList = flaggedQuestions,
                 pendingCount = pendingFlagCount,
-                onResolveFlag = { flagId, action, editedQ ->
-                    viewModel.resolveFlaggedQuestion(flagId, action, editedQ)
-                },
-                onRejectFlag = { flagId ->
-                    viewModel.dismissOrRejectFlag(flagId)
+                onAdminAction = { flagId, decision, adminNotes, editedQ ->
+                    viewModel.executeAdminReviewAction(flagId, decision, adminNotes, editedQ)
                 },
                 onDeleteFlag = { flagId ->
                     viewModel.deleteFlagRecord(flagId)

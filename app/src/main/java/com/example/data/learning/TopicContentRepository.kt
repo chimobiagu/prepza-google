@@ -917,35 +917,114 @@ object TopicContentRepository {
         Flashcard(
             id = "${topicId}_1",
             cardType = LearningCardType.DEFINITION,
-            title = "The Cell: Basic Unit of Life",
-            subtitle = "Cell Theory",
-            content = "The cell is the basic structural, functional, and biological unit of all living organisms.\n\nCell Theory states that all living organisms are composed of one or more cells, and all cells arise from pre-existing cells.",
+            title = "What is a Cell?",
+            subtitle = "The Fundamental Unit of Life",
+            content = "A cell is the basic structural, functional, and biological unit of all living organisms. All life forms—from single-celled bacteria to complex humans—are composed of cells.\n\nCell Theory states:\n1. All living organisms are composed of one or more cells.\n2. The cell is the basic unit of life.\n3. All cells arise from pre-existing cells through division.",
+            keyTakeaway = "The cell is the smallest independent unit capable of performing all life processes.",
             diagramId = "cell_organelles_overview",
             order = 1
         ),
         Flashcard(
             id = "${topicId}_2",
-            cardType = LearningCardType.COMPARISON,
-            title = "Plant Cell vs Animal Cell",
-            subtitle = "Key Organelle Differences",
-            content = "• Plant Cells: Possess cellulose cell wall, large central vacuole, and chloroplasts for photosynthesis.\n\n• Animal Cells: Lack cell wall and chloroplasts; possess flexible plasma membrane and small temporary vacuoles.",
-            comparisonLeftTitle = "Plant Cell",
-            comparisonRightTitle = "Animal Cell",
-            comparisonPairs = listOf(
-                "Cellulose cell wall present" to "Cell wall absent",
-                "Chloroplasts present" to "Chloroplasts absent",
-                "Large central vacuole" to "Small temporary vacuoles"
-            ),
+            cardType = LearningCardType.DEFINITION,
+            title = "The Cell Membrane",
+            subtitle = "Selectively Permeable Boundary",
+            content = "The cell membrane (plasma membrane) is a flexible phospholipid bilayer embedded with proteins that surrounds the entire cytoplasm.\n\nIt is selectively permeable, meaning it controls which substances can enter or leave the cell, maintaining a stable internal environment (homeostasis).",
+            keyTakeaway = "Controls movement of water, ions, nutrients, and waste into and out of the cell.",
             order = 2
         ),
         Flashcard(
             id = "${topicId}_3",
-            cardType = LearningCardType.KEY_TAKEAWAYS,
-            title = "Core Cell Organelles & Functions",
-            subtitle = "Organelle Breakdown",
-            content = "• Nucleus: Controls cell activities and houses DNA\n• Mitochondria: Powerhouse of the cell, generates ATP via aerobic respiration\n• Ribosomes: Sites of protein synthesis\n• Endoplasmic Reticulum (ER): Transport network within cytoplasm\n• Chloroplast: Site of photosynthesis.",
-            diagramId = "cell_organelles_overview",
+            cardType = LearningCardType.DEFINITION,
+            title = "The Nucleus",
+            subtitle = "Control Center of the Cell",
+            content = "The nucleus is a large, membrane-bound organelle containing the cell's genetic material (DNA organized into chromosomes).\n\nIt directs all cellular activities, including protein synthesis, cell growth, and reproduction. Inside is the nucleolus, which synthesizes ribosomes.",
+            keyTakeaway = "Houses hereditary material and directs cellular metabolism and cell division.",
             order = 3
+        ),
+        Flashcard(
+            id = "${topicId}_4",
+            cardType = LearningCardType.DEFINITION,
+            title = "The Cytoplasm",
+            subtitle = "Fluid Matrix for Cellular Reactions",
+            content = "The cytoplasm is the jelly-like fluid (cytosol) that fills the interior of the cell between the plasma membrane and the nuclear envelope.\n\nIt holds the organelles in place and provides the aqueous medium where essential metabolic reactions, such as glycolysis, take place.",
+            order = 4
+        ),
+        Flashcard(
+            id = "${topicId}_5",
+            cardType = LearningCardType.DEFINITION,
+            title = "Mitochondria: Powerhouses of the Cell",
+            subtitle = "Aerobic Respiration & ATP Production",
+            content = "Mitochondria are rod-shaped organelles bounded by a double membrane. The inner membrane is folded into cristae to maximize surface area for enzymes.\n\nThey are the sites of cellular aerobic respiration, converting chemical energy from glucose into ATP (Adenosine Triphosphate), the usable energy currency of life.",
+            keyTakeaway = "Cells with high energy demands (such as muscle and sperm cells) contain thousands of mitochondria.",
+            order = 5
+        ),
+        Flashcard(
+            id = "${topicId}_6",
+            cardType = LearningCardType.DEFINITION,
+            title = "Ribosomes and Endoplasmic Reticulum",
+            subtitle = "Protein Synthesis & Intracellular Transport",
+            content = "• Ribosomes: Tiny spherical bodies that assemble amino acids into proteins during translation.\n\n• Rough Endoplasmic Reticulum (RER): Studded with ribosomes; folds and transports newly synthesized proteins.\n\n• Smooth Endoplasmic Reticulum (SER): Lacks ribosomes; synthesizes lipids, steroids, and detoxifies chemicals.",
+            order = 6
+        ),
+        Flashcard(
+            id = "${topicId}_7",
+            cardType = LearningCardType.COMPARISON,
+            title = "Plant Cells vs Animal Cells",
+            subtitle = "Structural and Organellar Differences",
+            content = "Plant and animal cells share common structures like the nucleus, mitochondria, and cell membrane, but differ in key organelles suited to their lifestyles.",
+            comparisonLeftTitle = "Plant Cell",
+            comparisonRightTitle = "Animal Cell",
+            comparisonPairs = listOf(
+                "Rigid cellulose cell wall present" to "Cell wall absent (plasma membrane only)",
+                "Chloroplasts present for photosynthesis" to "Chloroplasts absent (heterotrophic)",
+                "Large, permanent central vacuole" to "Small, temporary vacuoles (or none)",
+                "Fixed, regular polygonal shape" to "Flexible, irregular or rounded shape",
+                "Centrioles absent in higher plants" to "Centrioles present for cell division"
+            ),
+            order = 7
+        ),
+        Flashcard(
+            id = "${topicId}_8",
+            cardType = LearningCardType.COMPARISON,
+            title = "Prokaryotic vs Eukaryotic Cells",
+            subtitle = "Primitive vs Complex Cell Organization",
+            content = "The biological world is fundamentally divided into two cellular organizational types based on nuclear structure.",
+            comparisonLeftTitle = "Prokaryotes (Bacteria, Archaea)",
+            comparisonRightTitle = "Eukaryotes (Plants, Animals, Fungi)",
+            comparisonPairs = listOf(
+                "No true nucleus (naked circular DNA in nucleoid)" to "True nucleus with double nuclear membrane",
+                "Lack membrane-bound organelles (no mitochondria/ER)" to "Possess membrane-bound organelles",
+                "Smaller 70S ribosomes" to "Larger 80S ribosomes",
+                "Small, unicellular organisms (0.1 - 5 μm)" to "Larger, mostly multicellular (10 - 100 μm)"
+            ),
+            order = 8
+        ),
+        Flashcard(
+            id = "${topicId}_9",
+            cardType = LearningCardType.DEFINITION,
+            title = "Cellular Transport: Diffusion and Osmosis",
+            subtitle = "Passive Transport Across Membranes",
+            content = "• Diffusion: The net movement of particles from a region of higher concentration to a region of lower concentration down a concentration gradient (requires no energy).\n\n• Osmosis: The special case of diffusion involving water molecules moving through a selectively permeable membrane from higher water potential (dilute) to lower water potential (concentrated).",
+            keyTakeaway = "Passive transport occurs spontaneously without expenditure of cellular ATP.",
+            order = 9
+        ),
+        Flashcard(
+            id = "${topicId}_10",
+            cardType = LearningCardType.DEFINITION,
+            title = "Active Transport",
+            subtitle = "Energy-Dependent Molecular Pumping",
+            content = "Active transport is the movement of ions or molecules across a cell membrane against their concentration gradient (from lower to higher concentration).\n\nThis process requires carrier proteins in the membrane and the expenditure of cellular energy in the form of ATP.",
+            keyTakeaway = "Example: Root hair cells absorbing mineral ions from dilute soil water, or glucose reabsorption in kidney tubules.",
+            order = 10
+        ),
+        Flashcard(
+            id = "${topicId}_11",
+            cardType = LearningCardType.KEY_TAKEAWAYS,
+            title = "Quick Summary: The Cell",
+            subtitle = "High-Yield Knowledge Check",
+            content = "1. Basic unit: All living things are composed of cells.\n2. Organelles: Nucleus (DNA/control), Mitochondria (ATP respiration), Ribosomes (proteins), Chloroplast (photosynthesis).\n3. Plant traits: Cell wall, chloroplast, large vacuole.\n4. Transport: Diffusion & Osmosis (passive, no ATP) vs Active transport (against gradient, uses ATP).",
+            order = 11
         )
     )
 
@@ -1219,75 +1298,67 @@ object TopicContentRepository {
                 id = "${topicId}_1",
                 cardType = LearningCardType.DEFINITION,
                 title = "What is $topicName?",
-                subtitle = "Core Definition & Purpose",
-                content = "$topicName forms an essential part of the $subjectDisplayName syllabus for UTME.\n\nIt focuses on understanding the primary concepts, standard classifications, and practical problem-solving rules required for accurate exam analysis.",
-                keyTakeaway = "Mastering $topicName requires clear understanding of terms and core operational rules.",
+                subtitle = "Concept & Scientific Definition",
+                content = "$topicName is a core foundational concept in $subjectDisplayName.\n\nIt establishes the standard definitions, fundamental principles, and structural mechanisms that govern how systems behave and how problems are systematically formulated.",
+                keyTakeaway = "Understanding the fundamental definition of $topicName is the essential first step before solving problems.",
                 order = 1
             ),
             Flashcard(
                 id = "${topicId}_2",
                 cardType = LearningCardType.KEY_TAKEAWAYS,
-                title = "Fundamental Concepts of $topicName",
-                subtitle = "Essential Principles",
-                content = "To analyze questions on $topicName correctly, observe the following basic principles:\n\n1. Identify the given components and standard definitions.\n2. Apply the correct formulas, classifications, or frameworks.\n3. Distinguish between cause, effect, and practical outcomes.",
+                title = "Key Characteristics of $topicName",
+                subtitle = "Properties & Framework",
+                content = "Core properties and operational rules governing $topicName:\n\n1. Structural components: The fundamental elements that constitute the concept.\n2. Law of behavior: How changing one variable or condition affects the overall outcome.\n3. Governing conditions: Boundary constraints under which these principles strictly apply.",
+                keyTakeaway = "Always check the operating conditions and definitions before applying rules in $topicName.",
                 order = 2
             ),
             Flashcard(
                 id = "${topicId}_3",
                 cardType = LearningCardType.COMPARISON,
-                title = "Classification & Key Distinctions",
-                subtitle = "Categorization",
-                content = "$topicName involves distinguishing between major categories, structures, or rules.\n\nExaminers frequently test the contrast between standard forms and special cases.",
-                comparisonLeftTitle = "Standard / Primary Case",
-                comparisonRightTitle = "Secondary / Special Case",
+                title = "Key Distinctions in $topicName",
+                subtitle = "Comparing Related Categories",
+                content = "In $subjectDisplayName, mastering $topicName requires distinguishing between complementary categories and opposing processes.",
+                comparisonLeftTitle = "Primary Form / Category A",
+                comparisonRightTitle = "Alternative Form / Category B",
                 comparisonPairs = listOf(
-                    "Core characteristics" to "Conditional variations",
-                    "Direct application rule" to "Exception to standard rule"
+                    "Standard conditions & properties" to "Specialized or modified cases",
+                    "Direct / Forward mechanism" to "Inverse / Counter mechanism"
                 ),
                 order = 3
             ),
             Flashcard(
                 id = "${topicId}_4",
                 cardType = LearningCardType.WORKED_EXAMPLE,
-                title = "Step-by-Step Solved Problem",
-                subtitle = "Worked Example for $topicName",
-                content = "When solving a standard question in $topicName:\n\nStep 1: State the underlying principle or equation.\nStep 2: Substitute the known values accurately.\nStep 3: Simplify and state the final result with appropriate units or categories.",
+                title = "Worked Example: Applying $topicName",
+                subtitle = "Step-by-Step Method",
+                content = "Problem Solving Strategy:\n\nStep 1: Identify the given quantities, terms, or context.\nStep 2: State and apply the relevant formula or governing rule.\nStep 3: Calculate or deduce the logical result and verify units.",
+                keyTakeaway = "Break complex questions into sequential sub-steps to prevent calculation and conceptual errors.",
                 order = 4
             ),
             Flashcard(
                 id = "${topicId}_5",
-                cardType = LearningCardType.WORKED_EXAMPLE,
-                title = "Second Application Example",
-                subtitle = "Advanced Problem Solving",
-                content = "Consider a multi-step question in $topicName:\n\nEnsure that all intermediate steps align with standard $subjectDisplayName guidelines before computing or selecting the final option.",
-                keyTakeaway = "Always verify the initial conditions before applying formulas or definitions.",
+                cardType = LearningCardType.KEY_TAKEAWAYS,
+                title = "Real-World Significance & Applications",
+                subtitle = "Practical Relevance",
+                content = "The principles of $topicName are actively applied across modern technology, natural systems, economic markets, and analytical reasoning.\n\nUnderstanding practical applications provides tangible intuition when analyzing theoretical models.",
                 order = 5
             ),
             Flashcard(
                 id = "${topicId}_6",
-                cardType = LearningCardType.KEY_TAKEAWAYS,
-                title = "Real-World Application & Relevance",
-                subtitle = "Practical Importance",
-                content = "Understanding $topicName is not just theoretical—it provides critical models used across scientific, commercial, social, and literary analysis.\n\nConnecting concepts to practical examples accelerates retention and recall.",
+                cardType = LearningCardType.EXAM_TIP,
+                title = "Common Pitfalls & Misconceptions",
+                subtitle = "Conceptual Traps in $topicName",
+                content = "• Pitfall 1: Confusing cause and effect or swapping inversely related variables.\n• Pitfall 2: Neglecting standard units, signs, or boundary definitions.\n• Pitfall 3: Applying a rule outside its valid operational limits.",
+                keyTakeaway = "Carefully analyze each problem premise to avoid common conceptual traps.",
                 order = 6
             ),
             Flashcard(
                 id = "${topicId}_7",
-                cardType = LearningCardType.EXAM_TIP,
-                title = "Common Mistakes in $topicName",
-                subtitle = "Avoid These Exam Traps",
-                content = "• Mistake 1: Confusing similar sounding terms or inverse principles.\n• Mistake 2: Forgetting boundary conditions, units, or grammatical concord.\n• Mistake 3: Overlooking negative signs or prerequisite definitions.",
-                keyTakeaway = "Read each question stem carefully to avoid common distractor traps.",
-                order = 7
-            ),
-            Flashcard(
-                id = "${topicId}_8",
                 cardType = LearningCardType.KEY_TAKEAWAYS,
-                title = "Quick Recap: $topicName",
-                subtitle = "High-Yield Summary",
-                content = "• Core principle: Understand the definition and active components.\n• Key rule: Apply consistent operations from first principles.\n• Exam strategy: Eliminate options that violate fundamental laws of $topicName.",
-                keyTakeaway = "Reviewing these flashcards ensures solid foundational mastery.",
-                order = 8
+                title = "Summary & Mastery Checklist",
+                subtitle = "High-Yield Review for $topicName",
+                content = "• Definition: Understand the core meaning from first principles.\n• Rules & Equations: Memorize key relationships and formulas.\n• Distinctions: Note differences between related terms and structures.",
+                order = 7
             )
         )
     }

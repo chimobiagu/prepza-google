@@ -72,10 +72,21 @@ object QuestionMediaDetector {
     fun resolveMedia(question: QuestionEntity): QuestionMediaInfo? {
         // 1. Direct imageUrl property on question
         if (!question.imageUrl.isNullOrBlank()) {
-            return QuestionMediaInfo(
-                imageUrl = question.imageUrl.trim(),
-                caption = "${question.subject} • ${question.topic} (${question.year})"
-            )
+            val rawRef = question.imageUrl.trim()
+            val resolvedUrl = com.example.data.supabase.SupabaseConfig.resolveImageUrl(rawRef)
+            if (resolvedUrl != null) {
+                return QuestionMediaInfo(
+                    imageUrl = resolvedUrl,
+                    caption = "${question.subject} • ${question.topic} (${question.year})"
+                )
+            } else if (com.example.data.supabase.SupabaseConfig.isDiagramKey(rawRef)) {
+                return QuestionMediaInfo(
+                    diagramType = rawRef,
+                    diagramTitle = "${question.subject} Figure",
+                    diagramDescription = "Interactive pedagogical diagram for ${question.topic}",
+                    caption = "${question.subject} • ${question.topic} (${question.year})"
+                )
+            }
         }
 
         // 2. Check questionText for markdown image ![alt](url)

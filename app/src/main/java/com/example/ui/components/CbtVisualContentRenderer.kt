@@ -22,17 +22,22 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import com.example.data.db.QuestionEntity
 import com.example.data.engine.CbtVisualRegistry
 import com.example.data.engine.TableVisualData
 import com.example.data.engine.VisualAsset
 import com.example.data.engine.VisualType
+import com.example.data.supabase.SupabaseConfig
 import com.example.ui.theme.*
 
 /**
@@ -194,57 +199,100 @@ private fun RenderVisualBody(
     question: QuestionEntity,
     isExpanded: Boolean = false
 ) {
-    val key = asset?.diagramKey ?: question.imageUrl ?: ""
+    val rawRef = asset?.diagramKey ?: question.imageUrl ?: ""
+    val resolvedUrl = SupabaseConfig.resolveImageUrl(rawRef)
     val height = if (isExpanded) 300.dp else 190.dp
 
     when {
         asset?.tableData != null -> {
             RenderTableView(asset.tableData, isExpanded)
         }
-        key.startsWith("math_right_triangle") -> {
+        !resolvedUrl.isNullOrBlank() -> {
+            SubcomposeAsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(resolvedUrl)
+                    .crossfade(true)
+                    .build(),
+                contentDescription = asset?.caption ?: "Question Figure",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(height)
+                    .padding(4.dp),
+                loading = {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(
+                            color = PrimaryGreen,
+                            modifier = Modifier.size(28.dp),
+                            strokeWidth = 2.5.dp
+                        )
+                    }
+                },
+                error = {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(
+                                imageVector = Icons.Default.ZoomIn,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(32.dp)
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = asset?.caption ?: "Diagram: ${question.subject} • ${question.topic}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            )
+        }
+        rawRef.startsWith("math_right_triangle") -> {
             MathRightTriangleDiagram(height)
         }
-        key.startsWith("math_circle") -> {
+        rawRef.startsWith("math_circle") -> {
             MathCircleTheoremDiagram(height)
         }
-        key.startsWith("math_coordinate") -> {
+        rawRef.startsWith("math_coordinate") -> {
             MathCoordinateGraphDiagram(height)
         }
-        key.startsWith("phy_circuit") -> {
+        rawRef.startsWith("phy_circuit") -> {
             PhysicsCircuitDiagram(height)
         }
-        key.startsWith("phy_optics") -> {
+        rawRef.startsWith("phy_optics") -> {
             PhysicsConvexLensDiagram(height)
         }
-        key.startsWith("phy_pulley") -> {
+        rawRef.startsWith("phy_pulley") -> {
             PhysicsPulleyDiagram(height)
         }
-        key.startsWith("phy_velocity") -> {
+        rawRef.startsWith("phy_velocity") -> {
             PhysicsVelocityTimeGraph(height)
         }
-        key.startsWith("chem_titration") -> {
+        rawRef.startsWith("chem_titration") -> {
             ChemistryTitrationDiagram(height)
         }
-        key.startsWith("chem_daniell") -> {
+        rawRef.startsWith("chem_daniell") -> {
             ChemistryDaniellCellDiagram(height)
         }
-        key.startsWith("chem_energy") -> {
+        rawRef.startsWith("chem_energy") -> {
             ChemistryEnergyProfileDiagram(height)
         }
-        key.startsWith("bio_plant_cell") -> {
+        rawRef.startsWith("bio_plant_cell") -> {
             BiologyPlantCellDiagram(height)
         }
-        key.startsWith("bio_nephron") -> {
+        rawRef.startsWith("bio_nephron") -> {
             BiologyNephronDiagram(height)
         }
-        key.startsWith("bio_arthropod") -> {
+        rawRef.startsWith("bio_arthropod") -> {
             BiologyArthropodLifecycleDiagram(height)
         }
-        key.startsWith("bio_vascular") -> {
+        rawRef.startsWith("bio_vascular") -> {
             BiologySeedlingVascularDiagram(height)
         }
         else -> {
-            DefaultScientificFigure(key.ifBlank { "Scientific Figure" }, height)
+            DefaultScientificFigure(rawRef.ifBlank { "Scientific Figure" }, height)
         }
     }
 }

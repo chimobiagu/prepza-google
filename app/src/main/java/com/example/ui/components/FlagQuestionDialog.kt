@@ -4,16 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Flag
-import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material.icons.outlined.ReportProblem
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,13 +27,15 @@ import androidx.compose.ui.window.DialogProperties
 import com.example.data.db.QuestionEntity
 import com.example.ui.theme.*
 
-private val REASON_PRESETS = listOf(
-    "Wrong Answer Key",
-    "Typo or Question Text Error",
-    "Diagram / Figure Issue",
-    "Unclear Explanation",
-    "Incorrect Option Choices",
-    "Other / Outdated Syllabus"
+val REPORT_REASONS = listOf(
+    "Wrong answer key",
+    "Question is incorrect",
+    "Option is missing/wrong",
+    "Question is unclear",
+    "Explanation is incorrect",
+    "Image/diagram is missing",
+    "Duplicate question",
+    "Other"
 )
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -47,7 +46,7 @@ fun FlagQuestionDialog(
     onConfirmFlagAndFix: (reason: String, notes: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var selectedReason by remember { mutableStateOf(REASON_PRESETS[0]) }
+    var selectedReason by remember { mutableStateOf(REPORT_REASONS[0]) }
     var userNotes by remember { mutableStateOf("") }
 
     Dialog(
@@ -95,13 +94,13 @@ fun FlagQuestionDialog(
 
                         Column {
                             Text(
-                                text = "Flag & Fix Question",
+                                text = "Report / Flag Question",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = TextPrimary
                             )
                             Text(
-                                text = "${question.subject} • ${question.year}",
+                                text = "${question.subject} • ${question.year.ifBlank { "Past UTME" }}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = TextSecondary
                             )
@@ -121,7 +120,7 @@ fun FlagQuestionDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 // Question Snippet Preview
                 Surface(
@@ -134,18 +133,18 @@ fun FlagQuestionDialog(
                         text = question.questionText,
                         style = MaterialTheme.typography.bodySmall,
                         color = TextSecondary,
-                        maxLines = 2,
+                        maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(12.dp),
                         isQuestionStem = true
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 // Reason Selection Title
                 Text(
-                    text = "Select Reason (Optional)",
+                    text = "Select Reason",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
@@ -159,7 +158,7 @@ fun FlagQuestionDialog(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    REASON_PRESETS.forEach { reason ->
+                    REPORT_REASONS.forEach { reason ->
                         val isSelected = selectedReason == reason
                         Surface(
                             shape = RoundedCornerShape(16.dp),
@@ -190,7 +189,7 @@ fun FlagQuestionDialog(
                                     style = MaterialTheme.typography.labelSmall,
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                                     color = if (isSelected) PrimaryGreen else TextPrimary,
-                                    fontSize = 11.sp
+                                    fontSize = 11.5.sp
                                 )
                             }
                         }
@@ -199,15 +198,15 @@ fun FlagQuestionDialog(
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                // Optional Notes Input
+                // "Tell us what is wrong" optional input
                 OutlinedTextField(
                     value = userNotes,
                     onValueChange = { userNotes = it },
-                    label = { Text("Additional notes or corrections (optional)", fontSize = 12.sp) },
-                    placeholder = { Text("e.g. Correct answer should be C because...", fontSize = 12.sp) },
+                    label = { Text("Tell us what is wrong", fontSize = 12.sp) },
+                    placeholder = { Text("Describe the issue (e.g. correct answer should be Option C because...)", fontSize = 12.sp) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 72.dp)
+                        .heightIn(min = 76.dp)
                         .testTag("flag_question_notes_input"),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -215,12 +214,12 @@ fun FlagQuestionDialog(
                         unfocusedBorderColor = BorderSubtle,
                         focusedLabelColor = PrimaryGreen
                     ),
-                    maxLines = 3
+                    maxLines = 4
                 )
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // AI Auto-Fix Notice Banner
+                // Review Queue Notice Banner
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = SoftEmeraldBg,
@@ -233,13 +232,13 @@ fun FlagQuestionDialog(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.AutoAwesome,
+                            imageVector = Icons.Outlined.ReportProblem,
                             contentDescription = null,
                             tint = PrimaryGreen,
                             modifier = Modifier.size(18.dp)
                         )
                         Text(
-                            text = "Background AI Tutor will immediately review syllabus rules, verify the answer key, and auto-fix this question.",
+                            text = "A snapshot of this question will be saved and submitted to the academic review queue for administrator verification.",
                             style = MaterialTheme.typography.labelSmall,
                             color = PrimaryGreenDark,
                             fontSize = 11.sp,
@@ -248,7 +247,7 @@ fun FlagQuestionDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
                 // Action Buttons
                 Row(
@@ -273,7 +272,7 @@ fun FlagQuestionDialog(
                             onDismiss()
                         },
                         modifier = Modifier
-                            .weight(1.4f)
+                            .weight(1.3f)
                             .height(44.dp)
                             .testTag("flag_and_fix_submit_btn"),
                         shape = RoundedCornerShape(12.dp),
@@ -283,12 +282,12 @@ fun FlagQuestionDialog(
                         )
                     ) {
                         Icon(
-                            imageVector = Icons.Filled.AutoAwesome,
+                            imageVector = Icons.Filled.Flag,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Flag & Fix with AI", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        Text("Submit Report", fontWeight = FontWeight.Bold, fontSize = 13.sp)
                     }
                 }
             }

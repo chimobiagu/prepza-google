@@ -46,7 +46,8 @@ data class UserAccountEntity(
         Index(value = ["subject", "topic"]),
         Index(value = ["subject", "year"]),
         Index(value = ["isVerifiedJamb"]),
-        Index(value = ["originType"])
+        Index(value = ["originType"]),
+        Index(value = ["isDisabled"])
     ]
 )
 data class QuestionEntity(
@@ -66,7 +67,10 @@ data class QuestionEntity(
     val originType: String = "JAMB_ORIGINAL", // "JAMB_ORIGINAL" or "PREPZA_ORIGINAL"
     val originLabel: String = "Original JAMB Question • 2024", // or "Prepza Original Question", "Made by Prepza"
     val isVerifiedJamb: Boolean = true,
-    val imageUrl: String? = null
+    val imageUrl: String? = null,
+    val contentVersion: Int = 1,
+    val isDisabled: Boolean = false,
+    val updatedAt: Long = System.currentTimeMillis()
 ) {
     val options: List<String> get() = listOf(optionA, optionB, optionC, optionD)
 }
@@ -375,15 +379,18 @@ data class CardBookmarkEntity(
         Index(value = ["questionId"]),
         Index(value = ["status"]),
         Index(value = ["subject"]),
-        Index(value = ["timestamp"])
+        Index(value = ["timestamp"]),
+        Index(value = ["isSyncedToSupabase"])
     ]
 )
 data class FlaggedQuestionEntity(
     @PrimaryKey val id: String = java.util.UUID.randomUUID().toString(),
     val questionId: String,
+    val userId: String = "",
     val subject: String,
     val topic: String,
-    val year: String,
+    val year: String = "",
+    val questionSource: String = "Original JAMB Past Question",
     val questionText: String,
     val optionA: String,
     val optionB: String,
@@ -391,12 +398,16 @@ data class FlaggedQuestionEntity(
     val optionD: String,
     val correctAnswerIndex: Int,
     val explanation: String,
-    val reason: String,             // e.g. "Wrong Answer Key", "Corrupted / Missing Diagram", "Typo in Question", "Missing Passages"
+    val reason: String,             // e.g. "Wrong answer key", "Question is incorrect", "Option is missing/wrong", "Question is unclear", "Explanation is incorrect", "Image/diagram is missing", "Duplicate question", "Other"
     val userNotes: String = "",
-    val status: String = "PENDING", // "PENDING", "RESOLVED", "ARCHIVED", "REJECTED"
-    val resolutionAction: String? = null, // "FIXED_IN_DB", "ARCHIVED", "ORIGINAL_KEPT", "AUTO_CORRECTED"
+    val appVersion: String = "1.0",
+    val status: String = "PENDING", // "PENDING", "REVIEWED", "RESOLVED", "REJECTED"
+    val adminDecision: String? = null, // "APPROVE_NO_CHANGE", "CORRECT_QUESTION", "DISABLE_QUESTION", "DUPLICATE"
+    val adminNotes: String? = null,
+    val resolutionAction: String? = null, // backward compatibility
     val resolvedAt: Long? = null,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val isSyncedToSupabase: Boolean = false
 )
 
 

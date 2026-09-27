@@ -41,9 +41,11 @@ fun QuestionPracticeScreen(
     onPreviousQuestion: () -> Unit,
     onFinishSession: () -> Unit,
     onToggleBookmark: (questionId: String) -> Unit,
-    onAskAiTutor: (contextQuestion: String) -> Unit
+    onAskAiTutor: (contextQuestion: String) -> Unit,
+    onReportQuestion: ((question: QuestionEntity, reason: String, notes: String) -> Unit)? = null
 ) {
     var showCalculator by remember { mutableStateOf(false) }
+    var showFlagDialog by remember { mutableStateOf(false) }
 
     if (questions.isEmpty()) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -58,6 +60,16 @@ fun QuestionPracticeScreen(
 
     if (showCalculator) {
         ScientificCalculatorDialog(onDismiss = { showCalculator = false })
+    }
+
+    if (showFlagDialog) {
+        FlagQuestionDialog(
+            question = question,
+            onDismiss = { showFlagDialog = false },
+            onConfirmFlagAndFix = { reason, notes ->
+                onReportQuestion?.invoke(question, reason, notes)
+            }
+        )
     }
 
     Scaffold(
@@ -103,6 +115,27 @@ fun QuestionPracticeScreen(
                     )
 
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // Flag / Report Question Button
+                        Surface(
+                            shape = CircleShape,
+                            color = SurfaceWhite,
+                            border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
+                            modifier = Modifier
+                                .size(38.dp)
+                                .clip(CircleShape)
+                                .clickable { showFlagDialog = true }
+                                .testTag("practice_flag_btn")
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Flag,
+                                    contentDescription = "Report / Flag Question",
+                                    tint = TextPrimary,
+                                    modifier = Modifier.size(19.dp)
+                                )
+                            }
+                        }
+
                         // Calculator Button
                         Surface(
                             shape = CircleShape,

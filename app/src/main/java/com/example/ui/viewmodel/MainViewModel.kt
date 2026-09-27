@@ -36,12 +36,14 @@ data class AiChatMessage(
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     val repository = PrepzaRepository(application)
+    val questionSyncManager = com.example.data.supabase.QuestionSyncManager(application)
     private val aiTutorService = GeminiTutorService()
     val aiQuestionFixer = com.example.data.ai.AiQuestionFixer(repository, aiTutorService, viewModelScope)
 
     // Offline Network Connectivity Monitoring & Background Sync
     val networkMonitor = com.example.data.network.NetworkConnectivityMonitor(application)
     val isOnline: StateFlow<Boolean> = networkMonitor.isOnline
+    val questionSyncMessage: StateFlow<String?> = questionSyncManager.syncMessage
 
     private val _isSyncingCloud = MutableStateFlow(false)
     val isSyncingCloud: StateFlow<Boolean> = _isSyncingCloud.asStateFlow()
@@ -157,7 +159,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun syncRemoteContent(force: Boolean = false) {
         viewModelScope.launch {
-            repository.syncRemoteContent(force)
+            _isSyncingCloud.value = true
+            try {
+                repository.syncRemoteContent(force)
+                questionSyncManager.syncQuestionsAndReports(isOnline.value)
+            } finally {
+                _isSyncingCloud.value = false
+            }
         }
     }
 
@@ -1093,15 +1101,31 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         persistCurrentExamState()
     }
 
-    fun flagAndAutoFixQuestion(question: QuestionEntity, reason: String, notes: String = "") {
+    fun reportQuestion(question: QuestionEntity, reason: String, notes: String = "") {
         val index = _activeQuestionIndex.value
         val currentSet = _cbtFlaggedQuestions.value.toMutableSet()
         currentSet.add(index)
         _cbtFlaggedQuestions.value = currentSet
         persistCurrentExamState()
 
-        // Launch background AI reasoning and database auto-repair
-        aiQuestionFixer.flagAndAutoFix(question, reason, notes)
+        viewModelScope.launch(Dispatchers.IO) {
+            val currentUserId = activeAccount.value?.id ?: "student"
+            questionSyncManager.reportQuestion(
+                question = question,
+                userId = currentUserId,
+                reason = reason,
+                writtenReport = notes,
+                appVersion = "1.0",
+                isOnline = isOnline.value
+            )
+            withContext(Dispatchers.Main) {
+                _aiFixToastMessage.value = "Report recorded with question snapshot for admin review."
+            }
+        }
+    }
+
+    fun flagAndAutoFixQuestion(question: QuestionEntity, reason: String, notes: String = "") {
+        reportQuestion(question, reason, notes)
     }
 
     fun resumeActiveCbtExam() {
@@ -1890,29 +1914,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val pendingFlagCount: StateFlow<Int> = repository.flaggedQuestionDao.getPendingFlagCount()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 0)
 
-    fun resolveFlaggedQuestion(flagId: String, action: String, editedQuestion: QuestionEntity? = null) {
+    fun executeAdminReviewAction(
+        flagId: String,
+        decision: String,
+        adminNotes: String = "",
+        editedQuestion: QuestionEntity? = null
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
-            if (editedQuestion != null) {
-                repository.updateQuestion(editedQuestion)
-            }
-            repository.flaggedQuestionDao.updateFlagStatus(
-                id = flagId,
-                status = "RESOLVED",
-                action = action,
-                timestamp = System.currentTimeMillis()
+            questionSyncManager.executeAdminReviewAction(
+                flagId = flagId,
+                decision = decision,
+                adminNotes = adminNotes,
+                editedQuestion = editedQuestion,
+                isOnline = isOnline.value
             )
         }
     }
 
+    fun resolveFlaggedQuestion(flagId: String, action: String, editedQuestion: QuestionEntity? = null) {
+        val decision = if (editedQuestion != null) "CORRECT_QUESTION" else "APPROVE_NO_CHANGE"
+        executeAdminReviewAction(flagId, decision, action, editedQuestion)
+    }
+
     fun dismissOrRejectFlag(flagId: String) {
-        viewModelScope.launch(Dispatchers.IO) {
-            repository.flaggedQuestionDao.updateFlagStatus(
-                id = flagId,
-                status = "REJECTED",
-                action = "ORIGINAL_CONFIRMED_VALID",
-                timestamp = System.currentTimeMillis()
-            )
-        }
+        executeAdminReviewAction(flagId, "APPROVE_NO_CHANGE", "Verified authentic by administrator.", null)
     }
 
     fun deleteFlagRecord(flagId: String) {

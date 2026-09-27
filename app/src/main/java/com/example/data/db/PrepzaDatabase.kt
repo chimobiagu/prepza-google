@@ -27,7 +27,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         CardBookmarkEntity::class,
         FlaggedQuestionEntity::class
     ],
-    version = 14,
+    version = 15,
     exportSchema = false
 )
 abstract class PrepzaDatabase : RoomDatabase() {
@@ -157,11 +157,31 @@ abstract class PrepzaDatabase : RoomDatabase() {
             } catch (_: Exception) {}
 
             try {
-                db.execSQL("CREATE TABLE IF NOT EXISTS flagged_questions (id TEXT NOT NULL PRIMARY KEY, questionId TEXT NOT NULL, subject TEXT NOT NULL, topic TEXT NOT NULL, year TEXT NOT NULL, questionText TEXT NOT NULL, optionA TEXT NOT NULL, optionB TEXT NOT NULL, optionC TEXT NOT NULL, optionD TEXT NOT NULL, correctAnswerIndex INTEGER NOT NULL, explanation TEXT NOT NULL, reason TEXT NOT NULL, userNotes TEXT NOT NULL DEFAULT '', status TEXT NOT NULL DEFAULT 'PENDING', resolutionAction TEXT, resolvedAt INTEGER, timestamp INTEGER NOT NULL DEFAULT 0)")
+                db.execSQL("CREATE TABLE IF NOT EXISTS flagged_questions (id TEXT NOT NULL PRIMARY KEY, questionId TEXT NOT NULL, userId TEXT NOT NULL DEFAULT '', subject TEXT NOT NULL, topic TEXT NOT NULL, year TEXT NOT NULL DEFAULT '', questionSource TEXT NOT NULL DEFAULT 'Original JAMB Past Question', questionText TEXT NOT NULL, optionA TEXT NOT NULL, optionB TEXT NOT NULL, optionC TEXT NOT NULL, optionD TEXT NOT NULL, correctAnswerIndex INTEGER NOT NULL, explanation TEXT NOT NULL, reason TEXT NOT NULL, userNotes TEXT NOT NULL DEFAULT '', appVersion TEXT NOT NULL DEFAULT '1.0', status TEXT NOT NULL DEFAULT 'PENDING', adminDecision TEXT, adminNotes TEXT, resolutionAction TEXT, resolvedAt INTEGER, timestamp INTEGER NOT NULL DEFAULT 0, isSyncedToSupabase INTEGER NOT NULL DEFAULT 0)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_flagged_questions_questionId ON flagged_questions(questionId)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_flagged_questions_status ON flagged_questions(status)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_flagged_questions_subject ON flagged_questions(subject)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_flagged_questions_timestamp ON flagged_questions(timestamp)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_flagged_questions_isSyncedToSupabase ON flagged_questions(isSyncedToSupabase)")
+            } catch (_: Exception) {}
+
+            // Canonical question versioning, disabled flags, and Supabase sync fields
+            addColumnIfNotExists(db, "questions", "contentVersion", "INTEGER NOT NULL DEFAULT 1")
+            addColumnIfNotExists(db, "questions", "isDisabled", "INTEGER NOT NULL DEFAULT 0")
+            addColumnIfNotExists(db, "questions", "updatedAt", "INTEGER NOT NULL DEFAULT 0")
+            try {
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_questions_isDisabled ON questions(isDisabled)")
+            } catch (_: Exception) {}
+
+            addColumnIfNotExists(db, "flagged_questions", "userId", "TEXT NOT NULL DEFAULT ''")
+            addColumnIfNotExists(db, "flagged_questions", "examYear", "TEXT NOT NULL DEFAULT ''")
+            addColumnIfNotExists(db, "flagged_questions", "questionSource", "TEXT NOT NULL DEFAULT 'Original JAMB Past Question'")
+            addColumnIfNotExists(db, "flagged_questions", "appVersion", "TEXT NOT NULL DEFAULT '1.0'")
+            addColumnIfNotExists(db, "flagged_questions", "adminDecision", "TEXT")
+            addColumnIfNotExists(db, "flagged_questions", "adminNotes", "TEXT")
+            addColumnIfNotExists(db, "flagged_questions", "isSyncedToSupabase", "INTEGER NOT NULL DEFAULT 0")
+            try {
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_flagged_questions_isSyncedToSupabase ON flagged_questions(isSyncedToSupabase)")
             } catch (_: Exception) {}
         }
 
@@ -178,12 +198,15 @@ abstract class PrepzaDatabase : RoomDatabase() {
         val MIGRATION_11_12 = object : Migration(11, 12) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
         val MIGRATION_12_13 = object : Migration(12, 13) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
         val MIGRATION_13_14 = object : Migration(13, 14) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
+        val MIGRATION_14_15 = object : Migration(14, 15) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
         val MIGRATION_1_12 = object : Migration(1, 12) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
         val MIGRATION_1_13 = object : Migration(1, 13) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
         val MIGRATION_1_14 = object : Migration(1, 14) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
+        val MIGRATION_1_15 = object : Migration(1, 15) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
         val MIGRATION_10_12 = object : Migration(10, 12) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
         val MIGRATION_10_13 = object : Migration(10, 13) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
         val MIGRATION_10_14 = object : Migration(10, 14) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
+        val MIGRATION_10_15 = object : Migration(10, 15) { override fun migrate(db: SupportSQLiteDatabase) { safeMigrate(db) } }
 
         fun getDatabase(context: Context): PrepzaDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -194,7 +217,8 @@ abstract class PrepzaDatabase : RoomDatabase() {
                 )
                     .addMigrations(
                         MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
-                        MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_1_12, MIGRATION_1_13, MIGRATION_1_14, MIGRATION_10_12, MIGRATION_10_13, MIGRATION_10_14
+                        MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15,
+                        MIGRATION_1_12, MIGRATION_1_13, MIGRATION_1_14, MIGRATION_1_15, MIGRATION_10_12, MIGRATION_10_13, MIGRATION_10_14, MIGRATION_10_15
                     )
                     .fallbackToDestructiveMigration(true)
                     .fallbackToDestructiveMigrationOnDowngrade(true)

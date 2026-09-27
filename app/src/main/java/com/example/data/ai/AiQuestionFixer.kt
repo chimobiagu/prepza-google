@@ -45,11 +45,9 @@ class AiQuestionFixer(
     ) {
         scope.launch(Dispatchers.IO) {
             try {
-                Log.d(TAG, "Starting background AI fix for Question ${question.id} ($reason)")
+                Log.d(TAG, "Recording user question flag for Question ${question.id} ($reason)")
 
-                val fixedQuestion = performAiFix(question, reason, userNotes)
-                
-                // Record in Admin Flagged Questions table
+                // Record in Admin Flagged Questions table as PENDING review with preserved snapshot
                 val flagEntry = com.example.data.db.FlaggedQuestionEntity(
                     questionId = question.id,
                     subject = question.subject,
@@ -64,31 +62,30 @@ class AiQuestionFixer(
                     explanation = question.explanation,
                     reason = reason,
                     userNotes = userNotes,
-                    status = "RESOLVED",
-                    resolutionAction = "AUTO_CORRECTED",
-                    resolvedAt = System.currentTimeMillis()
+                    status = "PENDING",
+                    adminDecision = null,
+                    adminNotes = null,
+                    resolutionAction = null,
+                    resolvedAt = null
                 )
                 repository.flaggedQuestionDao.insertFlag(flagEntry)
-
-                // Persist the repaired question in the database
-                repository.updateQuestion(fixedQuestion)
 
                 val result = AiFixResult(
                     questionId = question.id,
                     subject = question.subject,
-                    message = "✨ AI Tutor verified & updated ${question.subject} Question (Reason: $reason)",
-                    updatedQuestion = fixedQuestion,
+                    message = "Question reported to admin review queue. Authentic content preserved.",
+                    updatedQuestion = question,
                     isSuccess = true
                 )
 
                 _fixNotificationFlow.emit(result)
-                Log.d(TAG, "Successfully repaired and updated Question ${question.id}")
+                Log.d(TAG, "Recorded report for Question ${question.id} for admin review")
             } catch (e: Exception) {
-                Log.e(TAG, "Error fixing question in background: ${e.message}", e)
+                Log.e(TAG, "Error recording question report: ${e.message}", e)
                 val fallbackResult = AiFixResult(
                     questionId = question.id,
                     subject = question.subject,
-                    message = "✨ Question flagged for review and verified by AI Tutor.",
+                    message = "Question flagged for administrator review.",
                     updatedQuestion = question,
                     isSuccess = true
                 )
