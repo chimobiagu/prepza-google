@@ -52,7 +52,8 @@ fun CbtExamScreen(
     onToggleFlag: () -> Unit,
     onFlagAndFix: (question: QuestionEntity, reason: String, notes: String) -> Unit = { _, _, _ -> onToggleFlag() },
     onSubmitExam: () -> Unit,
-    onExitExam: () -> Unit
+    onExitExam: () -> Unit,
+    onCancelAndDeleteExam: () -> Unit = onExitExam
 ) {
     var showPaletteSheet by remember { mutableStateOf(false) }
     var showCalculator by remember { mutableStateOf(false) }
@@ -60,9 +61,6 @@ fun CbtExamScreen(
     var showSubmitConfirmation by remember { mutableStateOf(false) }
     var showExitConfirmation by remember { mutableStateOf(false) }
     var showFlagReasonDialog by remember { mutableStateOf(false) }
-    var showStartupProfilerDialog by remember { mutableStateOf(false) }
-
-    val startupProfile by com.example.data.engine.StartupProfiler.latestProfileFlow.collectAsStateWithLifecycle()
 
     // Intercept hardware and gesture back presses to prompt the End Exam confirmation
     BackHandler(enabled = true) {
@@ -151,74 +149,38 @@ fun CbtExamScreen(
 
     // End / Exit Confirmation Dialog
     if (showExitConfirmation) {
-        val answeredCount = userAnswers.size
-        val unansweredCount = questions.size - answeredCount
-
         AlertDialog(
             onDismissRequest = { showExitConfirmation = false },
             title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                        contentDescription = null,
-                        tint = IncorrectRed,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "End CBT Mock Exam?",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
-                    )
-                }
+                Text(
+                    text = "End Examination",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
             },
             text = {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    Text(
-                        text = "If you don't want to continue, choose whether to grade what you've answered so far or discard the mock.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = AppBackground,
-                        border = androidx.compose.foundation.BorderStroke(1.dp, BorderSubtle),
-                        modifier = Modifier.fillMaxWidth()
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    // 1. Continue Examination
+                    OutlinedButton(
+                        onClick = { showExitConfirmation = false },
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(46.dp)
+                            .testTag("end_exam_continue_btn")
                     ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Answered", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-                                Text("$answeredCount / ${questions.size}", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall, color = CorrectGreen)
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Unanswered", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-                                Text("$unansweredCount", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall, color = if (unansweredCount > 0) IncorrectRed else CorrectGreen)
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text("Time Left", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-                                Text(timerText, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodySmall, color = TextPrimary)
-                            }
-                        }
+                        Text(
+                            text = "Continue Examination",
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Option 1: Submit and see score
+                    // 2. Submit Exam
                     Button(
                         onClick = {
                             showExitConfirmation = false
@@ -228,41 +190,40 @@ fun CbtExamScreen(
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .testTag("end_exam_submit_and_grade_btn")
+                            .height(46.dp)
+                            .testTag("end_exam_submit_btn")
                     ) {
-                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Submit & View Results", fontWeight = FontWeight.Bold)
+                        Text(
+                            text = "Submit Exam",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    // Option 2: Discard and exit to home
+                    // 3. Cancel & Delete Exam
                     OutlinedButton(
                         onClick = {
                             showExitConfirmation = false
-                            onExitExam()
+                            onCancelAndDeleteExam()
                         },
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = IncorrectRed),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, IncorrectRed.copy(alpha = 0.5f)),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, IncorrectRed.copy(alpha = 0.6f)),
                         shape = RoundedCornerShape(10.dp),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .testTag("end_exam_discard_btn")
+                            .height(46.dp)
+                            .testTag("end_exam_cancel_delete_btn")
                     ) {
-                        Text("Discard & Exit", fontWeight = FontWeight.SemiBold)
+                        Text(
+                            text = "Cancel & Delete Exam",
+                            fontWeight = FontWeight.Bold,
+                            color = IncorrectRed
+                        )
                     }
                 }
             },
             confirmButton = {},
-            dismissButton = {
-                TextButton(
-                    onClick = { showExitConfirmation = false },
-                    modifier = Modifier.testTag("end_exam_cancel_btn")
-                ) {
-                    Text("Continue Exam", color = TextPrimary, fontWeight = FontWeight.Bold)
-                }
-            }
+            dismissButton = {}
         )
     }
 
@@ -382,13 +343,6 @@ fun CbtExamScreen(
         )
     }
 
-    if (showStartupProfilerDialog) {
-        StartupProfilerDialog(
-            profile = startupProfile,
-            onDismiss = { showStartupProfilerDialog = false }
-        )
-    }
-
     Scaffold(
         topBar = {
             Column(
@@ -490,16 +444,11 @@ fun CbtExamScreen(
                         }
                     }
 
-                    // Quick Actions (Startup Profiler Badge, Calculator, Palette, and End Exam Button)
+                    // Quick Actions (Calculator, Palette, and End button at extreme top-right)
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        StartupProfilerBadge(
-                            profile = startupProfile,
-                            onClick = { showStartupProfilerDialog = true }
-                        )
-
                         IconButton(
                             onClick = { showCalculator = true },
                             modifier = Modifier.size(34.dp)
@@ -522,31 +471,31 @@ fun CbtExamScreen(
                                 modifier = Modifier.size(18.dp)
                             )
                         }
-                        Spacer(modifier = Modifier.width(2.dp))
-                        // Prominent "End Exam" Action Pill
+                        Spacer(modifier = Modifier.width(4.dp))
+                        // End button placed at extreme top-right
                         Surface(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
                                 .clickable { showExitConfirmation = true }
                                 .testTag("cbt_end_exam_topbar_btn"),
-                            color = SoftRed.copy(alpha = 0.22f),
+                            color = SoftRed.copy(alpha = 0.25f),
                             shape = RoundedCornerShape(8.dp),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, SoftRed.copy(alpha = 0.5f))
+                            border = androidx.compose.foundation.BorderStroke(1.dp, SoftRed.copy(alpha = 0.6f))
                         ) {
                             Row(
-                                modifier = Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                                     contentDescription = "End Exam",
                                     tint = Color.White,
-                                    modifier = Modifier.size(13.dp)
+                                    modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     text = "End",
-                                    style = MaterialTheme.typography.labelSmall,
+                                    style = MaterialTheme.typography.labelMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = Color.White
                                 )

@@ -133,16 +133,8 @@ fun BookOverviewScreen(
             if (bookData.isPoetry) {
                 listOf(
                     SectionCardItem(
-                        section = LiteratureSection.READER,
-                        title = "1. Read Poem",
-                        subtitle = "Complete poetic text, stanza-by-stanza layout, comfortable typography & night mode",
-                        icon = Icons.AutoMirrored.Filled.MenuBook,
-                        accentColor = Color(0xFF1B5E20),
-                        badge = "${bookData.chapters.size} Sections"
-                    ),
-                    SectionCardItem(
                         section = LiteratureSection.SUMMARIES,
-                        title = "2. Stanza Analysis & Meaning",
+                        title = "1. Stanza Analysis & Meaning",
                         subtitle = "Detailed line-by-line explanation, paraphrase, and meaning of each stanza",
                         icon = Icons.Default.Summarize,
                         accentColor = Color(0xFF0277BD),
@@ -150,7 +142,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.BACKGROUND,
-                        title = "3. Background & Historical Context",
+                        title = "2. Background & Historical Context",
                         subtitle = "Circumstances of composition, literary era, social context & exam relevance",
                         icon = Icons.Default.AccountBalance,
                         accentColor = Color(0xFF4527A0),
@@ -158,7 +150,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.AUTHOR,
-                        title = "4. About the Poet",
+                        title = "3. About the Poet",
                         subtitle = "Poet's life, literary philosophy, poetic movement, and key works",
                         icon = Icons.Default.Edit,
                         accentColor = Color(0xFF4E342E),
@@ -166,7 +158,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.THEMES,
-                        title = "5. Themes & Central Ideas",
+                        title = "4. Themes & Central Ideas",
                         subtitle = "Core thematic concerns explored in the poem with quoted excerpts",
                         icon = Icons.Default.Lightbulb,
                         accentColor = Color(0xFFF57F17),
@@ -174,7 +166,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.LITERARY_DEVICES,
-                        title = "6. Poetic Devices & Figures of Speech",
+                        title = "5. Poetic Devices & Figures of Speech",
                         subtitle = "Rhyme scheme, metaphors, alliteration, personification, imagery & sound devices",
                         icon = Icons.Default.Psychology,
                         accentColor = Color(0xFF00695C),
@@ -182,7 +174,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.SETTING,
-                        title = "7. Tone, Mood & Setting",
+                        title = "6. Tone, Mood & Setting",
                         subtitle = "Atmosphere, emotional tone of the speaker, and symbolic environment",
                         icon = Icons.Default.Place,
                         accentColor = Color(0xFF2E7D32),
@@ -190,7 +182,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.PLOT,
-                        title = "8. Structure, Meter & Poetic Form",
+                        title = "7. Structure, Meter & Poetic Form",
                         subtitle = "Stanzaic structure, rhythm, caesuras, kireji, and structural progression",
                         icon = Icons.Default.Timeline,
                         accentColor = Color(0xFFC2185B),
@@ -198,7 +190,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.CHARACTERS,
-                        title = "9. Speaker, Persona & Symbols",
+                        title = "8. Speaker, Persona & Symbols",
                         subtitle = "The poetic voice, perspective, central images, and symbolic motifs",
                         icon = Icons.Default.PeopleAlt,
                         accentColor = Color(0xFFE65100),
@@ -206,7 +198,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.IMPORTANT_FACTS,
-                        title = "10. JAMB Exam Focus & High-Yield Facts",
+                        title = "9. JAMB Exam Focus & High-Yield Facts",
                         subtitle = "Crucial exam takeaways, recurring question patterns, and key lines",
                         icon = Icons.Default.PushPin,
                         accentColor = Color(0xFFD84315),
@@ -214,7 +206,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.EXAM_PREP,
-                        title = "11. Practice Questions & UTME Quiz",
+                        title = "10. Practice Questions & UTME Quiz",
                         subtitle = "Past UTME objective questions on the poem with explanations and instant scoring",
                         icon = Icons.Default.Quiz,
                         accentColor = Color(0xFF6A1B9A),
@@ -222,7 +214,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.QUICK_REVISION,
-                        title = "12. Quick Revision Sheet",
+                        title = "11. Quick Revision Sheet",
                         subtitle = "One-page revision sheet synthesizing form, themes, devices & 10 must-know facts",
                         icon = Icons.Default.Bolt,
                         accentColor = Color(0xFF00838F),
@@ -232,16 +224,8 @@ fun BookOverviewScreen(
             } else if (bookData.isDrama) {
                 listOf(
                     SectionCardItem(
-                        section = LiteratureSection.READER,
-                        title = "1. Read Entire Play",
-                        subtitle = "Full dramatic script, Acts and Scenes, stage directions & comfortable reader",
-                        icon = Icons.AutoMirrored.Filled.MenuBook,
-                        accentColor = Color(0xFF1B5E20),
-                        badge = "${bookData.chapters.size} Acts/Scenes"
-                    ),
-                    SectionCardItem(
                         section = LiteratureSection.SUMMARIES,
-                        title = "2. Act & Scene Summaries",
+                        title = "1. Act & Scene Summaries",
                         subtitle = "Concise breakdown for every act and scene with sequential navigation",
                         icon = Icons.Default.Summarize,
                         accentColor = Color(0xFF0277BD),
@@ -249,7 +233,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.BACKGROUND,
-                        title = "3. Background & Historical Context",
+                        title = "2. Background & Historical Context",
                         subtitle = "Historical, social, and cultural context, staging traditions & author's intent",
                         icon = Icons.Default.AccountBalance,
                         accentColor = Color(0xFF4527A0),
@@ -257,7 +241,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.AUTHOR,
-                        title = "4. About the Playwright",
+                        title = "3. About the Playwright",
                         subtitle = "Playwright biography, dramatic style, major plays, and theatrical era",
                         icon = Icons.Default.Edit,
                         accentColor = Color(0xFF4E342E),
@@ -265,7 +249,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.CHARACTERS,
-                        title = "5. Cast & Character Profiles",
+                        title = "4. Cast & Character Profiles",
                         subtitle = "Protagonist, antagonists, dramatic foils, motivations, quotes & development",
                         icon = Icons.Default.PeopleAlt,
                         accentColor = Color(0xFFE65100),
@@ -273,7 +257,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.THEMES,
-                        title = "6. Themes & Motifs",
+                        title = "5. Themes & Motifs",
                         subtitle = "Tradition vs modernity, marital conflict, alienation, power & social justice",
                         icon = Icons.Default.Lightbulb,
                         accentColor = Color(0xFFF57F17),
@@ -281,7 +265,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.LITERARY_DEVICES,
-                        title = "7. Dramatic & Literary Devices",
+                        title = "6. Dramatic & Literary Devices",
                         subtitle = "Dramatic irony, soliloquies, asides, symbolism, mime, music & dance",
                         icon = Icons.Default.Psychology,
                         accentColor = Color(0xFF00695C),
@@ -289,7 +273,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.PLOT,
-                        title = "8. Plot & Dramatic Structure",
+                        title = "7. Plot & Dramatic Structure",
                         subtitle = "Exposition, inciting incident, rising action, climax, and denouement",
                         icon = Icons.Default.Timeline,
                         accentColor = Color(0xFFC2185B),
@@ -297,7 +281,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.SETTING,
-                        title = "9. Setting & Staging",
+                        title = "8. Setting & Staging",
                         subtitle = "Physical locations, period, stage design, symbolic props & social atmosphere",
                         icon = Icons.Default.Place,
                         accentColor = Color(0xFF2E7D32),
@@ -305,7 +289,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.IMPORTANT_FACTS,
-                        title = "10. Key Dramatic Events & Facts",
+                        title = "9. Key Dramatic Events & Facts",
                         subtitle = "High-yield character actions, turning points, dialogue cues & exam traps",
                         icon = Icons.Default.PushPin,
                         accentColor = Color(0xFFD84315),
@@ -313,7 +297,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.EXAM_PREP,
-                        title = "11. Practice Questions & UTME Quiz",
+                        title = "10. Practice Questions & UTME Quiz",
                         subtitle = "Interactive past UTME questions on characters, dramatic irony & quotes",
                         icon = Icons.Default.Quiz,
                         accentColor = Color(0xFF6A1B9A),
@@ -321,7 +305,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.QUICK_REVISION,
-                        title = "12. Quick Revision Sheet",
+                        title = "11. Quick Revision Sheet",
                         subtitle = "One-page study sheet summarizing cast, themes, acts & 10 must-know facts",
                         icon = Icons.Default.Bolt,
                         accentColor = Color(0xFF00838F),
@@ -332,16 +316,8 @@ fun BookOverviewScreen(
                 // Prose
                 listOf(
                     SectionCardItem(
-                        section = LiteratureSection.READER,
-                        title = "1. Read Entire Work",
-                        subtitle = "Complete original prose text, chapter navigation, comfortable font & night mode",
-                        icon = Icons.AutoMirrored.Filled.MenuBook,
-                        accentColor = Color(0xFF1B5E20),
-                        badge = "${bookData.chapters.size} Chapters"
-                    ),
-                    SectionCardItem(
                         section = LiteratureSection.SUMMARIES,
-                        title = "2. Chapter Summaries",
+                        title = "1. Chapter Summaries",
                         subtitle = "Concise breakdown for every chapter with seamless sequential navigation",
                         icon = Icons.Default.Summarize,
                         accentColor = Color(0xFF0277BD),
@@ -349,7 +325,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.BACKGROUND,
-                        title = "3. Background & Context",
+                        title = "2. Background & Context",
                         subtitle = "Historical, social, and cultural context, publication circumstances & exam focus",
                         icon = Icons.Default.AccountBalance,
                         accentColor = Color(0xFF4527A0),
@@ -357,7 +333,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.AUTHOR,
-                        title = "4. About the Author",
+                        title = "3. About the Author",
                         subtitle = "Author's background, notable works, literary era, and key exam facts",
                         icon = Icons.Default.Edit,
                         accentColor = Color(0xFF4E342E),
@@ -365,7 +341,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.CHARACTERS,
-                        title = "5. Characters & Profiles",
+                        title = "4. Characters & Profiles",
                         subtitle = "Protagonist, antagonists, supporting cast, relationships & development",
                         icon = Icons.Default.PeopleAlt,
                         accentColor = Color(0xFFE65100),
@@ -373,7 +349,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.THEMES,
-                        title = "6. Themes & Motifs",
+                        title = "5. Themes & Motifs",
                         subtitle = "Core themes explained with story appearance, quotes, and exam takeaways",
                         icon = Icons.Default.Lightbulb,
                         accentColor = Color(0xFFF57F17),
@@ -381,7 +357,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.LITERARY_DEVICES,
-                        title = "7. Literary Devices & Figures",
+                        title = "6. Literary Devices & Figures",
                         subtitle = "Metaphors, ironies, symbolism, and narrative devices with exact excerpts",
                         icon = Icons.Default.Psychology,
                         accentColor = Color(0xFF00695C),
@@ -389,7 +365,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.PLOT,
-                        title = "8. Plot & Narrative Arc",
+                        title = "7. Plot & Narrative Arc",
                         subtitle = "Exposition, conflict, turning points, climax, and resolution breakdown",
                         icon = Icons.Default.Timeline,
                         accentColor = Color(0xFFC2185B),
@@ -397,7 +373,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.SETTING,
-                        title = "9. Setting & Locations",
+                        title = "8. Setting & Locations",
                         subtitle = "Where, when, social environments, and symbolic locations in the novel",
                         icon = Icons.Default.Place,
                         accentColor = Color(0xFF2E7D32),
@@ -405,7 +381,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.IMPORTANT_FACTS,
-                        title = "10. Key Events & High-Yield Facts",
+                        title = "9. Key Events & High-Yield Facts",
                         subtitle = "High-yield character connections, crucial events, dates, and exam traps",
                         icon = Icons.Default.PushPin,
                         accentColor = Color(0xFFD84315),
@@ -413,7 +389,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.EXAM_PREP,
-                        title = "11. Practice Questions & UTME Quiz",
+                        title = "10. Practice Questions & UTME Quiz",
                         subtitle = "Interactive past UTME questions, quick quizzes, and instant scoring",
                         icon = Icons.Default.Quiz,
                         accentColor = Color(0xFF6A1B9A),
@@ -421,7 +397,7 @@ fun BookOverviewScreen(
                     ),
                     SectionCardItem(
                         section = LiteratureSection.QUICK_REVISION,
-                        title = "12. Quick Revision Sheet",
+                        title = "11. Quick Revision Sheet",
                         subtitle = "One-pager revision sheet synthesizing plot, characters, themes & 10 must-know facts",
                         icon = Icons.Default.Bolt,
                         accentColor = Color(0xFF00838F),
@@ -448,14 +424,12 @@ fun BookOverviewScreen(
                 )
             }
 
-            // 2. PRIMARY ACTION: Large "Continue Reading" or "Read The Book" Card
+            // 2. PRIMARY ACTION: Large Study Summaries & Analysis Card
             item {
-                PrimaryReadingActionCard(
+                PrimaryStudyActionCard(
                     bookData = bookData,
-                    currentChapterNumber = activeChapterNumber,
-                    currentChapterTitle = currentChapterTitle,
-                    progressPercent = currentProgressPercent,
-                    onContinueClick = { onContinueReading(lastReadChapterIndex) }
+                    onOpenSummaries = { onOpenSection(LiteratureSection.SUMMARIES) },
+                    onOpenExamPrep = { onOpenSection(LiteratureSection.EXAM_PREP) }
                 )
             }
 
@@ -684,16 +658,14 @@ fun BookHeroHeaderCard(
 }
 
 @Composable
-fun PrimaryReadingActionCard(
+fun PrimaryStudyActionCard(
     bookData: LiteratureBookStudyData,
-    currentChapterNumber: Int,
-    currentChapterTitle: String,
-    progressPercent: Int,
-    onContinueClick: () -> Unit,
+    onOpenSummaries: () -> Unit,
+    onOpenExamPrep: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
-        onClick = onContinueClick,
+        onClick = onOpenSummaries,
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = PrimaryGreenDark
@@ -701,7 +673,7 @@ fun PrimaryReadingActionCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         modifier = modifier
             .fillMaxWidth()
-            .testTag("primary_reading_action_card")
+            .testTag("primary_study_action_card")
     ) {
         Row(
             modifier = Modifier
@@ -717,10 +689,10 @@ fun PrimaryReadingActionCard(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = if (progressPercent > 0) Icons.Default.PlayArrow else Icons.AutoMirrored.Filled.MenuBook,
+                    imageVector = Icons.Default.Summarize,
                     contentDescription = null,
                     tint = Color.White,
-                    modifier = Modifier.size(28.dp)
+                    modifier = Modifier.size(26.dp)
                 )
             }
 
@@ -728,7 +700,7 @@ fun PrimaryReadingActionCard(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = if (progressPercent > 0) "CONTINUE READING" else "START READING BOOK",
+                    text = "LITERATURE STUDY GUIDE",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = Color.White.copy(alpha = 0.85f),
@@ -736,7 +708,7 @@ fun PrimaryReadingActionCard(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = currentChapterTitle,
+                    text = "Study Summaries & Key Notes",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.ExtraBold,
                     color = Color.White,
@@ -744,7 +716,7 @@ fun PrimaryReadingActionCard(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = if (progressPercent > 0) "Resume from where you left off" else "Read full text with chapter navigation",
+                    text = "Master chapters, characters, themes & UTME practice questions",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.75f)
                 )

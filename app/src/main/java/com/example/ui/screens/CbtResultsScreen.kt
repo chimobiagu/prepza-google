@@ -81,6 +81,18 @@ private fun CbtMainSummaryScreen(
     val totalCorrectCount = if (isMini) summary.totalScore else summary.subjectScores.values.sumOf { it.first }
     val totalQuestionsCount = if (isMini) summary.maxScore else summary.subjectScores.values.sumOf { it.second }
 
+    val totalQuestions = summary.questions.size
+    val correctCount = summary.questions.count { q -> summary.userAnswers[q.id] == q.correctAnswerIndex }
+    val answeredCount = summary.questions.count { q -> summary.userAnswers.containsKey(q.id) }
+    val incorrectCount = summary.questions.count { q -> summary.userAnswers.containsKey(q.id) && summary.userAnswers[q.id] != q.correctAnswerIndex }
+    val unansweredCount = (totalQuestions - answeredCount).coerceAtLeast(0)
+
+    val correctSweep = if (totalQuestions > 0) (correctCount.toFloat() / totalQuestions) * 360f else 0f
+    val incorrectSweep = if (totalQuestions > 0) (incorrectCount.toFloat() / totalQuestions) * 360f else 0f
+    val unansweredSweep = if (totalQuestions > 0) (unansweredCount.toFloat() / totalQuestions) * 360f else 0f
+
+    val avgSecondsPerQuestion = if (answeredCount > 0) (summary.totalTimeSeconds / answeredCount) else 0L
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -144,89 +156,225 @@ private fun CbtMainSummaryScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 1. Total Score Big Hero Card
+        // 1. Total Score Big Hero Card with Circular Performance Donut
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(18.dp)),
+                .clip(RoundedCornerShape(20.dp)),
             color = DarkCardBg,
-            shape = RoundedCornerShape(18.dp)
+            shape = RoundedCornerShape(20.dp),
+            shadowElevation = 4.dp
         ) {
             Column(
-                modifier = Modifier.padding(22.dp),
+                modifier = Modifier.padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = if (isMini) "MINI CBT GRADE" else "TOTAL JAMB CBT SCORE",
+                    text = if (isMini) "MINI CBT PERFORMANCE" else "TOTAL JAMB CBT SCORE",
                     style = MaterialTheme.typography.labelSmall,
                     color = TextMuted,
                     fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp
+                    letterSpacing = 1.2.sp
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
-                Row(
-                    verticalAlignment = Alignment.Bottom
+                // Circular Performance Donut Visualization
+                Box(
+                    modifier = Modifier.size(170.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = "${summary.totalScore}",
-                        fontSize = 50.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                    Text(
-                        text = " / $maxScore",
-                        fontSize = 22.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = TextMuted,
-                        modifier = Modifier.padding(bottom = 8.dp, start = 4.dp)
-                    )
+                    androidx.compose.foundation.Canvas(modifier = Modifier.size(160.dp)) {
+                        val strokeWidth = 14.dp.toPx()
+                        val arcSize = size.copy(
+                            width = size.width - strokeWidth,
+                            height = size.height - strokeWidth
+                        )
+                        val topLeft = androidx.compose.ui.geometry.Offset(strokeWidth / 2, strokeWidth / 2)
+
+                        // Track Background
+                        drawArc(
+                            color = Color.White.copy(alpha = 0.1f),
+                            startAngle = 0f,
+                            sweepAngle = 360f,
+                            useCenter = false,
+                            topLeft = topLeft,
+                            size = arcSize,
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = strokeWidth)
+                        )
+
+                        var startAngle = -90f
+                        // Correct Arc
+                        if (correctSweep > 0f) {
+                            drawArc(
+                                color = Color(0xFF22C55E),
+                                startAngle = startAngle,
+                                sweepAngle = correctSweep,
+                                useCenter = false,
+                                topLeft = topLeft,
+                                size = arcSize,
+                                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                                    width = strokeWidth,
+                                    cap = androidx.compose.ui.graphics.StrokeCap.Round
+                                )
+                            )
+                            startAngle += correctSweep
+                        }
+
+                        // Incorrect Arc
+                        if (incorrectSweep > 0f) {
+                            drawArc(
+                                color = Color(0xFFEF4444),
+                                startAngle = startAngle,
+                                sweepAngle = incorrectSweep,
+                                useCenter = false,
+                                topLeft = topLeft,
+                                size = arcSize,
+                                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                                    width = strokeWidth,
+                                    cap = androidx.compose.ui.graphics.StrokeCap.Round
+                                )
+                            )
+                            startAngle += incorrectSweep
+                        }
+
+                        // Unanswered Arc
+                        if (unansweredSweep > 0f) {
+                            drawArc(
+                                color = Color(0xFF94A3B8),
+                                startAngle = startAngle,
+                                sweepAngle = unansweredSweep,
+                                useCenter = false,
+                                topLeft = topLeft,
+                                size = arcSize,
+                                style = androidx.compose.ui.graphics.drawscope.Stroke(
+                                    width = strokeWidth,
+                                    cap = androidx.compose.ui.graphics.StrokeCap.Round
+                                )
+                            )
+                        }
+                    }
+
+                    // Donut Center Content
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = "${summary.totalScore}",
+                            fontSize = 38.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = Color.White
+                        )
+                        Text(
+                            text = "out of $maxScore",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextMuted
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = PrimaryGreen.copy(alpha = 0.25f)
+                        ) {
+                            Text(
+                                text = "${summary.accuracyPercent}% ACCURACY",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color(0xFF86EFAC),
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 9.sp,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
-                Text(
-                    text = "$totalCorrectCount of $totalQuestionsCount questions correct (${summary.accuracyPercent}% overall)",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = PaleGreenBg
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Stats Chips Row
+                // Answer Breakdown Legend (Correct, Incorrect, Unanswered)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Result", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(shape = CircleShape, color = Color(0xFF22C55E), modifier = Modifier.size(8.dp)) {}
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Correct", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                        }
                         Text(
-                            text = "${summary.totalScore}/$maxScore",
+                            text = "$correctCount",
                             fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            fontSize = 15.sp
+                            color = Color(0xFF86EFAC),
+                            fontSize = 16.sp
                         )
                     }
+
                     Divider(
                         modifier = Modifier
-                            .height(24.dp)
+                            .height(26.dp)
                             .width(1.dp),
-                        color = Color.White.copy(alpha = 0.2f)
+                        color = Color.White.copy(alpha = 0.15f)
                     )
+
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Time Used", style = MaterialTheme.typography.labelSmall, color = TextMuted)
-                        Text(formattedTime, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 15.sp)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(shape = CircleShape, color = Color(0xFFEF4444), modifier = Modifier.size(8.dp)) {}
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Incorrect", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                        }
+                        Text(
+                            text = "$incorrectCount",
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFFCA5A5),
+                            fontSize = 16.sp
+                        )
                     }
+
                     Divider(
                         modifier = Modifier
-                            .height(24.dp)
+                            .height(26.dp)
                             .width(1.dp),
-                        color = Color.White.copy(alpha = 0.2f)
+                        color = Color.White.copy(alpha = 0.15f)
                     )
+
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("Accuracy", style = MaterialTheme.typography.labelSmall, color = TextMuted)
-                        Text("${summary.accuracyPercent}%", fontWeight = FontWeight.Bold, color = CorrectGreen, fontSize = 15.sp)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Surface(shape = CircleShape, color = Color(0xFF94A3B8), modifier = Modifier.size(8.dp)) {}
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Unanswered", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                        }
+                        Text(
+                            text = "$unansweredCount",
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFCBD5E1),
+                            fontSize = 16.sp
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // Time Metrics Sub-card
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.White.copy(alpha = 0.08f),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Timer, contentDescription = null, tint = AmberAccent, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Total Time Used: $formattedTime", style = MaterialTheme.typography.bodySmall, color = Color.White)
+                        }
+
+                        if (avgSecondsPerQuestion > 0) {
+                            Text("~${avgSecondsPerQuestion}s/Q", style = MaterialTheme.typography.labelSmall, color = TextMuted)
+                        }
                     }
                 }
             }

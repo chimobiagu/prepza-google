@@ -1304,6 +1304,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun cancelAndDeleteCbtExam() {
+        timerJob?.cancel()
+        _activePracticeQuestions.value = emptyList()
+        _userAnswers.value = emptyMap()
+        _cbtTimerSeconds.value = 0L
+        _cbtFlaggedQuestions.value = emptySet()
+        _activeQuestionIndex.value = 0
+        _cbtResult.value = null
+        _isMiniCbtSession.value = false
+        // Discard completely: Does NOT count as a completed attempt and does not produce a score/history result.
+    }
+
     private val _cbtPersonalizedPlan = MutableStateFlow<String?>(null)
     val cbtPersonalizedPlan: StateFlow<String?> = _cbtPersonalizedPlan.asStateFlow()
 

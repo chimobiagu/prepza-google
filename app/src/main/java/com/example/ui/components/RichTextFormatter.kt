@@ -364,6 +364,65 @@ object RichTextFormatter {
             }
         }
     }
+
+    /**
+     * Specifically formats AI chat responses:
+     * - Cleans raw heading hashes (###, ##, #) into clean bold lines
+     * - Formats list markers (*, -) into proper bullet points
+     * - Strips horizontal dividers (---, ***)
+     * - Renders rich bold/italic/underline spans cleanly without raw syntax
+     */
+    fun formatAiResponse(rawText: String): AnnotatedString {
+        var text = rawText
+        // Convert headers like ### Header or ## Header to <b>Header</b>
+        text = text.replace(Regex("(?m)^#{1,6}\\s*(.*?)$")) { match ->
+            val title = match.groupValues[1].trim()
+            if (title.isNotBlank()) "<b>$title</b>" else ""
+        }
+        // Convert bullet points starting with * or - to bullet symbol
+        text = text.replace(Regex("(?m)^\\s*[*\\-]\\s+")) { "• " }
+        // Remove horizontal lines
+        text = text.replace(Regex("(?m)^[-*_]{3,}\\s*$"), "")
+        // Clean multiple consecutive blank lines
+        text = text.replace(Regex("\\n{3,}"), "\n\n")
+        return buildAnnotatedFromFormattedText(text.trim())
+    }
+}
+
+/**
+ * Reusable FormattedAiText Composable that renders AI tutor responses cleanly with no markdown artifacts.
+ */
+@Composable
+fun FormattedAiText(
+    text: String,
+    modifier: Modifier = Modifier,
+    style: TextStyle = LocalTextStyle.current,
+    color: Color = Color.Unspecified,
+    fontSize: TextUnit = TextUnit.Unspecified,
+    fontWeight: FontWeight? = null,
+    fontStyle: FontStyle? = null,
+    lineHeight: TextUnit = TextUnit.Unspecified,
+    textAlign: TextAlign? = null,
+    maxLines: Int = Int.MAX_VALUE,
+    overflow: TextOverflow = TextOverflow.Clip
+) {
+    val annotatedString = remember(text) {
+        RichTextFormatter.formatAiResponse(text)
+    }
+
+    Text(
+        text = annotatedString,
+        modifier = modifier,
+        style = style,
+        color = color,
+        fontSize = fontSize,
+        fontWeight = fontWeight,
+        fontStyle = fontStyle,
+        lineHeight = lineHeight,
+        textAlign = textAlign,
+        maxLines = maxLines,
+        overflow = overflow
+    )
 }
 
 /**

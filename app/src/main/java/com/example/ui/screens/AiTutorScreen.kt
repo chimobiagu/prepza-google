@@ -225,12 +225,7 @@ fun AiTutorScreen(
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
-                                    imageVector = when (selectedPersona) {
-                                        TutorPersona.STEM_SPECIALIST -> Icons.Default.Calculate
-                                        TutorPersona.RAPID_SPRINT -> Icons.Default.Bolt
-                                        TutorPersona.LITERATURE_ANALYST -> Icons.Default.MenuBook
-                                        else -> Icons.Default.AutoAwesome
-                                    },
+                                    imageVector = Icons.Default.AutoAwesome,
                                     contentDescription = null,
                                     tint = PrimaryGreen,
                                     modifier = Modifier.size(20.dp)
@@ -241,7 +236,7 @@ fun AiTutorScreen(
                         Column {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = "Prepza AI Tutor",
+                                    text = "Prepza AI",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -262,7 +257,7 @@ fun AiTutorScreen(
                                         )
                                         Spacer(modifier = Modifier.width(2.dp))
                                         Text(
-                                            text = selectedPersona.engineName,
+                                            text = "Study Assistant",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = PrimaryGreenDark,
                                             fontWeight = FontWeight.Bold,
@@ -272,7 +267,7 @@ fun AiTutorScreen(
                                 }
                             }
                             Text(
-                                text = selectedPersona.displayName,
+                                text = "Your 24/7 UTME Study Companion",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = TextSecondary,
                                 fontSize = 11.sp
@@ -477,76 +472,6 @@ fun AiTutorScreen(
                 .padding(innerPadding)
                 .background(AppBackground)
         ) {
-            // Tutor Persona Selector Tabs
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(SurfaceWhite)
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                TutorPersona.values().forEach { persona ->
-                    val isSelected = persona == selectedPersona
-                    val chipBg = if (isSelected) PrimaryGreen else SurfaceWhite
-                    val chipTextColor = if (isSelected) Color.White else TextSecondary
-                    val chipBorderColor = if (isSelected) PrimaryGreen else BorderSubtle
-
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = chipBg,
-                        border = BorderStroke(1.dp, chipBorderColor),
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(20.dp))
-                            .clickable {
-                                onSelectPersona(persona)
-                            }
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                        ) {
-                            Icon(
-                                imageVector = when (persona) {
-                                    TutorPersona.STEM_SPECIALIST -> Icons.Default.Calculate
-                                    TutorPersona.RAPID_SPRINT -> Icons.Default.Bolt
-                                    TutorPersona.LITERATURE_ANALYST -> Icons.Default.MenuBook
-                                    else -> Icons.Default.AutoAwesome
-                                },
-                                contentDescription = null,
-                                tint = chipTextColor,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = persona.displayName,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = chipTextColor,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Role Description Banner
-            Surface(
-                color = SoftEmeraldBg.copy(alpha = 0.5f),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Role: ${selectedPersona.tagline} • Powered by ${selectedPersona.engineName}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = PrimaryGreenDark,
-                        fontSize = 11.sp
-                    )
-                }
-            }
-
             // If active question context is present, show a context banner
             if (contextQuestion.isNotBlank()) {
                 Surface(
@@ -569,7 +494,7 @@ fun AiTutorScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Discussing selected practice question",
+                            text = "Discussing Practice Question",
                             style = MaterialTheme.typography.labelMedium,
                             color = PrimaryGreenDark,
                             fontWeight = FontWeight.Bold
@@ -605,12 +530,7 @@ fun AiTutorScreen(
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
-                                        imageVector = when (selectedPersona) {
-                                            TutorPersona.STEM_SPECIALIST -> Icons.Default.Calculate
-                                            TutorPersona.RAPID_SPRINT -> Icons.Default.Bolt
-                                            TutorPersona.LITERATURE_ANALYST -> Icons.Default.MenuBook
-                                            else -> Icons.Default.AutoAwesome
-                                        },
+                                        imageVector = Icons.Default.AutoAwesome,
                                         contentDescription = null,
                                         tint = Color.White,
                                         modifier = Modifier.size(16.dp)
@@ -630,10 +550,10 @@ fun AiTutorScreen(
                             color = if (isUser) PrimaryGreen else SurfaceWhite,
                             border = if (isUser) null else BorderStroke(1.dp, if (isCurrentlySpeaking) PrimaryGreen else BorderSubtle),
                             shadowElevation = if (isUser) 0.dp else 1.dp,
-                            modifier = Modifier.widthIn(max = 320.dp)
+                            modifier = Modifier.fillMaxWidth(0.85f).widthIn(max = 440.dp)
                         ) {
                             Column(modifier = Modifier.padding(14.dp)) {
-                                Text(
+                                com.example.ui.components.FormattedAiText(
                                     text = msg.text,
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = if (isUser) Color.White else TextPrimary,

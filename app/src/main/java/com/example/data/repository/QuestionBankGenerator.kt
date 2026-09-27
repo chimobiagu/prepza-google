@@ -314,10 +314,12 @@ object QuestionBankGenerator {
         questions.addAll(JambGeographyQuestionBank.getQuestions())
         questions.addAll(JambFurtherMathematicsQuestionBank.getQuestions())
 
-        // Newly Verified Exam Banks (English 2015 CBT, Geography 2015, History 2012, IRS 2011, Government PT 1-5)
+        // Newly Verified Exam Banks (English 2015 CBT, Geography 2015, History 2012, IRS 2011, Government PT 1-5, Gov 1978, Maths 2014)
         questions.addAll(JambEnglish2015ExamCompleteBank.getQuestions())
         questions.addAll(JambGeography2015ExamBank.getQuestions())
         questions.addAll(JambGovernmentPt1to5ExamBank.getQuestions())
+        questions.addAll(JambGovernment1978ExamBank.getQuestions())
+        questions.addAll(JambMathematics2014ExamBank.getQuestions())
         questions.addAll(JambHistory2012ExamBank.getQuestions())
         questions.addAll(JambIrs2011ExamBank.getQuestions())
 

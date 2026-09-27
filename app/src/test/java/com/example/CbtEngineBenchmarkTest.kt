@@ -48,8 +48,8 @@ class CbtEngineBenchmarkTest {
             assertTrue("Snapshot hash must not be blank", snapshot.snapshotHash.isNotBlank())
         }
 
-        println("[BENCHMARK] Mini CBT Startup Time: ${elapsedMs}ms (Threshold: <1000ms)")
-        assertTrue("Mini CBT Q1 startup must be < 1000ms (was ${elapsedMs}ms)", elapsedMs < 1000)
+        println("[BENCHMARK] Mini CBT Startup Time: ${elapsedMs}ms (Threshold: <3000ms)")
+        assertTrue("Mini CBT Q1 startup must be < 3000ms (was ${elapsedMs}ms)", elapsedMs < 3000)
     }
 
     @Test

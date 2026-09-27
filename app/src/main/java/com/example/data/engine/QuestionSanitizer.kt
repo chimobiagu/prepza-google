@@ -20,32 +20,10 @@ object QuestionSanitizer {
         val cleanTopic = cleanTopicString(q.topic)
         val cleanStem = cleanQuestionStem(q.questionText)
 
-        var optA = cleanOptionText(q.optionA, 'A')
-        var optB = cleanOptionText(q.optionB, 'B')
-        var optC = cleanOptionText(q.optionC, 'C')
-        var optD = cleanOptionText(q.optionD, 'D')
-
-        // Ensure no empty or duplicate options
-        val opts = listOf(optA, optB, optC, optD).toMutableList()
-        val defaultDistractors = listOf("None of the above", "Both A and B", "Cannot be determined", "All of the above")
-
-        for (i in 0..3) {
-            if (opts[i].isBlank()) {
-                opts[i] = defaultDistractors[i]
-            }
-        }
-
-        // Deduplicate identical options if any without adding artificial labels
-        val seenOpts = mutableSetOf<String>()
-        for (i in 0..3) {
-            val key = opts[i].trim().lowercase(Locale.ROOT)
-            seenOpts.add(key)
-        }
-
-        optA = opts[0]
-        optB = opts[1]
-        optC = opts[2]
-        optD = opts[3]
+        val optA = cleanOptionText(q.optionA, 'A')
+        val optB = cleanOptionText(q.optionB, 'B')
+        val optC = cleanOptionText(q.optionC, 'C')
+        val optD = cleanOptionText(q.optionD, 'D')
 
         val cleanAnswerIndex = q.correctAnswerIndex.coerceIn(0, 3)
 

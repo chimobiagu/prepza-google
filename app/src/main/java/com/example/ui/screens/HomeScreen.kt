@@ -382,7 +382,7 @@ fun HomeScreen(
                 shape = RoundedCornerShape(14.dp),
                 color = if (isDark) Color(0xFF382910) else Color(0xFFFFFBEB),
                 border = BorderStroke(1.dp, if (isDark) Color(0xFFD97706) else Color(0xFFF59E0B)),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().testTag("unfinished_cbt_banner")
             ) {
                 Row(
                     modifier = Modifier.padding(14.dp),
@@ -402,7 +402,7 @@ fun HomeScreen(
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
-                                text = "Unfinished CBT Session",
+                                text = "Unfinished CBT",
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp,
                                 color = if (isDark) Color(0xFFFDE68A) else Color(0xFF92400E)
@@ -414,13 +414,33 @@ fun HomeScreen(
                             )
                         }
                     }
-                    Button(
-                        onClick = onResumeActiveExam,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
-                        shape = RoundedCornerShape(8.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("Resume", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        OutlinedButton(
+                            onClick = onDiscardActiveExam,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = if (isDark) Color(0xFFFDE68A) else Color(0xFF92400E)
+                            ),
+                            border = BorderStroke(1.dp, if (isDark) Color(0xFFD97706) else Color(0xFFF59E0B)),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                            modifier = Modifier.testTag("cancel_active_exam_btn")
+                        ) {
+                            Text("Cancel", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        }
+
+                        Button(
+                            onClick = onResumeActiveExam,
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD97706)),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                            modifier = Modifier.testTag("continue_active_exam_btn")
+                        ) {
+                            Text("Continue", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }

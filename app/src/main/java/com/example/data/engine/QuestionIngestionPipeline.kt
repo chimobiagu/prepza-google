@@ -117,7 +117,7 @@ object QuestionIngestionPipeline {
             // 4. Correct answer index check
             val cleanAnswerIndex = raw.correctAnswerIndex.coerceIn(0, 3)
 
-            // 5. Option Quality & Answer Leakage Audit
+            // 5. Option Quality & Exact Source Fidelity
             val candidateQuestion = raw.copy(
                 id = raw.id.trim().ifBlank { "q_${UUID.randomUUID().toString().take(10)}" },
                 subject = normalizedSubject,
@@ -142,13 +142,29 @@ object QuestionIngestionPipeline {
                 imageUrl = raw.imageUrl?.trim()?.ifBlank { null }
             )
 
+            // 6. Hard Visual Integrity Rule: If question depends on a visual/diagram, asset must be present
+            val visualIntegrity = CbtVisualIntegrityValidator.validateQuestionVisual(candidateQuestion)
+            if (!visualIntegrity.hasRequiredVisual) {
+                rejectedCount++
+                flaggedReviewCount++
+                rejectionReports.add(
+                    QuestionRejectionReport(
+                        candidateQuestion.id,
+                        normalizedSubject,
+                        visualIntegrity.quarantineReason ?: "Quarantined: Missing required diagram/visual asset",
+                        cleanStem.take(60)
+                    )
+                )
+                continue
+            }
+
             val auditResult = auditOptionQuality(candidateQuestion)
             if (auditResult.isLeakyOrSuspicious) {
                 flaggedReviewCount++
             }
             val sanitized = auditResult.sanitizedQuestion
 
-            // 6. Deduplication check
+            // 7. Deduplication check
             val fingerprint = computeFingerprint(sanitized)
             if (sanitized.id in seenIds || fingerprint in seenFingerprints) {
                 duplicateCount++
@@ -204,41 +220,11 @@ object QuestionIngestionPipeline {
             reason = "Correct option is significantly longer than distractors (${correctLength} chars vs avg ${avgOtherLength.toInt()} chars)."
         }
 
-        // 2. Parenthetical definition giveaway check in correct option
-        var cleanOptA = q.optionA
-        var cleanOptB = q.optionB
-        var cleanOptC = q.optionC
-        var cleanOptD = q.optionD
-
-        // If one option has bracketed explanations like "Cellulose (a complex carbohydrate)" while other options are plain words,
-        // sanitize it by cleaning the bracketed explanation into the explanation field.
-        val cleanedOptions = options.map { opt ->
-            if (opt.contains("(") && opt.contains(")")) {
-                val bracketContent = opt.substringAfter("(").substringBefore(")")
-                if (bracketContent.length > 10 && (bracketContent.contains("meaning", ignoreCase = true) || bracketContent.contains("which", ignoreCase = true) || bracketContent.contains("definition", ignoreCase = true))) {
-                    opt.replace(Regex("\\s*\\([^)]+\\)"), "").trim()
-                } else {
-                    opt
-                }
-            } else {
-                opt
-            }
-        }
-
-        cleanOptA = cleanedOptions[0]
-        cleanOptB = cleanedOptions[1]
-        cleanOptC = cleanedOptions[2]
-        cleanOptD = cleanedOptions[3]
-
+        // Preserve exact source option wording and order without AI/synthetic truncation
         return OptionAuditResult(
             isLeakyOrSuspicious = isSuspicious,
             reason = reason,
-            sanitizedQuestion = q.copy(
-                optionA = cleanOptA,
-                optionB = cleanOptB,
-                optionC = cleanOptC,
-                optionD = cleanOptD
-            )
+            sanitizedQuestion = q
         )
     }
 

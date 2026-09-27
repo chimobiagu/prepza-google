@@ -450,6 +450,11 @@ fun PrepzaApp(viewModel: MainViewModel = viewModel()) {
                     activeScreen = ActiveScreen.CBT_RESULTS
                 },
                 onExitExam = {
+                    viewModel.cancelAndDeleteCbtExam()
+                    activeScreen = ActiveScreen.MAIN_TABS
+                },
+                onCancelAndDeleteExam = {
+                    viewModel.cancelAndDeleteCbtExam()
                     activeScreen = ActiveScreen.MAIN_TABS
                 }
             )

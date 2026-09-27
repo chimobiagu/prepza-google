@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.data.db.OfflinePackEntity
 import com.example.ui.components.PrepzaCard
 import com.example.ui.theme.*
@@ -55,7 +56,7 @@ fun OfflineDownloadsScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Offline Downloads",
+                        text = "Offline Questions",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -112,7 +113,7 @@ fun OfflineDownloadsScreen(
                                 color = PrimaryGreenDark
                             )
                             Text(
-                                text = "Practice without data",
+                                text = "Full CBT runs locally without internet connection",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = TextSecondary
                             )
@@ -172,7 +173,7 @@ fun OfflineDownloadsScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // One-tap Download All Button
+            // One-tap Download All 4 Subjects Button
             Button(
                 onClick = { onDownloadAllSelectedSubjects(userSubjects) },
                 modifier = Modifier
@@ -185,7 +186,7 @@ fun OfflineDownloadsScreen(
                 Icon(imageVector = Icons.Default.Download, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Ensure My 4 JAMB Subjects are Cached",
+                    text = "Cache All 4 Exam Subjects for Offline CBT",
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -193,7 +194,7 @@ fun OfflineDownloadsScreen(
             Spacer(modifier = Modifier.height(18.dp))
 
             Text(
-                text = "Available Question Bundles",
+                text = "Offline Questions by Subject",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 color = TextPrimary
@@ -226,6 +227,9 @@ fun OfflinePackRowItem(
     onDownload: () -> Unit,
     onDelete: () -> Unit
 ) {
+    val isDownloading = !pack.isDownloaded && pack.downloadProgressPercent in 1..99
+    val isAvailableOffline = pack.isDownloaded && pack.downloadProgressPercent >= 100
+
     PrepzaCard {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -247,7 +251,7 @@ fun OfflinePackRowItem(
                             shape = RoundedCornerShape(4.dp)
                         ) {
                             Text(
-                                text = "My Subject",
+                                text = "Exam Subject",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = PrimaryGreen,
                                 fontWeight = FontWeight.Bold,
@@ -262,17 +266,37 @@ fun OfflinePackRowItem(
                     style = MaterialTheme.typography.bodySmall,
                     color = TextSecondary
                 )
-                Text(
-                    text = "${pack.sizeMb} MB · Stored in Room SQLite Database",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = TextSecondary.copy(alpha = 0.8f)
-                )
+                Spacer(modifier = Modifier.height(2.dp))
+                // Status indicator
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val statusText = when {
+                        isAvailableOffline -> "Available offline"
+                        isDownloading -> "Downloading (${pack.downloadProgressPercent}%)"
+                        else -> "Not downloaded"
+                    }
+                    val statusColor = when {
+                        isAvailableOffline -> PrimaryGreen
+                        isDownloading -> WarningAmber
+                        else -> TextSecondary
+                    }
+                    Text(
+                        text = statusText,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = statusColor
+                    )
+                    Text(
+                        text = " · ${pack.sizeMb} MB",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextSecondary.copy(alpha = 0.7f)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            if (pack.isDownloaded) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            when {
+                isAvailableOffline -> {
                     Surface(
                         color = PaleGreenBg,
                         shape = RoundedCornerShape(8.dp)
@@ -289,27 +313,52 @@ fun OfflinePackRowItem(
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = "Cached",
-                                style = MaterialTheme.typography.labelMedium,
+                                text = "Available offline",
+                                style = MaterialTheme.typography.labelSmall,
                                 color = PrimaryGreen,
                                 fontWeight = FontWeight.Bold
                             )
                         }
                     }
                 }
-            } else {
-                OutlinedButton(
-                    onClick = onDownload,
-                    shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Download,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Cache", fontWeight = FontWeight.SemiBold)
+                isDownloading -> {
+                    Surface(
+                        color = WarningAmberBg,
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            CircularProgressIndicator(
+                                color = WarningAmber,
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Downloading...",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = WarningAmber,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+                else -> {
+                    OutlinedButton(
+                        onClick = onDownload,
+                        shape = RoundedCornerShape(8.dp),
+                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Download,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Download", fontWeight = FontWeight.SemiBold, fontSize = 12.5.sp)
+                    }
                 }
             }
         }

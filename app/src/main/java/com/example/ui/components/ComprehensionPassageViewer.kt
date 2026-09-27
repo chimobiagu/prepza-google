@@ -2,6 +2,7 @@ package com.example.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -160,9 +161,9 @@ fun getEffectivePassageForQuestion(question: QuestionEntity): String? {
 }
 
 /**
- * Clean and non-intrusive "View Passage" Action Button.
- * The passage remains hidden until the candidate intentionally taps "View Passage".
- * Opens a dedicated reading dialog without cluttering the question interface.
+ * Small, understated, underlined "View Passage" link above the question.
+ * The passage remains hidden until the candidate intentionally taps it.
+ * Tapping "Done" closes the reading view and returns directly to the question.
  */
 @Composable
 fun ComprehensionPassageLink(
@@ -185,84 +186,34 @@ fun ComprehensionPassageLink(
         )
     }
 
-    val labelTitle = if (isRegister) "Lexis & Structure Register" else "Reading Passage"
-    val btnText = if (isRegister) "View Register" else "View Passage"
+    val labelText = if (isRegister) "View Register" else "View Passage"
     val testTagVal = if (isRegister) "view_register_btn" else "view_comprehension_passage_btn"
 
-    Surface(
+    Row(
         modifier = modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp)),
-        color = PaleGreenBg,
-        shape = RoundedCornerShape(14.dp),
-        border = BorderStroke(1.dp, PrimaryGreenLight.copy(alpha = 0.5f))
+            .clip(RoundedCornerShape(4.dp))
+            .clickable { showPassageDialog = true }
+            .padding(vertical = 4.dp, horizontal = 2.dp)
+            .testTag(testTagVal),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 10.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = PrimaryGreen.copy(alpha = 0.15f),
-                    modifier = Modifier.size(32.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.MenuBook,
-                            contentDescription = null,
-                            tint = PrimaryGreenDark,
-                            modifier = Modifier.size(17.dp)
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.width(10.dp))
-                Column {
-                    Text(
-                        text = labelTitle,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = PrimaryGreenDark
-                    )
-                    Text(
-                        text = topic.ifBlank { "Passage Context" },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextPrimary,
-                        maxLines = 1
-                    )
-                }
-            }
-
-            Button(
-                onClick = { showPassageDialog = true },
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
-                shape = RoundedCornerShape(20.dp),
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                modifier = Modifier
-                    .height(36.dp)
-                    .testTag(testTagVal)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Visibility,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(15.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = btnText,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
-            }
-        }
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.MenuBook,
+            contentDescription = null,
+            tint = PrimaryGreen,
+            modifier = Modifier.size(14.dp)
+        )
+        Spacer(modifier = Modifier.width(6.dp))
+        Text(
+            text = labelText,
+            style = MaterialTheme.typography.bodyMedium.copy(
+                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                textDecoration = androidx.compose.ui.text.style.TextDecoration.Underline,
+                fontWeight = FontWeight.SemiBold
+            ),
+            color = PrimaryGreen,
+            fontSize = 13.5.sp
+        )
     }
 }
 
@@ -346,10 +297,10 @@ fun ComprehensionPassageDialog(
                             }
                         }
 
-                        // Font size adjustment controls (A- / A+)
+                        // Font size adjustment controls (A- / A+) and Done button
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
@@ -394,6 +345,18 @@ fun ComprehensionPassageDialog(
                                         )
                                     }
                                 }
+                            }
+
+                            Button(
+                                onClick = onDismiss,
+                                colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
+                                shape = RoundedCornerShape(8.dp),
+                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                                modifier = Modifier
+                                    .height(34.dp)
+                                    .testTag("done_passage_top_btn")
+                            ) {
+                                Text("Done", fontWeight = FontWeight.Bold, color = Color.White)
                             }
                         }
                     }
@@ -452,15 +415,15 @@ fun ComprehensionPassageDialog(
                         Button(
                             onClick = onDismiss,
                             colors = ButtonDefaults.buttonColors(containerColor = PrimaryGreen),
-                            shape = RoundedCornerShape(14.dp),
+                            shape = RoundedCornerShape(12.dp),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(48.dp)
+                                .height(46.dp)
                                 .testTag("done_reading_passage_btn")
                         ) {
                             Text(
-                                text = "Done Reading • Return to Questions",
-                                style = MaterialTheme.typography.labelLarge,
+                                text = "Done",
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
                             )

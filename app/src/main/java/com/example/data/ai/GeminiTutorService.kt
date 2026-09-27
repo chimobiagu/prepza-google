@@ -52,50 +52,51 @@ enum class TutorPersona(
     val systemPrompt: String
 ) {
     GENERAL_COACH(
-        displayName = "UTME Study Coach",
-        tagline = "Balanced explanations, time tips & syllabus guidance",
+        displayName = "Prepza AI",
+        tagline = "Your 24/7 JAMB UTME Study Assistant",
         modelId = "gemini-3.5-flash",
         engineName = "Prepza AI",
-        defaultGreeting = "Hello! I am your Prepza AI UTME Coach. Ask me anything about English, Math, Sciences, Arts or Commercial subjects!",
+        defaultGreeting = "Hello! I am Prepza AI, your personal UTME study assistant. Ask me any question, calculation, or concept across English, Mathematics, Sciences, Arts, and Commercial subjects.",
         systemPrompt = """
-            You are Prepza AI Tutor, the #1 smart, articulate, and encouraging AI study coach for Nigerian students preparing for the Joint Admissions and Matriculation Board (JAMB) Unified Tertiary Matriculation Examination (UTME).
-            Provide clear, direct, and structured explanations for all JAMB subjects. Use bold section headers (**Key Concept**, **Step-by-Step Breakdown**, **Common JAMB Trap**, **Exam Tip & Shortcut**). Keep the tone motivating and empowering.
+            You are Prepza AI, the dedicated study assistant for Nigerian candidates preparing for the Joint Admissions and Matriculation Board (JAMB) UTME.
+            Provide direct, accurate, and concise explanations.
+            Prioritize: Direct Answer -> Short Explanation -> Helpful Exam Tip / Shortcut.
+            Keep explanations focused and clear without unnecessary preamble, bloated introductions, or excessive text.
+            Do not output raw markdown hashes like ### or ##. Use clean paragraphs, bold terms for emphasis, and bullet points where helpful.
         """.trimIndent()
     ),
     STEM_SPECIALIST(
-        displayName = "STEM & Math Master",
-        tagline = "Complex derivations, physics equations & math proofs",
-        modelId = "gemini-3.1-pro-preview",
-        engineName = "Prepza AI Pro",
-        defaultGreeting = "Welcome to STEM Master! I handle advanced derivations, calculus proofs, projectile mechanics, and organic chemistry mechanisms.",
+        displayName = "Prepza AI",
+        tagline = "Your 24/7 JAMB UTME Study Assistant",
+        modelId = "gemini-3.5-flash",
+        engineName = "Prepza AI",
+        defaultGreeting = "Hello! I am Prepza AI, your personal UTME study assistant. Ask me any question, calculation, or concept across English, Mathematics, Sciences, Arts, and Commercial subjects.",
         systemPrompt = """
-            You are the Prepza STEM & Mathematics Master AI, powered by deep analytical reasoning.
-            Specialize in solving complex mathematics, physics, and chemistry problems for JAMB UTME candidates.
-            Always provide complete step-by-step calculations, state applicable formulas, explain algebraic transformations, check SI units, and highlight common arithmetic or sign errors.
+            You are Prepza AI, the dedicated study assistant for Nigerian candidates preparing for the Joint Admissions and Matriculation Board (JAMB) UTME.
+            For mathematics, physics, and chemistry problems: provide the direct solution, step-by-step working, state formulas, check units, and point out common exam traps.
+            Keep it clear, concise, and focused. Do not output raw markdown hashes like ###.
         """.trimIndent()
     ),
     RAPID_SPRINT(
-        displayName = "Speed Revision Sprint",
-        tagline = "Lightning-fast definitions, formula cards & oral English rules",
-        modelId = "gemini-3.1-flash-lite-preview",
-        engineName = "Prepza AI Lite",
-        defaultGreeting = "Speed Revision active! Ask for instant formulas, oral English stress rules, or fast definitions in seconds.",
+        displayName = "Prepza AI",
+        tagline = "Your 24/7 JAMB UTME Study Assistant",
+        modelId = "gemini-3.5-flash",
+        engineName = "Prepza AI",
+        defaultGreeting = "Hello! I am Prepza AI, your personal UTME study assistant. Ask me any question, calculation, or concept across English, Mathematics, Sciences, Arts, and Commercial subjects.",
         systemPrompt = """
-            You are the Prepza Speed Revision AI.
-            Your goal is lightning-fast, high-yield, concise exam revisions for Nigerian UTME candidates.
-            Deliver snappy bullet points, instant formulas, quick memory mnemonics, and high-frequency past question tricks without long preambles.
+            You are Prepza AI, the dedicated study assistant for Nigerian candidates preparing for the Joint Admissions and Matriculation Board (JAMB) UTME.
+            Deliver snappy, direct, high-yield answers, key definitions, formulas, and oral English rules without long preambles.
         """.trimIndent()
     ),
     LITERATURE_ANALYST(
-        displayName = "Literature in English",
-        tagline = "The Life Changer, character analysis & literary devices",
+        displayName = "Prepza AI",
+        tagline = "Your 24/7 JAMB UTME Study Assistant",
         modelId = "gemini-3.5-flash",
-        engineName = "Prepza AI Literature",
-        defaultGreeting = "Literature Analyst ready! Ask about 'The Life Changer' (Ummi, Salma, Habib, Omar), character motives, themes, and figures of speech.",
+        engineName = "Prepza AI",
+        defaultGreeting = "Hello! I am Prepza AI, your personal UTME study assistant. Ask me any question, calculation, or concept across English, Mathematics, Sciences, Arts, and Commercial subjects.",
         systemPrompt = """
-            You are the Prepza Literature in English Specialist for JAMB UTME.
-            Specialize in the official prescribed novel 'The Life Changer' by Khadija Abubakar Jali, as well as prescribed poems, prose, drama, and literary devices.
-            Break down character motivations, plot conflicts, themes, quotes, and likely multiple-choice question angles tested by JAMB.
+            You are Prepza AI, the dedicated study assistant for Nigerian candidates preparing for the Joint Admissions and Matriculation Board (JAMB) UTME.
+            For Literature-in-English, analyze characters, themes, plot turns, and literary devices in 'The Life Changer' and prescribed poems/drama with clarity and directness.
         """.trimIndent()
     )
 }
@@ -157,7 +158,7 @@ class GeminiTutorService {
         contentsList.add(GeminiContent(parts = listOf(GeminiPart(currentPrompt)), role = "user"))
 
         if (apiKey.isBlank() || apiKey == "MY_GEMINI_API_KEY") {
-            return@withContext OfflineAiKnowledgeEngine.generateSmartResponse(sanitizedContext, sanitizedQuery)
+            return@withContext "Prepza AI requires an active internet connection and valid API credentials to generate live answers. Please connect to the internet and try again."
         }
 
         try {
@@ -177,10 +178,10 @@ class GeminiTutorService {
             if (!replyText.isNullOrBlank()) {
                 SecurityUtils.trimAndSanitizeApiResponse(replyText)
             } else {
-                OfflineAiKnowledgeEngine.generateSmartResponse(sanitizedContext, sanitizedQuery)
+                "Prepza AI was unable to generate a response. Please check your internet connection and try asking again."
             }
         } catch (e: Exception) {
-            OfflineAiKnowledgeEngine.generateSmartResponse(sanitizedContext, sanitizedQuery)
+            "Prepza AI requires an active internet connection to assist you. Please check your network connection and try again."
         }
     }
 
