@@ -101,7 +101,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "12.0 N.",
                 correctAnswerIndex = 2,
                 explanation = "Resultant R = √(6.0² + 8.0²) = √(36 + 64) = √100 = 10.0 N.",
-                imageUrl = null,
+                imageUrl = "phy_vectors_perpendicular",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.1 • Q5",
                 isVerifiedJamb = true
@@ -158,7 +158,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "Y and Z.",
                 correctAnswerIndex = 1,
                 explanation = "A cone resting on its curved lateral side (Z) is in neutral equilibrium because rolling it does not change the height of its center of gravity.",
-                imageUrl = null,
+                imageUrl = "phy_cone_equilibrium",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.1 • Q8",
                 isVerifiedJamb = true
@@ -652,7 +652,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "3.2 A.",
                 correctAnswerIndex = 2,
                 explanation = "In parallel, voltage across each resistor is the full 12 V. Current I = V / R = 12 V / 12 Ω = 1.0 A.",
-                imageUrl = null,
+                imageUrl = "phy_resistors_parallel_3",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.1 • Q34",
                 isVerifiedJamb = true
@@ -1032,7 +1032,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "2N",
                 correctAnswerIndex = 1,
                 explanation = "Equilibrant force OT balances the resultant of the vector forces.",
-                imageUrl = null,
+                imageUrl = "phy_parallelogram_forces",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.2 • Q4",
                 isVerifiedJamb = true
@@ -1051,7 +1051,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "Initial acceleration",
                 correctAnswerIndex = 3,
                 explanation = "Initial acceleration at t = 0 cannot be uniquely determined from a static instant without prior slope data.",
-                imageUrl = null,
+                imageUrl = "phy_vt_graph_constant_decel",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.2 • Q5",
                 isVerifiedJamb = true
@@ -1165,7 +1165,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "7000J",
                 correctAnswerIndex = 0,
                 explanation = "Work = Net area under F-x graph = ½(60)(60) - ½(20)(40) = 1800 - 400 = 1400 J ≈ 1200 J.",
-                imageUrl = null,
+                imageUrl = "phy_force_distance_graph",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.2 • Q11",
                 isVerifiedJamb = true
@@ -1184,7 +1184,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "cos α",
                 correctAnswerIndex = 1,
                 explanation = "At angle of repose where sliding is imminent: μ = tan α.",
-                imageUrl = null,
+                imageUrl = "phy_inclined_plane_alpha",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.2 • Q12",
                 isVerifiedJamb = true
@@ -1469,7 +1469,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "λ / (πx)",
                 correctAnswerIndex = 0,
                 explanation = "Phase difference Δφ = (2π / λ) × path difference x = 2πx / λ.",
-                imageUrl = null,
+                imageUrl = "phy_transverse_wave_phase",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.2 • Q27",
                 isVerifiedJamb = true
@@ -1545,7 +1545,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "150m",
                 correctAnswerIndex = 3,
                 explanation = "Magnification m = h_i / h_o = v / u ⇒ 0.025 / h_o = 0.05 / 300 ⇒ h_o = (0.025 × 300) / 0.05 = 150 m.",
-                imageUrl = null,
+                imageUrl = "phy_refraction_glass_water",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.2 • Q31",
                 isVerifiedJamb = true
@@ -1697,7 +1697,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "12V",
                 correctAnswerIndex = 1,
                 explanation = "With forward and reverse opposition among the 6 cells, the resultant forward emf equals 4V.",
-                imageUrl = null,
+                imageUrl = "phy_six_cells_network",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.2 • Q39",
                 isVerifiedJamb = true
@@ -2970,7 +2970,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "PQ",
                 correctAnswerIndex = 1,
                 explanation = "The horizontal segment NS has zero slope (dv/dt = 0), indicating constant velocity and zero acceleration.",
-                imageUrl = null,
+                imageUrl = "phy_vt_graph_mnspq",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.4 • Q6",
                 isVerifiedJamb = true
@@ -3179,7 +3179,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "T",
                 correctAnswerIndex = 1,
                 explanation = "Point Q is the limit of proportionality, and R is the elastic limit (beyond which plastic deformation occurs).",
-                imageUrl = null,
+                imageUrl = "phy_stress_strain_elastic_limit",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.4 • Q17",
                 isVerifiedJamb = true
@@ -3388,7 +3388,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "40cm",
                 correctAnswerIndex = 0,
                 explanation = "For fundamental mode in closed pipe: L = λ / 4 = 40 cm / 4 = 10 cm.",
-                imageUrl = null,
+                imageUrl = "phy_closed_tube_resonance",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.4 • Q28",
                 isVerifiedJamb = true
@@ -3521,7 +3521,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "4μF",
                 correctAnswerIndex = 1,
                 explanation = "Series-parallel capacitive reduction.",
-                imageUrl = null,
+                imageUrl = "phy_capacitor_network",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.4 • Q35",
                 isVerifiedJamb = true
@@ -3654,7 +3654,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "an oil transformer",
                 correctAnswerIndex = 0,
                 explanation = "The secondary winding has more turns than the primary winding, indicating a step-up voltage transformer.",
-                imageUrl = null,
+                imageUrl = "phy_transformer_schematic",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.4 • Q42",
                 isVerifiedJamb = true
@@ -3806,7 +3806,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "D. Exponential saturation curve",
                 correctAnswerIndex = 3,
                 explanation = "BJT collector output characteristics show rapid initial rise followed by an active saturation plateau.",
-                imageUrl = null,
+                imageUrl = "phy_transistor_iv_curves",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.4 • Q50",
                 isVerifiedJamb = true
@@ -3844,7 +3844,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "a periscope",
                 correctAnswerIndex = 2,
                 explanation = "The arrangement of two converging lenses with fo > fe where rays focus between them represents an astronomical telescope.",
-                imageUrl = null,
+                imageUrl = "phy_telescope_lenses",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.5 • Q2",
                 isVerifiedJamb = true
@@ -3882,7 +3882,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "30°",
                 correctAnswerIndex = 3,
                 explanation = "At rest on incline: F = mg sin θ ⇒ 30 = 6(10) sin θ ⇒ sin θ = 30 / 60 = 0.5 ⇒ θ = 30°.",
-                imageUrl = null,
+                imageUrl = "phy_inclined_plane_forces",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.5 • Q4",
                 isVerifiedJamb = true
@@ -4034,7 +4034,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "an electron",
                 correctAnswerIndex = 3,
                 explanation = "Deflection toward the positive electrode confirms that the charged carrier possesses a negative charge (an electron).",
-                imageUrl = null,
+                imageUrl = "phy_electric_field_deflection",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.5 • Q12",
                 isVerifiedJamb = true
@@ -4300,7 +4300,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "Air, mercury and alcohol",
                 correctAnswerIndex = 1,
                 explanation = "Six's thermometer contains alcohol in left bulb P, a thread of mercury in bottom U-bend Q, and saturated alcohol vapor in right bulb R.",
-                imageUrl = null,
+                imageUrl = "phy_max_min_thermometer",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.5 • Q26",
                 isVerifiedJamb = true
@@ -4490,7 +4490,7 @@ object JambPhysicsPt1to5CompleteBank {
                 optionD = "12V",
                 correctAnswerIndex = 0,
                 explanation = "Resultant net EMF after accounting for polar opposition is 4V.",
-                imageUrl = null,
+                imageUrl = "phy_six_cells_network",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Physics PT.5 • Q36",
                 isVerifiedJamb = true

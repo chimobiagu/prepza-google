@@ -709,7 +709,7 @@ object JambMathematics2014ExamBank {
                 optionD = "4",
                 correctAnswerIndex = 3,
                 explanation = "The mode is the value with the highest frequency. Value 4 has the highest frequency (9).",
-                imageUrl = null,
+                imageUrl = "math_table_distribution_0_4",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Mathematics 2014 • Q37",
                 isVerifiedJamb = true
@@ -785,7 +785,7 @@ object JambMathematics2014ExamBank {
                 optionD = "3/4",
                 correctAnswerIndex = 2,
                 explanation = "Frequencies for outcomes ≥ 4 (i.e. 4, 5, 6) = 16 + 10 + 14 = 40. Total outcomes = 100. P(at least 4) = 40 / 100 = 2/5.",
-                imageUrl = null,
+                imageUrl = "math_table_die_outcomes",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Mathematics 2014 • Q41",
                 isVerifiedJamb = true
@@ -823,7 +823,7 @@ object JambMathematics2014ExamBank {
                 optionD = "(P ∩ Q) ∪ (P ∪ R)",
                 correctAnswerIndex = 0,
                 explanation = "The shaded region consists of the intersection of P with Q unioned with the intersection of P with R: (P ∩ Q) ∪ (P ∩ R).",
-                imageUrl = null,
+                imageUrl = "math_venn_diagram_3_sets",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Mathematics 2014 • Q43",
                 isVerifiedJamb = true
@@ -842,7 +842,7 @@ object JambMathematics2014ExamBank {
                 optionD = "19°",
                 correctAnswerIndex = 2,
                 explanation = "Since KL // NM, alternate angle ∠LNM = ∠KLN = 54°.\nSince LN bisects ∠KNM, ∠KNM = 2 × 54° = 108°.\nIn ΔKMN: ∠KMN + ∠MKN + ∠KNM = 180° ⇒ ∠KMN + 35° + 108° = 180° ⇒ ∠KMN = 180° - 143° = 37°.",
-                imageUrl = null,
+                imageUrl = "math_parallel_lines_geometry",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Mathematics 2014 • Q44",
                 isVerifiedJamb = true
@@ -861,7 +861,7 @@ object JambMathematics2014ExamBank {
                 optionD = "45°",
                 correctAnswerIndex = 1,
                 explanation = "q° = 30° (vertically opposite angles).\nAngles on a straight line: (p + 2q)° + 30° = 180° ⇒ p + 2(30) + 30 = 180 ⇒ p + 90 = 180 ⇒ p = 90°.",
-                imageUrl = null,
+                imageUrl = "math_intersecting_lines_angles",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Mathematics 2014 • Q45",
                 isVerifiedJamb = true
@@ -880,7 +880,7 @@ object JambMathematics2014ExamBank {
                 optionD = "4√3 cm",
                 correctAnswerIndex = 1,
                 explanation = "By Sine rule: x / sin 60° = 10 / sin 30° ⇒ x = (10 sin 60°) / sin 30° = [10 × (√3/2)] / (1/2) = 10√3 cm.",
-                imageUrl = null,
+                imageUrl = "math_triangle_sine_rule",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Mathematics 2014 • Q46",
                 isVerifiedJamb = true
@@ -899,7 +899,7 @@ object JambMathematics2014ExamBank {
                 optionD = "y = -x - 5",
                 correctAnswerIndex = 1,
                 explanation = "Intercept form: x/a + y/b = 1 ⇒ x/5 + y/5 = 1 ⇒ x + y = 5 ⇒ y = -x + 5.",
-                imageUrl = null,
+                imageUrl = "math_cartesian_line_05_50",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Mathematics 2014 • Q47",
                 isVerifiedJamb = true
@@ -918,7 +918,7 @@ object JambMathematics2014ExamBank {
                 optionD = "₦12,000",
                 correctAnswerIndex = 2,
                 explanation = "Yam sector angle = 360° - (70° + 80° + 50°) = 360° - 200° = 160°.\nSince 80° corresponds to ₦8,000 (i.e. ₦100 per degree), Yam expenditure (160°) = 160 × ₦100 = ₦16,000.",
-                imageUrl = null,
+                imageUrl = "math_pie_chart_food",
                 originType = "JAMB_ORIGINAL",
                 originLabel = "JAMB Mathematics 2014 • Q48",
                 isVerifiedJamb = true

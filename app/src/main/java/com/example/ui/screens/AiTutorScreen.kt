@@ -83,6 +83,28 @@ fun AiTutorScreen(
     var voiceRms by remember { mutableFloatStateOf(0f) }
     var voiceErrorMessage by remember { mutableStateOf<String?>(null) }
     var autoReadAloud by remember { mutableStateOf(false) }
+    var isContinuousVoiceMode by remember { mutableStateOf(false) }
+
+    // Kelvin dynamic processing states
+    val kelvinProcessingStates = remember {
+        listOf(
+            "Kelvin is thinking…",
+            "Kelvin is evaluating…",
+            "Kelvin is checking…",
+            "Kelvin is formulating answer…",
+            "Kelvin is verifying UTME concepts…"
+        )
+    }
+    var processingStateIndex by remember { mutableIntStateOf(0) }
+    LaunchedEffect(isLoading) {
+        if (isLoading) {
+            processingStateIndex = 0
+            while (true) {
+                kotlinx.coroutines.delay(1200)
+                processingStateIndex = (processingStateIndex + 1) % kelvinProcessingStates.size
+            }
+        }
+    }
 
     // Managers
     val voiceSpeechManager = remember { VoiceSpeechManager(context) }
@@ -96,13 +118,34 @@ fun AiTutorScreen(
         }
     }
 
-    // Auto-read aloud incoming AI message if enabled
-    LaunchedEffect(messages.size) {
+    // Auto-read aloud incoming AI message if enabled or in continuous voice mode
+    LaunchedEffect(messages.size, isLoading) {
         if (messages.isNotEmpty()) {
             listState.animateScrollToItem(messages.size - 1)
             val lastMsg = messages.last()
-            if (autoReadAloud && lastMsg.sender != "user" && !isLoading) {
-                voiceTtsManager.speak(lastMsg.text, lastMsg.timestamp.toString())
+            if ((autoReadAloud || isContinuousVoiceMode) && lastMsg.sender != "user" && !isLoading) {
+                voiceTtsManager.speak(
+                    text = lastMsg.text,
+                    utteranceId = lastMsg.timestamp.toString(),
+                    onFinished = {
+                        if (isContinuousVoiceMode && showVoiceDialog) {
+                            // Resume listening for next query automatically in continuous conversation mode
+                            voiceSpeechManager.startListening(
+                                onStateChange = { voiceState = it },
+                                onRmsChanged = { voiceRms = it },
+                                onPartialResult = { voiceSpokenText = it },
+                                onFinalResult = { finalResult ->
+                                    voiceSpokenText = finalResult
+                                    voiceState = VoiceInputState.IDLE
+                                },
+                                onError = { error ->
+                                    voiceErrorMessage = error
+                                    voiceState = VoiceInputState.ERROR
+                                }
+                            )
+                        }
+                    }
+                )
             }
         }
     }
@@ -236,7 +279,7 @@ fun AiTutorScreen(
                         Column {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = "Prepza AI",
+                                    text = "Kelvin",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -257,7 +300,7 @@ fun AiTutorScreen(
                                         )
                                         Spacer(modifier = Modifier.width(2.dp))
                                         Text(
-                                            text = "Study Assistant",
+                                            text = "Virtual Assistant",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = PrimaryGreenDark,
                                             fontWeight = FontWeight.Bold,
@@ -267,7 +310,7 @@ fun AiTutorScreen(
                                 }
                             }
                             Text(
-                                text = "Your 24/7 UTME Study Companion",
+                                text = "Hey there, I’m Kelvin, your virtual assistant.",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = TextSecondary,
                                 fontSize = 11.sp
@@ -594,7 +637,7 @@ fun AiTutorScreen(
                                         IconButton(
                                             onClick = {
                                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                                val clip = ClipData.newPlainText("Prepza AI Note", msg.text)
+                                                val clip = ClipData.newPlainText("Kelvin Note", msg.text)
                                                 clipboard.setPrimaryClip(clip)
                                                 Toast.makeText(context, "Copied explanation to clipboard", Toast.LENGTH_SHORT).show()
                                             },
@@ -616,22 +659,42 @@ fun AiTutorScreen(
 
                 if (isLoading) {
                     item {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = SurfaceWhite,
+                            border = BorderStroke(1.dp, PrimaryGreenLight.copy(alpha = 0.5f)),
+                            shadowElevation = 2.dp,
+                            modifier = Modifier
+                                .padding(horizontal = 4.dp, vertical = 6.dp)
+                                .testTag("kelvin_loading_indicator")
                         ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(18.dp),
-                                color = PrimaryGreen,
-                                strokeWidth = 2.dp
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = "${selectedPersona.engineName} is preparing your ${selectedPersona.displayName} explanation...",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = TextSecondary,
-                                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
-                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(18.dp),
+                                    color = PrimaryGreen,
+                                    strokeWidth = 2.2.dp
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                AnimatedContent(
+                                    targetState = kelvinProcessingStates[processingStateIndex],
+                                    transitionSpec = {
+                                        (slideInVertically { height -> height } + fadeIn()).togetherWith(
+                                            slideOutVertically { height -> -height } + fadeOut()
+                                        )
+                                    },
+                                    label = "kelvin_processing_state"
+                                ) { stateText ->
+                                    Text(
+                                        text = stateText,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = PrimaryGreenDark
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -672,7 +735,7 @@ fun AiTutorScreen(
                 try {
                     val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                         putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Ask Prepza AI Tutor a question...")
+                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Ask Kelvin a question...")
                     }
                     speechIntentLauncher.launch(intent)
                 } catch (e: Exception) {
@@ -769,13 +832,13 @@ fun AiTutorVoiceDialog(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = "Ask AI Tutor by Voice",
+                                text = "Voice Conversation with Kelvin",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = TextPrimary
                             )
                             Text(
-                                text = "Speak your UTME question or formula",
+                                text = "Speak naturally with Kelvin",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = TextSecondary
                             )
@@ -933,7 +996,7 @@ fun AiTutorVoiceDialog(
                         ) {
                             Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Ask AI Tutor Now", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                            Text("Ask Kelvin Now", fontWeight = FontWeight.Bold, fontSize = 14.sp)
                         }
 
                         Row(

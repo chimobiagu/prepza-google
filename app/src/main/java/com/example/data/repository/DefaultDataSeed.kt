@@ -177,15 +177,14 @@ object DefaultDataSeed {
                 id = "book_she_walks_in_beauty",
                 title = "She Walks in Beauty",
                 author = "Lord Byron (George Gordon)",
-                description = "Selected UTME Poem. Complete text, background summary, stanza-by-stanza breakdown, comprehensive poetic devices, central themes, and UTME practice questions.",
+                description = "Prescribed UTME Romantic Poem. Core stanzas, essential poetic devices, central themes of harmony and moral beauty.",
                 category = "Selected UTME Poems",
                 chaptersJson = """
                     [
-                      {"title": "Full Poem & Stanzas", "content": "Stanza 1:\nShe walks in beauty, like the night\nOf cloudless climes and starry skies;\nAnd all that’s best of dark and bright\nMeet in her aspect and her eyes;\nThus mellowed to that tender light\nWhich heaven to gaudy day denies.\n\nStanza 2:\nOne shade the more, one ray the less,\nHad half impaired the nameless grace\nWhich waves in every raven tress,\nOr softly lightens o’er her face;\nWhere thoughts serenely sweet express,\nHow pure, how dear their dwelling-place.\n\nStanza 3:\nAnd on that cheek, and o’er that brow,\nSo soft, so calm, yet eloquent,\nThe smiles that win, the tints that glow,\nBut tell of days in goodness spent,\nA mind at peace with all below,\nA heart whose love is innocent!"},
-                      {"title": "Background & Context", "content": "Poet: George Gordon Byron, 6th Baron Byron (1788–1824), leading Romantic poet.\n\nHistorical Context: Written in June 1814 after Lord Byron attended an evening party in London. He was struck by his cousin-by-marriage, Mrs. Anne Beatrix Wilmot, who appeared in a mourning gown made of black fabric with glittering silver spangles. Struck by the sublime contrast between the dark gown, her fair skin, and dark hair, Byron returned home and penned this masterpiece.\n\nPublication: Published in 1815 in 'Hebrew Melodies', set to traditional Jewish melodies arranged by Isaac Nathan.\n\nSignificance in JAMB UTME: Prescribed non-African poem testing figures of speech, rhyme scheme, Romanticism, and themes of harmony and moral purity."},
-                      {"title": "Poetic Devices & Figures of Speech", "content": "1. Simile: 'She walks in beauty, like the night / Of cloudless climes and starry skies' (Lines 1–2). Compares her graceful aura to a clear, starry night.\n2. Antithesis / Contrast: 'dark and bright' (Line 3), 'One shade the more, one ray the less' (Line 7), comparing 'tender light' against 'gaudy day' (Lines 5–6).\n3. Alliteration: 'cloudless climes', 'starry skies', 'serenely sweet', 'days in goodness'.\n4. Metaphor & Imagery: 'raven tress' (glossy black hair), thoughts having a 'dwelling-place' (mind/temple of purity).\n5. Personification: 'Which heaven to gaudy day denies', 'smiles that win', 'tints that glow', thoughts that 'express'.\n6. Synecdoche: 'cheek', 'brow', 'smiles', 'heart' representing the whole woman.\n7. Rhyme Scheme: Regular ABABAB in every six-line stanza (sestet).\n8. Meter: Iambic Tetrameter (4 iambic feet / 8 syllables per line with unstressed/stressed cadence).\n9. Enjambment: Unbroken run-on lines in stanzas 1 and 2 creating fluid rhythmic movement."},
-                      {"title": "Stanza-by-Stanza Analysis", "content": "• Stanza 1 (Cosmic Harmony): Introduces the lady's ethereal beauty by blending light and dark into a soothing, tender light that surpasses harsh daytime ('gaudy day').\n• Stanza 2 (Flawless Equilibrium & Pure Mind): Emphasizes that even the slightest alteration ('one shade the more, one ray the less') would ruin her nameless grace. Her black curls ('raven tress') frame a face whose serenity reveals an unblemished, pure mind.\n• Stanza 3 (Moral Beauty & Innocent Heart): Connects her radiant physical expressions (soft cheeks, calm brow, glowing smiles) to a life lived in goodness, a mind at peace, and a heart overflowing with innocent love."},
-                      {"title": "Themes & Tone", "content": "• Themes:\n1. Harmony of Opposites (Darkness and Light in perfect balance)\n2. Physical Beauty as a Reflection of Inner Moral Purity\n3. Chaste and Innocent Love\n4. Serenity, Peace, and Tranquility\n\n• Tone: Reverent, admiring, awestruck, respectful, contemplative\n• Mood: Serene, tranquil, romantic, soothing"}
+                      {"title": "1. Stanzas", "content": "Stanza 1:\nShe walks in beauty, like the night\nOf cloudless climes and starry skies;\nAnd all that’s best of dark and bright\nMeet in her aspect and her eyes;\nThus mellowed to that tender light\nWhich heaven to gaudy day denies.\n\nStanza 2:\nOne shade the more, one ray the less,\nHad half impaired the nameless grace\nWhich waves in every raven tress,\nOr softly lightens o’er her face;\nWhere thoughts serenely sweet express,\nHow pure, how dear their dwelling-place.\n\nStanza 3:\nAnd on that cheek, and o’er that brow,\nSo soft, so calm, yet eloquent,\nThe smiles that win, the tints that glow,\nBut tell of days in goodness spent,\nA mind at peace with all below,\nA heart whose love is innocent!"},
+                      {"title": "2. Context & Significance", "content": "• Poet: Lord Byron (1788–1824), Romantic Movement\n• Origin: Inspired by Mrs. Anne Beatrix Wilmot in a sparkling mourning gown in 1814\n• UTME Focus: Harmony of opposites (dark vs bright), moral innocence, and regular ABABAB sestets in iambic tetrameter"},
+                      {"title": "3. Poetic Devices", "content": "• Simile: 'like the night of cloudless climes and starry skies' (Lines 1–2)\n• Antithesis / Contrast: 'dark and bright' (L3), 'One shade the more, one ray the less' (L7)\n• Alliteration: 'cloudless climes', 'starry skies', 'serenely sweet'\n• Metaphor: 'raven tress' (glossy black curls), 'dwelling-place' of pure thought\n• Personification: 'heaven to gaudy day denies', 'smiles that win', 'tints that glow'\n• Synecdoche: 'cheek', 'brow', 'heart' representing the whole person\n• Meter & Rhyme: Iambic tetrameter, regular ABABAB scheme"},
+                      {"title": "4. Themes & Tone", "content": "• Themes:\n  1. Harmony of Opposites (Darkness & Light in balance)\n  2. Outer Beauty as Mirror of Inner Purity\n  3. Chaste and Innocent Love\n• Tone: Reverent, admiring, contemplative\n• Mood: Serene, tranquil, romantic"}
                     ]
                 """.trimIndent(),
                 readingProgressPercent = 80,
@@ -194,16 +193,16 @@ object DefaultDataSeed {
             LiteratureBookEntity(
                 id = "book_2",
                 title = "Selected UTME Poems",
-                author = "Various African & Non-African Poets",
-                description = "Comprehensive guide and stanza-by-stanza analysis of the official prescribed poems for JAMB UTME Literature in English including African and Non-African selections.",
+                author = "Prescribed African & Non-African Poets",
+                description = "Concise examination breakdowns of prescribed JAMB UTME poems.",
                 category = "UTME Poetry Compendium",
                 chaptersJson = """
                     [
-                      {"title": "She Walks in Beauty - Lord Byron", "content": "Analysis of Lord Byron's Romantic masterpiece on harmony of dark and bright, inner virtue, and ABABAB iambic tetrameter."},
-                      {"title": "The Leader and the Led - Niyi Osundare", "content": "Analysis of leadership styles in Africa portrayed through animal imagery: the lion's ferocity, the hyena's toughness, the elephant's weight, and the antelope's caution."},
-                      {"title": "The Grieved Lands - Agostinho Neto", "content": "Poetic reflection on African struggles, resilience, imperialist oppression, and enduring hope during colonial subjugation."},
-                      {"title": "Piano and Drums - Gabriel Okara", "content": "Exploration of cultural conflict between raw, primal African heritage (the drums) and complex, alien Western civilization (the piano)."},
-                      {"title": "Song of the Women of My Land - Oumar Farouk Sesay", "content": "Tribute to the resilience, forgotten songs, and historic struggles of African women across generations."}
+                      {"title": "She Walks in Beauty - Lord Byron", "content": "• Core Focus: Harmony of dark and bright, inner purity reflecting outwardly.\n• Technique: ABABAB sestet, iambic tetrameter, alliteration, antithesis."},
+                      {"title": "The Leader and the Led - Niyi Osundare", "content": "• Core Focus: Satire on flawed political leadership styles in Africa.\n• Technique: Animal imagery (lion, hyena, elephant vs cautious antelope), balance of power."},
+                      {"title": "The Grieved Lands - Agostinho Neto", "content": "• Core Focus: Colonial oppression, cultural resilience, and revolutionary hope in Africa.\n• Technique: Repetition, vivid personification of African soil and tears."},
+                      {"title": "Piano and Drums - Gabriel Okara", "content": "• Core Focus: Cultural clash between authentic African heritage (drums) and complex Western civilization (piano).\n• Technique: Sensory imagery, dualistic symbolism, existential dilemma."},
+                      {"title": "Song of the Women of My Land - Oumar Farouk Sesay", "content": "• Core Focus: The unheralded labor, suffering, and fading memory of African women across generations.\n• Technique: Metaphor of forgotten songs, elegiac tone, historical tribute."}
                     ]
                 """.trimIndent(),
                 readingProgressPercent = 35,
@@ -213,13 +212,13 @@ object DefaultDataSeed {
                 id = "book_sweet_sixteen",
                 title = "Sweet Sixteen",
                 author = "Bolaji Abdullahi",
-                description = "Aliya's journey into young adulthood, exploring self-identity, friendship, puberty, and moral choices through conversations with her father.",
+                description = "Aliya's transition to young adulthood exploring self-identity, friendship, and moral choices.",
                 category = "UTME Compulsory Prose",
                 chaptersJson = """
                     [
-                      {"title": "Chapter 1: The Letter", "content": "On her sixteenth birthday, Aliya receives a 16-page letter from her father, addressing topics from body changes to emotional maturity."},
-                      {"title": "Chapter 2: The Drive", "content": "Father and daughter discuss the significance of self-esteem and peer influence during their weekend drive."},
-                      {"title": "Chapter 3: Work & Responsibility", "content": "Aliya learns the value of discipline, integrity, and focus amidst distractions of youth."}
+                      {"title": "Chapter 1: The Letter", "content": "On her 16th birthday, Aliya receives a letter from her father discussing emotional maturity, bodily changes, and self-worth."},
+                      {"title": "Chapter 2: The Drive", "content": "Father and daughter discuss peer influence, healthy boundaries, and self-esteem during a drive."},
+                      {"title": "Chapter 3: Work & Responsibility", "content": "Aliya learns the value of academic discipline, honest effort, and staying focused amidst distractions."}
                     ]
                 """.trimIndent(),
                 readingProgressPercent = 20,
@@ -228,14 +227,14 @@ object DefaultDataSeed {
             LiteratureBookEntity(
                 id = "book_modern_haiku",
                 title = "Modern Haiku",
-                author = "Selected Poets & UTME Poetic Anthology",
-                description = "Prescribed UTME Poetic Form. Complete collection of modern haiku verses exploring nature, human consciousness, brevity, sensory imagery, juxtaposition (kireji), and season words (kigo).",
+                author = "Selected UTME Poets",
+                description = "Essential collection of modern haiku verses and exam-tested structural concepts.",
                 category = "Selected UTME Poems",
                 chaptersJson = """
                     [
-                      {"title": "Section 1: The Nature of Modern Haiku & Core Poems", "content": "Poem 1 (Spring Awakening):\nA sudden raindrop\nRipples across the green pond—\nSilence finds its voice.\n\nPoem 2 (Summer Heat & Labor):\nDry savanna dust,\nThe hoe strikes the iron earth—\nWaiting for the storm.\n\nPoem 3 (Harmattan Breeze):\nDry grass in the wind,\nDust settles on sleeping roofs—\nThe cold dawn whispers.\n\nPoem 4 (Twilight & Reflection):\nWhite egret takes flight\nAgainst the crimson sunset—\nNight gathers the sky.\n\nPoem 5 (Epiphany & Urban Mind):\nMetro door slides shut,\nReflections in glass dissolve—\nA stranger's warm smile."},
-                      {"title": "Section 2: Meaning, Structure & Poetic Techniques", "content": "Haiku is a traditional Japanese poetic form popularized globally in modern literature. Modern English haiku adapts the classical 5-7-5 syllabic structure (seventeen syllables across three unrhymed lines) while prioritizing:\n1. Economy of language (saying the maximum with minimal words).\n2. Kigo (Season word or environmental indicator such as 'dry savanna dust' or 'Harmattan breeze').\n3. Kireji (The cutting word or conceptual break that juxtaposes two contrasting images).\n4. Satori (An instantaneous flash of insight, epiphany, or sudden awareness).\n5. Objective Correlative (Expressing internal human emotion through external sensory phenomena)."},
-                      {"title": "Section 3: UTME Exam Focus & Poetic Devices", "content": "Key Poetic Devices in Modern Haiku for UTME:\n• Imagery: Visual ('crimson sunset', 'white egret'), Auditory ('silence finds its voice'), Tactile ('cold dawn whispers', 'dry savanna dust').\n• Personification: 'Silence finds its voice', 'The cold dawn whispers', 'Night gathers the sky'.\n• Juxtaposition: Placing human labor or urban rushing beside timeless natural cycles.\n• Symbolism: The pond represents human consciousness; the egret symbolizes freedom and transcendence; the Harmattan symbolizes perseverance amidst harsh realities.\n• Meter & Rhythm: 3 unrhymed lines (tercet) capturing a single captured moment of timeless truth."}
+                      {"title": "1. Core Haiku Verses", "content": "• Poem 1 (Spring):\nA sudden raindrop\nRipples across the green pond—\nSilence finds its voice.\n\n• Poem 2 (Harmattan):\nDry grass in the wind,\nDust settles on sleeping roofs—\nThe cold dawn whispers.\n\n• Poem 3 (Twilight):\nWhite egret takes flight\nAgainst the crimson sunset—\nNight gathers the sky."},
+                      {"title": "2. Structural Elements", "content": "• 5-7-5 Syllable Format: 17 total syllables across 3 unrhymed lines (tercet)\n• Kigo: Season word indicating environment or time of year\n• Kireji: Cutting word / pause separating two contrasting images\n• Satori: Instant flash of intuitive insight or epiphany\n• Objective Correlative: Conveying internal emotion through concrete physical imagery"},
+                      {"title": "3. Exam Takeaways", "content": "• Visual & Auditory Imagery: 'crimson sunset', 'silence finds its voice'\n• Personification: 'cold dawn whispers', 'night gathers the sky'\n• Brevity: Maximizing emotional depth with minimal phrasing"}
                     ]
                 """.trimIndent(),
                 readingProgressPercent = 0,

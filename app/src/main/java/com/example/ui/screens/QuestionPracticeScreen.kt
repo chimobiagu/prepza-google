@@ -477,7 +477,7 @@ fun QuestionPracticeScreen(
 
                             Spacer(modifier = Modifier.height(14.dp))
 
-                            // Ask AI Tutor Button
+                            // Ask Kelvin Button
                             Surface(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -504,7 +504,7 @@ fun QuestionPracticeScreen(
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
                                     Text(
-                                        text = "Ask AI Tutor (Voice & Text)",
+                                        text = "Ask Kelvin (Voice & Text)",
                                         style = MaterialTheme.typography.labelLarge,
                                         fontWeight = FontWeight.Bold,
                                         color = PrimaryGreen

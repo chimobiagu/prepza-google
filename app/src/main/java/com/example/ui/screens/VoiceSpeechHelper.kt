@@ -120,7 +120,7 @@ class VoiceSpeechManager(private val context: Context) {
                     putExtra(RecognizerIntent.EXTRA_ONLY_RETURN_LANGUAGE_PREFERENCE, "en-US")
                     putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
                     putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 3)
-                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Ask Prepza AI Tutor a question...")
+                    putExtra(RecognizerIntent.EXTRA_PROMPT, "Ask Kelvin a question...")
                 }
 
                 onStateChange(VoiceInputState.INITIALIZING)
@@ -173,6 +173,7 @@ class VoiceTtsManager(context: Context) {
         private set
     var currentlySpeakingId by mutableStateOf<String?>(null)
         private set
+    var onSpeechCompleted: ((String?) -> Unit)? = null
 
     init {
         tts = TextToSpeech(context.applicationContext) { status ->
@@ -180,8 +181,23 @@ class VoiceTtsManager(context: Context) {
                 tts?.let { engine ->
                     val result = engine.setLanguage(Locale.US)
                     if (result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED) {
-                        engine.setSpeechRate(0.95f)
-                        engine.setPitch(1.0f)
+                        // Select male voice if available in system voices
+                        try {
+                            val maleVoice = engine.voices?.firstOrNull { voice ->
+                                (voice.name.contains("male", ignoreCase = true) ||
+                                 voice.name.contains("en-us-x-sfg", ignoreCase = true) ||
+                                 voice.name.contains("en_us_male", ignoreCase = true)) &&
+                                 !voice.name.contains("female", ignoreCase = true)
+                            }
+                            if (maleVoice != null) {
+                                engine.voice = maleVoice
+                            }
+                        } catch (e: Exception) {
+                            // Fallback to pitch modulation
+                        }
+                        // Calibrate pitch and speech rate for Kelvin's warm, articulate male voice
+                        engine.setSpeechRate(0.96f)
+                        engine.setPitch(0.92f)
                         isInitialized = true
                     }
                 }
@@ -197,6 +213,7 @@ class VoiceTtsManager(context: Context) {
                 if (currentlySpeakingId == utteranceId) {
                     currentlySpeakingId = null
                 }
+                onSpeechCompleted?.invoke(utteranceId)
             }
 
             override fun onError(utteranceId: String?) {
@@ -207,10 +224,17 @@ class VoiceTtsManager(context: Context) {
         })
     }
 
-    fun speak(text: String, utteranceId: String) {
+    fun speak(text: String, utteranceId: String, onFinished: (() -> Unit)? = null) {
         if (!isInitialized || tts == null) return
         stop()
         currentlySpeakingId = utteranceId
+        if (onFinished != null) {
+            onSpeechCompleted = { id ->
+                if (id == utteranceId) {
+                    onFinished()
+                }
+            }
+        }
         // Clean markdown symbols for natural vocalization
         val cleanText = text
             .replace(Regex("[*#_`~]"), "")

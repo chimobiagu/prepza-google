@@ -1076,7 +1076,7 @@ private fun CbtDetailedAnswersReviewScreen(
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = "Ask AI Tutor to Explain Question ${origIndex + 1}",
+                                    text = "Ask Kelvin to Explain Question ${origIndex + 1}",
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 12.sp
                                 )

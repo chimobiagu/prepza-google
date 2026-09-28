@@ -94,7 +94,7 @@ fun SecondClassCitizenReaderView(
                                 onAskAiTutor("Explain the main themes, characters (Adah and Francis), and UTME examination points for Buchi Emecheta's 'Second-Class Citizen'.")
                             }
                         ) {
-                            Icon(Icons.Filled.AutoAwesome, contentDescription = "Ask AI Tutor", tint = PrimaryGreen)
+                            Icon(Icons.Filled.AutoAwesome, contentDescription = "Ask Kelvin", tint = PrimaryGreen)
                         }
                     }
                 },
@@ -447,7 +447,7 @@ fun LookBackInAngerReaderView(
                                 onAskAiTutor("Analyze Jimmy Porter's disillusionment, the 'bears and squirrels' metaphor, and themes of class alienation in John Osborne's 'Look Back in Anger' for UTME.")
                             }
                         ) {
-                            Icon(Icons.Filled.AutoAwesome, contentDescription = "Ask AI Tutor", tint = PrimaryGreen)
+                            Icon(Icons.Filled.AutoAwesome, contentDescription = "Ask Kelvin", tint = PrimaryGreen)
                         }
                     }
                 },
@@ -739,7 +739,7 @@ fun LionAndJewelReaderView(
                                 onAskAiTutor("Explain the clash between tradition and modernity in Wole Soyinka's 'The Lion and the Jewel' focusing on Baroka, Sidi, and Lakunle.")
                             }
                         ) {
-                            Icon(Icons.Filled.AutoAwesome, contentDescription = "Ask AI Tutor", tint = PrimaryGreen)
+                            Icon(Icons.Filled.AutoAwesome, contentDescription = "Ask Kelvin", tint = PrimaryGreen)
                         }
                     }
                 },
@@ -1031,7 +1031,7 @@ fun WutheringHeightsReaderView(
                                 onAskAiTutor("Explain the complex gothic themes of revenge, spiritual union between Heathcliff and Catherine, and redemption in Emily Brontë's 'Wuthering Heights' for UTME.")
                             }
                         ) {
-                            Icon(Icons.Filled.AutoAwesome, contentDescription = "Ask AI Tutor", tint = PrimaryGreen)
+                            Icon(Icons.Filled.AutoAwesome, contentDescription = "Ask Kelvin", tint = PrimaryGreen)
                         }
                     }
                 },

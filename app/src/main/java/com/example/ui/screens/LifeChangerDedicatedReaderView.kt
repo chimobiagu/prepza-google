@@ -147,7 +147,7 @@ fun LifeChangerDedicatedReaderView(
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.AutoAwesome,
-                                contentDescription = "Ask AI Tutor",
+                                contentDescription = "Ask Kelvin",
                                 tint = PrimaryGreen
                             )
                         }

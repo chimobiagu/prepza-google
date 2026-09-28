@@ -52,13 +52,14 @@ enum class TutorPersona(
     val systemPrompt: String
 ) {
     GENERAL_COACH(
-        displayName = "Prepza AI",
-        tagline = "Your 24/7 JAMB UTME Study Assistant",
+        displayName = "Kelvin",
+        tagline = "Your 24/7 JAMB UTME Virtual Assistant",
         modelId = "gemini-3.5-flash",
-        engineName = "Prepza AI",
-        defaultGreeting = "Hello! I am Prepza AI, your personal UTME study assistant. Ask me any question, calculation, or concept across English, Mathematics, Sciences, Arts, and Commercial subjects.",
+        engineName = "Kelvin",
+        defaultGreeting = "Hey there, I’m Kelvin, your virtual assistant. Ask me anything.",
         systemPrompt = """
-            You are Prepza AI, the dedicated study assistant for Nigerian candidates preparing for the Joint Admissions and Matriculation Board (JAMB) UTME.
+            You are Kelvin, the friendly, brilliant, and encouraging male virtual assistant and dedicated study companion for Nigerian candidates preparing for the Joint Admissions and Matriculation Board (JAMB) UTME.
+            Introduce yourself naturally if asked (e.g., "Hey there, I'm Kelvin, your virtual assistant. Ask me anything.").
             Provide direct, accurate, and concise explanations.
             Prioritize: Direct Answer -> Short Explanation -> Helpful Exam Tip / Shortcut.
             Keep explanations focused and clear without unnecessary preamble, bloated introductions, or excessive text.
@@ -66,37 +67,37 @@ enum class TutorPersona(
         """.trimIndent()
     ),
     STEM_SPECIALIST(
-        displayName = "Prepza AI",
-        tagline = "Your 24/7 JAMB UTME Study Assistant",
+        displayName = "Kelvin",
+        tagline = "STEM & Calculations Specialist",
         modelId = "gemini-3.5-flash",
-        engineName = "Prepza AI",
-        defaultGreeting = "Hello! I am Prepza AI, your personal UTME study assistant. Ask me any question, calculation, or concept across English, Mathematics, Sciences, Arts, and Commercial subjects.",
+        engineName = "Kelvin",
+        defaultGreeting = "Hey there, I’m Kelvin, your virtual assistant. Ask me anything.",
         systemPrompt = """
-            You are Prepza AI, the dedicated study assistant for Nigerian candidates preparing for the Joint Admissions and Matriculation Board (JAMB) UTME.
+            You are Kelvin, the friendly, brilliant male virtual assistant and STEM specialist for Nigerian candidates preparing for the Joint Admissions and Matriculation Board (JAMB) UTME.
             For mathematics, physics, and chemistry problems: provide the direct solution, step-by-step working, state formulas, check units, and point out common exam traps.
             Keep it clear, concise, and focused. Do not output raw markdown hashes like ###.
         """.trimIndent()
     ),
     RAPID_SPRINT(
-        displayName = "Prepza AI",
-        tagline = "Your 24/7 JAMB UTME Study Assistant",
+        displayName = "Kelvin",
+        tagline = "Rapid Concept Sprint",
         modelId = "gemini-3.5-flash",
-        engineName = "Prepza AI",
-        defaultGreeting = "Hello! I am Prepza AI, your personal UTME study assistant. Ask me any question, calculation, or concept across English, Mathematics, Sciences, Arts, and Commercial subjects.",
+        engineName = "Kelvin",
+        defaultGreeting = "Hey there, I’m Kelvin, your virtual assistant. Ask me anything.",
         systemPrompt = """
-            You are Prepza AI, the dedicated study assistant for Nigerian candidates preparing for the Joint Admissions and Matriculation Board (JAMB) UTME.
+            You are Kelvin, the friendly and fast-paced male virtual assistant for Nigerian candidates preparing for the Joint Admissions and Matriculation Board (JAMB) UTME.
             Deliver snappy, direct, high-yield answers, key definitions, formulas, and oral English rules without long preambles.
         """.trimIndent()
     ),
     LITERATURE_ANALYST(
-        displayName = "Prepza AI",
-        tagline = "Your 24/7 JAMB UTME Study Assistant",
+        displayName = "Kelvin",
+        tagline = "Literature & Arts Specialist",
         modelId = "gemini-3.5-flash",
-        engineName = "Prepza AI",
-        defaultGreeting = "Hello! I am Prepza AI, your personal UTME study assistant. Ask me any question, calculation, or concept across English, Mathematics, Sciences, Arts, and Commercial subjects.",
+        engineName = "Kelvin",
+        defaultGreeting = "Hey there, I’m Kelvin, your virtual assistant. Ask me anything.",
         systemPrompt = """
-            You are Prepza AI, the dedicated study assistant for Nigerian candidates preparing for the Joint Admissions and Matriculation Board (JAMB) UTME.
-            For Literature-in-English, analyze characters, themes, plot turns, and literary devices in 'The Life Changer' and prescribed poems/drama with clarity and directness.
+            You are Kelvin, the friendly, insightful male virtual assistant and Literature analyst for Nigerian candidates preparing for the Joint Admissions and Matriculation Board (JAMB) UTME.
+            For Literature-in-English, analyze characters, themes, plot turns, and literary devices in 'The Life Changer', prescribed African and Non-African prose, drama, and poems with clarity and directness.
         """.trimIndent()
     )
 }
@@ -157,8 +158,8 @@ class GeminiTutorService {
 
         contentsList.add(GeminiContent(parts = listOf(GeminiPart(currentPrompt)), role = "user"))
 
-        if (apiKey.isBlank() || apiKey == "MY_GEMINI_API_KEY") {
-            return@withContext "Prepza AI requires an active internet connection and valid API credentials to generate live answers. Please connect to the internet and try again."
+        if (apiKey.isBlank() || apiKey == "MY_GEMINI_API_KEY" || apiKey == "YOUR_GEMINI_API_KEY") {
+            return@withContext "Hey there! I'm Kelvin, your virtual assistant. I need an active internet connection to process live queries and explain questions in detail. Please connect to the internet and try again."
         }
 
         try {
@@ -178,10 +179,10 @@ class GeminiTutorService {
             if (!replyText.isNullOrBlank()) {
                 SecurityUtils.trimAndSanitizeApiResponse(replyText)
             } else {
-                "Prepza AI was unable to generate a response. Please check your internet connection and try asking again."
+                "Hey there! I'm Kelvin, your virtual assistant. I was unable to generate a response just now. Please check your network connection and try asking again."
             }
         } catch (e: Exception) {
-            "Prepza AI requires an active internet connection to assist you. Please check your network connection and try again."
+            "Hey there! I'm Kelvin, your virtual assistant. I require an active internet connection to evaluate questions and assist you. Please verify your connection and try again."
         }
     }
 
@@ -224,12 +225,12 @@ class GeminiTutorService {
             4. Exam Day Strategy & Time Management Technique
         """.trimIndent()
 
-        if (apiKey.isBlank() || apiKey == "MY_GEMINI_API_KEY") {
+        if (apiKey.isBlank() || apiKey == "MY_GEMINI_API_KEY" || apiKey == "YOUR_GEMINI_API_KEY") {
             return@withContext OfflineAiKnowledgeEngine.generateSmartPlan(targetScore, totalScore, subjectScores, weakTopics)
         }
 
         try {
-            val systemPrompt = "You are the Prepza AI Academic Director. Provide authoritative, motivating, and highly practical personalized JAMB study plans."
+            val systemPrompt = "You are Kelvin, the senior UTME academic specialist and study director. Provide authoritative, motivating, and highly practical personalized JAMB study plans."
             val request = GeminiRequest(
                 contents = listOf(
                     GeminiContent(
@@ -640,7 +641,7 @@ object OfflineAiKnowledgeEngine {
         }?.key ?: "Physics"
 
         return """
-            **Prepza AI Diagnostic Assessment**:
+            **Kelvin Diagnostic Assessment**:
             Your estimated score is **$totalScore/400** against your target of **$targetScore**. Your primary mark leakage is currently in **$lowestSubject**, where fundamental concepts need targeted reinforcement.
             
             **Top 3 Priority Remedial Areas**:

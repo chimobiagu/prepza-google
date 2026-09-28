@@ -255,8 +255,74 @@ private fun RenderVisualBody(
         rawRef.startsWith("math_circle") -> {
             MathCircleTheoremDiagram(height)
         }
-        rawRef.startsWith("math_coordinate") -> {
+        rawRef.startsWith("math_coordinate") || rawRef.startsWith("math_cartesian") -> {
             MathCoordinateGraphDiagram(height)
+        }
+        rawRef.startsWith("math_venn") -> {
+            MathVennDiagram(height)
+        }
+        rawRef.startsWith("math_parallel") -> {
+            MathParallelLinesDiagram(height)
+        }
+        rawRef.startsWith("math_intersecting") -> {
+            MathIntersectingLinesDiagram(height)
+        }
+        rawRef.startsWith("math_triangle_sine") -> {
+            MathTriangleSineDiagram(height)
+        }
+        rawRef.startsWith("math_pie_chart") -> {
+            MathPieChartDiagram(height)
+        }
+        rawRef.startsWith("phy_vectors_perp") || rawRef.startsWith("phy_vectors") -> {
+            PhysicsPerpendicularVectorsDiagram(height)
+        }
+        rawRef.startsWith("phy_cone") -> {
+            PhysicsConeEquilibriumDiagram(height)
+        }
+        rawRef.startsWith("phy_resistors_parallel") -> {
+            PhysicsResistorsParallel3Diagram(height)
+        }
+        rawRef.startsWith("phy_parallelogram") -> {
+            PhysicsParallelogramForcesDiagram(height)
+        }
+        rawRef.startsWith("phy_force_distance") -> {
+            PhysicsForceDistanceGraph(height)
+        }
+        rawRef.startsWith("phy_inclined_plane") -> {
+            PhysicsInclinedPlaneDiagram(height)
+        }
+        rawRef.startsWith("phy_transverse_wave") -> {
+            PhysicsTransverseWaveDiagram(height)
+        }
+        rawRef.startsWith("phy_refraction") -> {
+            PhysicsRefractionDiagram(height)
+        }
+        rawRef.startsWith("phy_six_cells") -> {
+            PhysicsSixCellsDiagram(height)
+        }
+        rawRef.startsWith("phy_stress_strain") -> {
+            PhysicsStressStrainDiagram(height)
+        }
+        rawRef.startsWith("phy_closed_tube") -> {
+            PhysicsClosedTubeDiagram(height)
+        }
+        rawRef.startsWith("phy_capacitor_network") -> {
+            PhysicsCapacitorNetworkDiagram(height)
+        }
+        rawRef.startsWith("phy_transformer") -> {
+            PhysicsTransformerDiagram(height)
+        }
+        rawRef.startsWith("phy_transistor_iv") -> {
+            PhysicsTransistorIvDiagram(height)
+        }
+        rawRef.startsWith("phy_telescope") -> {
+            PhysicsTelescopeLensesDiagram(height)
+        }
+        rawRef.startsWith("phy_electric_field") -> {
+            PhysicsElectricFieldDeflectionDiagram(height)
+        }
+        rawRef.startsWith("phy_max_min_thermometer") -> {
+            PhysicsMaxMinThermometerDiagram(height)
         }
         rawRef.startsWith("phy_circuit") -> {
             PhysicsCircuitDiagram(height)
@@ -267,7 +333,7 @@ private fun RenderVisualBody(
         rawRef.startsWith("phy_pulley") -> {
             PhysicsPulleyDiagram(height)
         }
-        rawRef.startsWith("phy_velocity") -> {
+        rawRef.startsWith("phy_velocity") || rawRef.startsWith("phy_vt") -> {
             PhysicsVelocityTimeGraph(height)
         }
         rawRef.startsWith("chem_titration") -> {
@@ -1051,6 +1117,809 @@ fun DefaultScientificFigure(name: String, height: androidx.compose.ui.unit.Dp) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(name, color = TextSecondary, fontSize = 11.sp)
             }
+        }
+    }
+}
+
+// ==========================================
+// AUTHENTIC EXAM COMPOSABLE DIAGRAMS
+// ==========================================
+
+@Composable
+fun MathVennDiagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(14.dp)) {
+            val w = size.width
+            val h = size.height
+            val r = h * 0.28f
+
+            val cP = Offset(w * 0.38f, h * 0.42f)
+            val cQ = Offset(w * 0.62f, h * 0.42f)
+            val cR = Offset(w * 0.50f, h * 0.68f)
+
+            // Draw shaded intersections (P ∩ Q) and (P ∩ R)
+            drawCircle(Color(0xFF38BDF8).copy(alpha = 0.25f), radius = r, center = cP)
+            drawCircle(Color(0xFF818CF8).copy(alpha = 0.25f), radius = r, center = cQ)
+            drawCircle(Color(0xFF34D399).copy(alpha = 0.25f), radius = r, center = cR)
+
+            // Outline circles
+            drawCircle(Color(0xFF0284C7), radius = r, center = cP, style = Stroke(width = 3f))
+            drawCircle(Color(0xFF4F46E5), radius = r, center = cQ, style = Stroke(width = 3f))
+            drawCircle(Color(0xFF059669), radius = r, center = cR, style = Stroke(width = 3f))
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(10.dp)) {
+            Text("P", Modifier.align(Alignment.TopStart).padding(start = 60.dp, top = 10.dp), fontWeight = FontWeight.Bold, color = Color(0xFF0284C7), fontSize = 14.sp)
+            Text("Q", Modifier.align(Alignment.TopEnd).padding(end = 60.dp, top = 10.dp), fontWeight = FontWeight.Bold, color = Color(0xFF4F46E5), fontSize = 14.sp)
+            Text("R", Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp), fontWeight = FontWeight.Bold, color = Color(0xFF059669), fontSize = 14.sp)
+            Text("Shaded: (P ∩ Q) ∪ (P ∩ R)", Modifier.align(Alignment.TopCenter), fontWeight = FontWeight.Bold, color = PrimaryGreenDark, fontSize = 11.sp)
+        }
+    }
+}
+
+@Composable
+fun MathParallelLinesDiagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(14.dp)) {
+            val w = size.width
+            val h = size.height
+
+            val k = Offset(w * 0.15f, h * 0.85f)
+            val l = Offset(w * 0.35f, h * 0.20f)
+            val m = Offset(w * 0.85f, h * 0.20f)
+            val n = Offset(w * 0.65f, h * 0.85f)
+
+            // Parallel lines KL and NM
+            drawLine(PrimaryGreenDark, k, l, strokeWidth = 3.5f)
+            drawLine(PrimaryGreenDark, n, m, strokeWidth = 3.5f)
+
+            // Transversals
+            drawLine(Color.DarkGray, k, n, strokeWidth = 2.5f) // KN
+            drawLine(Color.DarkGray, l, m, strokeWidth = 2.5f) // LM
+            drawLine(Color(0xFF0284C7), l, n, strokeWidth = 2.5f) // LN (bisector)
+            drawLine(Color(0xFFEF4444), k, m, strokeWidth = 2.5f) // KM
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(10.dp)) {
+            Text("L (54°)", Modifier.align(Alignment.TopStart).padding(start = 70.dp, top = 10.dp), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+            Text("M", Modifier.align(Alignment.TopEnd).padding(end = 25.dp, top = 10.dp), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Text("K (35°)", Modifier.align(Alignment.BottomStart).padding(start = 20.dp, bottom = 10.dp), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+            Text("N", Modifier.align(Alignment.BottomEnd).padding(end = 70.dp, bottom = 10.dp), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Text("KL // NM, LN bisects ∠KNM", Modifier.align(Alignment.TopCenter), color = TextSecondary, fontSize = 10.sp)
+        }
+    }
+}
+
+@Composable
+fun MathIntersectingLinesDiagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            val w = size.width
+            val h = size.height
+
+            // Line 1
+            drawLine(Color.DarkGray, Offset(w * 0.1f, h * 0.2f), Offset(w * 0.9f, h * 0.8f), strokeWidth = 3f)
+            // Line 2
+            drawLine(Color.DarkGray, Offset(w * 0.1f, h * 0.8f), Offset(w * 0.9f, h * 0.2f), strokeWidth = 3f)
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(12.dp)) {
+            Text("q°", Modifier.align(Alignment.CenterStart).padding(start = 70.dp), fontWeight = FontWeight.Bold, color = BlueAccent, fontSize = 13.sp)
+            Text("30°", Modifier.align(Alignment.CenterEnd).padding(end = 70.dp), fontWeight = FontWeight.Bold, color = PrimaryGreenDark, fontSize = 13.sp)
+            Text("(p + 2q)°", Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp), fontWeight = FontWeight.Bold, color = IncorrectRed, fontSize = 12.sp)
+        }
+    }
+}
+
+@Composable
+fun MathTriangleSineDiagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(14.dp)) {
+            val w = size.width
+            val h = size.height
+
+            val pA = Offset(w * 0.12f, h * 0.80f)
+            val pB = Offset(w * 0.82f, h * 0.80f)
+            val pC = Offset(w * 0.55f, h * 0.25f)
+
+            val path = Path().apply {
+                moveTo(pA.x, pA.y)
+                lineTo(pB.x, pB.y)
+                lineTo(pC.x, pC.y)
+                close()
+            }
+            drawPath(path, color = PrimaryGreenLight.copy(alpha = 0.2f))
+            drawPath(path, color = PrimaryGreenDark, style = Stroke(width = 3.5f))
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(10.dp)) {
+            Text("30°", Modifier.align(Alignment.BottomStart).padding(start = 45.dp, bottom = 18.dp), fontWeight = FontWeight.Bold, color = OrangeAccent, fontSize = 11.sp)
+            Text("60°", Modifier.align(Alignment.BottomEnd).padding(end = 45.dp, bottom = 18.dp), fontWeight = FontWeight.Bold, color = OrangeAccent, fontSize = 11.sp)
+            Text("x", Modifier.align(Alignment.TopStart).padding(start = 70.dp, top = 35.dp), fontWeight = FontWeight.Bold, color = BlueAccent, fontSize = 13.sp)
+            Text("10 cm", Modifier.align(Alignment.TopEnd).padding(end = 60.dp, top = 35.dp), fontWeight = FontWeight.Bold, color = PrimaryGreenDark, fontSize = 12.sp)
+        }
+    }
+}
+
+@Composable
+fun MathPieChartDiagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(12.dp)) {
+            val center = Offset(size.width / 2f, size.height / 2f)
+            val radius = (size.height / 2f) * 0.85f
+
+            // Gari 70° (from 0 to 70)
+            drawArc(Color(0xFF38BDF8), 0f, 70f, true, Offset(center.x - radius, center.y - radius), Size(radius * 2, radius * 2))
+            // Rice 80° (from 70 to 150)
+            drawArc(Color(0xFF34D399), 70f, 80f, true, Offset(center.x - radius, center.y - radius), Size(radius * 2, radius * 2))
+            // Beans 50° (from 150 to 200)
+            drawArc(Color(0xFFFBBF24), 150f, 50f, true, Offset(center.x - radius, center.y - radius), Size(radius * 2, radius * 2))
+            // Yam 160° (from 200 to 360)
+            drawArc(Color(0xFFF87171), 200f, 160f, true, Offset(center.x - radius, center.y - radius), Size(radius * 2, radius * 2))
+
+            drawCircle(Color.White, radius, center, style = Stroke(width = 2.5f))
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+            Text("Gari: 70°", Modifier.align(Alignment.CenterEnd).padding(end = 10.dp), fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Color(0xFF0284C7))
+            Text("Rice: 80° (₦8,000)", Modifier.align(Alignment.BottomEnd).padding(end = 15.dp, bottom = 4.dp), fontWeight = FontWeight.Bold, fontSize = 10.sp, color = PrimaryGreenDark)
+            Text("Beans: 50°", Modifier.align(Alignment.BottomStart).padding(start = 15.dp, bottom = 4.dp), fontWeight = FontWeight.Bold, fontSize = 10.sp, color = OrangeAccent)
+            Text("Yam: 160°", Modifier.align(Alignment.TopStart).padding(start = 20.dp, top = 6.dp), fontWeight = FontWeight.Bold, fontSize = 10.sp, color = IncorrectRed)
+        }
+    }
+}
+
+@Composable
+fun PhysicsPerpendicularVectorsDiagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(18.dp)) {
+            val origin = Offset(size.width * 0.35f, size.height * 0.75f)
+
+            // Vertical vector (6.0 N)
+            drawLine(PrimaryGreenDark, origin, Offset(origin.x, origin.y - 120f), strokeWidth = 4f)
+            // Arrowhead
+            drawLine(PrimaryGreenDark, Offset(origin.x - 6f, origin.y - 110f), Offset(origin.x, origin.y - 120f), strokeWidth = 3f)
+            drawLine(PrimaryGreenDark, Offset(origin.x + 6f, origin.y - 110f), Offset(origin.x, origin.y - 120f), strokeWidth = 3f)
+
+            // Horizontal vector (8.0 N)
+            drawLine(BlueAccent, origin, Offset(origin.x + 140f, origin.y), strokeWidth = 4f)
+            drawLine(BlueAccent, Offset(origin.x + 130f, origin.y - 6f), Offset(origin.x + 140f, origin.y), strokeWidth = 3f)
+            drawLine(BlueAccent, Offset(origin.x + 130f, origin.y + 6f), Offset(origin.x + 140f, origin.y), strokeWidth = 3f)
+
+            // Right angle symbol
+            val r = 16f
+            drawLine(Color.DarkGray, Offset(origin.x + r, origin.y), Offset(origin.x + r, origin.y - r), strokeWidth = 2f)
+            drawLine(Color.DarkGray, Offset(origin.x + r, origin.y - r), Offset(origin.x, origin.y - r), strokeWidth = 2f)
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(10.dp)) {
+            Text("6.0 N", Modifier.align(Alignment.CenterStart).padding(start = 55.dp, bottom = 40.dp), fontWeight = FontWeight.Bold, color = PrimaryGreenDark, fontSize = 12.sp)
+            Text("8.0 N", Modifier.align(Alignment.BottomCenter).padding(start = 60.dp, bottom = 12.dp), fontWeight = FontWeight.Bold, color = BlueAccent, fontSize = 12.sp)
+            Text("Resultant R = √(6² + 8²) = 10.0 N", Modifier.align(Alignment.TopCenter), fontWeight = FontWeight.Bold, color = TextPrimary, fontSize = 11.sp)
+        }
+    }
+}
+
+@Composable
+fun PhysicsConeEquilibriumDiagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(14.dp)) {
+            val w = size.width
+            val h = size.height
+
+            // Cone X (Inverted on apex)
+            val xApex = Offset(w * 0.2f, h * 0.75f)
+            val pathX = Path().apply {
+                moveTo(xApex.x, xApex.y)
+                lineTo(xApex.x - 30f, h * 0.25f)
+                lineTo(xApex.x + 30f, h * 0.25f)
+                close()
+            }
+            drawPath(pathX, color = Color(0xFFEF4444).copy(alpha = 0.25f))
+            drawPath(pathX, color = Color(0xFFEF4444), style = Stroke(width = 3f))
+
+            // Cone Y (Upright on base)
+            val yApex = Offset(w * 0.5f, h * 0.25f)
+            val pathY = Path().apply {
+                moveTo(yApex.x, yApex.y)
+                lineTo(yApex.x - 35f, h * 0.75f)
+                lineTo(yApex.x + 35f, h * 0.75f)
+                close()
+            }
+            drawPath(pathY, color = Color(0xFF10B981).copy(alpha = 0.25f))
+            drawPath(pathY, color = Color(0xFF10B981), style = Stroke(width = 3f))
+
+            // Cone Z (Lying on side - neutral equilibrium)
+            val zApex = Offset(w * 0.72f, h * 0.5f)
+            val pathZ = Path().apply {
+                moveTo(zApex.x, zApex.y)
+                lineTo(zApex.x + 55f, h * 0.3f)
+                lineTo(zApex.x + 55f, h * 0.7f)
+                close()
+            }
+            drawPath(pathZ, color = Color(0xFF0284C7).copy(alpha = 0.25f))
+            drawPath(pathZ, color = Color(0xFF0284C7), style = Stroke(width = 3f))
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+            Text("X (Unstable)", Modifier.align(Alignment.BottomStart).padding(start = 30.dp), fontWeight = FontWeight.Bold, color = IncorrectRed, fontSize = 10.sp)
+            Text("Y (Stable)", Modifier.align(Alignment.BottomCenter), fontWeight = FontWeight.Bold, color = PrimaryGreenDark, fontSize = 10.sp)
+            Text("Z (Neutral)", Modifier.align(Alignment.BottomEnd).padding(end = 30.dp), fontWeight = FontWeight.Bold, color = BlueAccent, fontSize = 10.sp)
+        }
+    }
+}
+
+@Composable
+fun PhysicsResistorsParallel3Diagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(14.dp)) {
+            val w = size.width
+            val h = size.height
+
+            // Outer loop
+            drawLine(Color(0xFF0284C7), Offset(w * 0.2f, h * 0.2f), Offset(w * 0.8f, h * 0.2f), strokeWidth = 3f)
+            drawLine(Color(0xFF0284C7), Offset(w * 0.2f, h * 0.5f), Offset(w * 0.8f, h * 0.5f), strokeWidth = 3f)
+            drawLine(Color(0xFF0284C7), Offset(w * 0.2f, h * 0.8f), Offset(w * 0.8f, h * 0.8f), strokeWidth = 3f)
+            drawLine(Color(0xFF0284C7), Offset(w * 0.2f, h * 0.2f), Offset(w * 0.2f, h * 0.8f), strokeWidth = 3f)
+            drawLine(Color(0xFF0284C7), Offset(w * 0.8f, h * 0.2f), Offset(w * 0.8f, h * 0.8f), strokeWidth = 3f)
+
+            // Resistor boxes
+            drawRect(OrangeAccent, Offset(w * 0.45f, h * 0.15f), Size(w * 0.15f, h * 0.1f))
+            drawRect(OrangeAccent, Offset(w * 0.45f, h * 0.45f), Size(w * 0.15f, h * 0.1f))
+            drawRect(OrangeAccent, Offset(w * 0.45f, h * 0.75f), Size(w * 0.15f, h * 0.1f))
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+            Text("2 Ω", Modifier.align(Alignment.TopCenter).padding(top = 8.dp), fontWeight = FontWeight.Bold, fontSize = 11.sp, color = TextPrimary)
+            Text("4 Ω", Modifier.align(Alignment.Center), fontWeight = FontWeight.Bold, fontSize = 11.sp, color = TextPrimary)
+            Text("12 Ω", Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp), fontWeight = FontWeight.Bold, fontSize = 11.sp, color = TextPrimary)
+            Text("12 V Supply", Modifier.align(Alignment.CenterStart).padding(start = 10.dp), fontWeight = FontWeight.Bold, color = BlueAccent, fontSize = 10.sp)
+        }
+    }
+}
+
+@Composable
+fun PhysicsParallelogramForcesDiagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(14.dp)) {
+            val midX = size.width / 2f
+            val origin = Offset(midX, size.height * 0.55f)
+
+            // Upward vertical resultant OR
+            drawLine(PrimaryGreenDark, origin, Offset(midX, 20f), strokeWidth = 3.5f)
+            // Downward tension OT
+            drawLine(IncorrectRed, origin, Offset(midX, size.height - 20f), strokeWidth = 3.5f)
+
+            // Component forces OQ (left) and OS (right)
+            drawLine(BlueAccent, origin, Offset(midX - 70f, 60f), strokeWidth = 3f)
+            drawLine(BlueAccent, origin, Offset(midX + 70f, 60f), strokeWidth = 3f)
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+            Text("R (Resultant)", Modifier.align(Alignment.TopCenter), fontWeight = FontWeight.Bold, color = PrimaryGreenDark, fontSize = 11.sp)
+            Text("Q", Modifier.align(Alignment.TopStart).padding(start = 55.dp, top = 35.dp), fontWeight = FontWeight.Bold, fontSize = 11.sp)
+            Text("S (8N)", Modifier.align(Alignment.TopEnd).padding(end = 55.dp, top = 35.dp), fontWeight = FontWeight.Bold, color = BlueAccent, fontSize = 11.sp)
+            Text("O", Modifier.align(Alignment.Center).padding(end = 18.dp), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Text("T", Modifier.align(Alignment.BottomCenter), fontWeight = FontWeight.Bold, color = IncorrectRed, fontSize = 12.sp)
+        }
+    }
+}
+
+@Composable
+fun PhysicsForceDistanceGraph(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            val origin = Offset(40f, size.height * 0.6f)
+            val w = size.width
+            val h = size.height
+
+            // Axes
+            drawLine(Color.Gray, Offset(origin.x, 15f), Offset(origin.x, h - 15f), strokeWidth = 2.5f)
+            drawLine(Color.Gray, Offset(15f, origin.y), Offset(w - 15f, origin.y), strokeWidth = 2.5f)
+
+            // Force graph curve: triangular to 60N at 30m, down to 0 at 60m, negative to -40N at 80m
+            val path = Path().apply {
+                moveTo(origin.x, origin.y)
+                lineTo(origin.x + (w * 0.3f), origin.y - (h * 0.45f))
+                lineTo(origin.x + (w * 0.55f), origin.y)
+                lineTo(origin.x + (w * 0.75f), origin.y + (h * 0.25f))
+            }
+            drawPath(path, color = PrimaryGreenDark, style = Stroke(width = 3.5f))
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(10.dp)) {
+            Text("Force (N)", Modifier.align(Alignment.TopStart).padding(start = 2.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Text("+60 N", Modifier.align(Alignment.TopStart).padding(start = 2.dp, top = 18.dp), fontSize = 9.sp, color = PrimaryGreenDark, fontWeight = FontWeight.Bold)
+            Text("Distance (m)", Modifier.align(Alignment.BottomEnd).padding(bottom = 2.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Text("Work = Area under F-d curve", Modifier.align(Alignment.TopCenter), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = BlueAccent)
+        }
+    }
+}
+
+@Composable
+fun PhysicsInclinedPlaneDiagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            val w = size.width
+            val h = size.height
+
+            val baseLeft = Offset(w * 0.15f, h * 0.8f)
+            val baseRight = Offset(w * 0.85f, h * 0.8f)
+            val apex = Offset(w * 0.85f, h * 0.25f)
+
+            // Incline wedge
+            val wedge = Path().apply {
+                moveTo(baseLeft.x, baseLeft.y)
+                lineTo(baseRight.x, baseRight.y)
+                lineTo(apex.x, apex.y)
+                close()
+            }
+            drawPath(wedge, color = Color(0xFFF1F5F9))
+            drawPath(wedge, color = Color.DarkGray, style = Stroke(width = 3f))
+
+            // Block on incline
+            val blockCenter = Offset(w * 0.55f, h * 0.50f)
+            drawRect(OrangeAccent, Offset(blockCenter.x - 20f, blockCenter.y - 15f), Size(40f, 25f))
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(10.dp)) {
+            Text("Block", Modifier.align(Alignment.Center).padding(start = 10.dp, bottom = 10.dp), fontWeight = FontWeight.Bold, color = TextPrimary, fontSize = 11.sp)
+            Text("Angle α", Modifier.align(Alignment.BottomStart).padding(start = 45.dp, bottom = 25.dp), fontWeight = FontWeight.Bold, color = PrimaryGreenDark, fontSize = 11.sp)
+            Text("μ = tan α", Modifier.align(Alignment.TopCenter), fontWeight = FontWeight.Bold, color = BlueAccent, fontSize = 11.sp)
+        }
+    }
+}
+
+@Composable
+fun PhysicsTransverseWaveDiagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(14.dp)) {
+            val midY = size.height / 2f
+            val w = size.width
+
+            // Center axis
+            drawLine(Color.Gray, Offset(20f, midY), Offset(w - 20f, midY), strokeWidth = 2f)
+
+            // Sinusoidal wave
+            val wavePath = Path().apply {
+                moveTo(30f, midY)
+                val amp = 40f
+                val period = (w - 60f) / 2f
+                for (x in 0..(w - 60f).toInt()) {
+                    val angle = (x / period) * 2 * Math.PI
+                    val y = midY - (Math.sin(angle) * amp).toFloat()
+                    lineTo(30f + x, y)
+                }
+            }
+            drawPath(wavePath, color = BlueAccent, style = Stroke(width = 3.5f))
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+            Text("Origin O", Modifier.align(Alignment.CenterStart).padding(start = 12.dp, bottom = 20.dp), fontWeight = FontWeight.Bold, fontSize = 10.sp)
+            Text("Particle F (at distance x)", Modifier.align(Alignment.Center).padding(start = 40.dp, bottom = 20.dp), fontWeight = FontWeight.Bold, color = IncorrectRed, fontSize = 10.sp)
+            Text("Phase difference φ = 2πx/λ", Modifier.align(Alignment.TopCenter), fontWeight = FontWeight.Bold, color = PrimaryGreenDark, fontSize = 11.sp)
+        }
+    }
+}
+
+@Composable
+fun PhysicsRefractionDiagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(14.dp)) {
+            val midY = size.height / 2f
+            val midX = size.width / 2f
+
+            // Boundary
+            drawLine(Color.DarkGray, Offset(20f, midY), Offset(size.width - 20f, midY), strokeWidth = 3f)
+
+            // Normal line (dashed)
+            drawLine(Color.Gray, Offset(midX, 20f), Offset(midX, size.height - 20f), strokeWidth = 2f)
+
+            // Incident ray in glass
+            drawLine(IncorrectRed, Offset(midX - 70f, 30f), Offset(midX, midY), strokeWidth = 3f)
+            // Refracted ray in water
+            drawLine(PrimaryGreenDark, Offset(midX, midY), Offset(midX + 80f, size.height - 30f), strokeWidth = 3f)
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+            Text("Glass (n = 1.52)", Modifier.align(Alignment.TopStart).padding(start = 20.dp, top = 8.dp), fontWeight = FontWeight.Bold, color = BlueAccent, fontSize = 11.sp)
+            Text("Incident ray (angle i)", Modifier.align(Alignment.TopCenter).padding(end = 40.dp), color = IncorrectRed, fontSize = 10.sp)
+            Text("Water (n = 1.33)", Modifier.align(Alignment.BottomStart).padding(start = 20.dp, bottom = 8.dp), fontWeight = FontWeight.Bold, color = Color(0xFF0284C7), fontSize = 11.sp)
+            Text("Refracted ray", Modifier.align(Alignment.BottomEnd).padding(end = 20.dp, bottom = 8.dp), color = PrimaryGreenDark, fontSize = 10.sp)
+        }
+    }
+}
+
+@Composable
+fun PhysicsSixCellsDiagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(14.dp)) {
+            val midY = size.height / 2f
+            val w = size.width
+
+            // Main wire
+            drawLine(Color(0xFF0284C7), Offset(20f, midY), Offset(w - 20f, midY), strokeWidth = 3f)
+
+            // 6 cell symbols (long line = positive, short thick = negative)
+            val step = (w - 80f) / 6f
+            for (i in 0..5) {
+                val cx = 40f + (i * step)
+                drawLine(PrimaryGreenDark, Offset(cx, midY - 20f), Offset(cx, midY + 20f), strokeWidth = 4f)
+                drawLine(PrimaryGreenDark, Offset(cx + 10f, midY - 12f), Offset(cx + 10f, midY + 12f), strokeWidth = 6f)
+            }
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+            Text("Six 2V Cells Connected in Series-Parallel Network", Modifier.align(Alignment.TopCenter), fontWeight = FontWeight.Bold, color = TextPrimary, fontSize = 11.sp)
+            Text("Effective e.m.f. = 4V (opposing polarities cancel)", Modifier.align(Alignment.BottomCenter), color = PrimaryGreenDark, fontWeight = FontWeight.Bold, fontSize = 10.sp)
+        }
+    }
+}
+
+@Composable
+fun PhysicsStressStrainDiagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            val origin = Offset(40f, size.height - 30f)
+            val w = size.width
+            val h = size.height
+
+            // Axes
+            drawLine(Color.Gray, Offset(origin.x, 20f), origin, strokeWidth = 2.5f)
+            drawLine(Color.Gray, origin, Offset(w - 20f, origin.y), strokeWidth = 2.5f)
+
+            // Load-extension curve
+            val ptQ = Offset(origin.x + 50f, origin.y - 45f) // Proportional limit
+            val ptR = Offset(origin.x + 85f, origin.y - 65f) // Elastic limit
+            val ptS = Offset(origin.x + 150f, origin.y - 85f) // Maximum load
+            val ptT = Offset(origin.x + 200f, origin.y - 50f) // Breaking point
+
+            drawLine(PrimaryGreenDark, origin, ptQ, strokeWidth = 3f)
+            drawLine(PrimaryGreenDark, ptQ, ptR, strokeWidth = 3f)
+            drawLine(OrangeAccent, ptR, ptS, strokeWidth = 3f)
+            drawLine(IncorrectRed, ptS, ptT, strokeWidth = 3f)
+
+            drawCircle(PrimaryGreenDark, 4f, ptQ)
+            drawCircle(PrimaryGreenDark, 5f, ptR)
+            drawCircle(OrangeAccent, 4f, ptS)
+            drawCircle(IncorrectRed, 4f, ptT)
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+            Text("Load (N)", Modifier.align(Alignment.TopStart).padding(start = 4.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Text("Extension", Modifier.align(Alignment.BottomEnd).padding(bottom = 2.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Text("R: Elastic Limit", Modifier.align(Alignment.CenterStart).padding(start = 75.dp, bottom = 30.dp), fontWeight = FontWeight.Bold, color = PrimaryGreenDark, fontSize = 11.sp)
+        }
+    }
+}
+
+@Composable
+fun PhysicsClosedTubeDiagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(14.dp)) {
+            val midX = size.width / 2f
+            val h = size.height
+
+            // Closed tube outline
+            drawLine(Color.DarkGray, Offset(midX - 35f, 20f), Offset(midX - 35f, h - 30f), strokeWidth = 3f)
+            drawLine(Color.DarkGray, Offset(midX + 35f, 20f), Offset(midX + 35f, h - 30f), strokeWidth = 3f)
+            drawLine(Color.DarkGray, Offset(midX - 35f, h - 30f), Offset(midX + 35f, h - 30f), strokeWidth = 5f) // Closed bottom
+
+            // Standing wave envelope (fundamental quarter wave)
+            val pTopL = Offset(midX - 30f, 25f)
+            val pTopR = Offset(midX + 30f, 25f)
+            val pNode = Offset(midX, h - 30f)
+
+            drawLine(BlueAccent, pTopL, pNode, strokeWidth = 2.5f)
+            drawLine(BlueAccent, pTopR, pNode, strokeWidth = 2.5f)
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+            Text("Antinode (Open)", Modifier.align(Alignment.TopCenter), fontWeight = FontWeight.Bold, color = BlueAccent, fontSize = 10.sp)
+            Text("Length L = λ / 4", Modifier.align(Alignment.CenterEnd).padding(end = 40.dp), fontWeight = FontWeight.Bold, color = PrimaryGreenDark, fontSize = 11.sp)
+            Text("Node (Closed)", Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp), fontWeight = FontWeight.Bold, color = TextSecondary, fontSize = 10.sp)
+        }
+    }
+}
+
+@Composable
+fun PhysicsCapacitorNetworkDiagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(14.dp)) {
+            val w = size.width
+            val h = size.height
+
+            // 3 parallel capacitors on left
+            drawLine(Color(0xFF0284C7), Offset(w * 0.15f, h * 0.25f), Offset(w * 0.45f, h * 0.25f), strokeWidth = 2.5f)
+            drawLine(Color(0xFF0284C7), Offset(w * 0.15f, h * 0.50f), Offset(w * 0.45f, h * 0.50f), strokeWidth = 2.5f)
+            drawLine(Color(0xFF0284C7), Offset(w * 0.15f, h * 0.75f), Offset(w * 0.45f, h * 0.75f), strokeWidth = 2.5f)
+            drawLine(Color(0xFF0284C7), Offset(w * 0.15f, h * 0.25f), Offset(w * 0.15f, h * 0.75f), strokeWidth = 2.5f)
+            drawLine(Color(0xFF0284C7), Offset(w * 0.45f, h * 0.25f), Offset(w * 0.45f, h * 0.75f), strokeWidth = 2.5f)
+
+            // Right branch with 2uF and 3uF
+            drawLine(Color(0xFF0284C7), Offset(w * 0.45f, h * 0.50f), Offset(w * 0.85f, h * 0.50f), strokeWidth = 2.5f)
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+            Text("2μF || 2μF || 2μF = 6μF", Modifier.align(Alignment.CenterStart).padding(start = 10.dp), fontWeight = FontWeight.Bold, color = PrimaryGreenDark, fontSize = 10.sp)
+            Text("Series branch: 2μF, 3μF", Modifier.align(Alignment.CenterEnd).padding(end = 10.dp), fontWeight = FontWeight.Bold, color = BlueAccent, fontSize = 10.sp)
+        }
+    }
+}
+
+@Composable
+fun PhysicsTransformerDiagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(14.dp)) {
+            val midX = size.width / 2f
+            val h = size.height
+
+            // Iron Core (rectangular loop)
+            drawRoundRect(Color.DarkGray, Offset(midX - 70f, h * 0.2f), Size(140f, h * 0.6f), androidx.compose.ui.geometry.CornerRadius(10f, 10f), style = Stroke(width = 8f))
+
+            // Primary coil left
+            drawRect(Color(0xFF0284C7), Offset(midX - 76f, h * 0.35f), Size(12f, h * 0.3f))
+            // Secondary coil right
+            drawRect(IncorrectRed, Offset(midX + 64f, h * 0.35f), Size(12f, h * 0.3f))
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+            Text("Input (Primary)", Modifier.align(Alignment.CenterStart).padding(start = 12.dp), fontWeight = FontWeight.Bold, color = BlueAccent, fontSize = 10.sp)
+            Text("Iron Core", Modifier.align(Alignment.TopCenter), fontWeight = FontWeight.Bold, color = TextSecondary, fontSize = 10.sp)
+            Text("Output (Secondary)", Modifier.align(Alignment.CenterEnd).padding(end = 12.dp), fontWeight = FontWeight.Bold, color = IncorrectRed, fontSize = 10.sp)
+        }
+    }
+}
+
+@Composable
+fun PhysicsTransistorIvDiagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            val origin = Offset(40f, size.height - 30f)
+            val w = size.width
+            val h = size.height
+
+            // Axes
+            drawLine(Color.Gray, Offset(origin.x, 15f), origin, strokeWidth = 2.5f)
+            drawLine(Color.Gray, origin, Offset(w - 15f, origin.y), strokeWidth = 2.5f)
+
+            // Characteristic curve rising then saturating flat
+            val curve = Path().apply {
+                moveTo(origin.x, origin.y)
+                quadraticTo(origin.x + 40f, origin.y - (h * 0.55f), w - 30f, origin.y - (h * 0.60f))
+            }
+            drawPath(curve, color = PrimaryGreenDark, style = Stroke(width = 3.5f))
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+            Text("Collector Current (Ic)", Modifier.align(Alignment.TopStart).padding(start = 4.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Text("Voltage (Vce)", Modifier.align(Alignment.BottomEnd).padding(bottom = 2.dp), fontSize = 10.sp, fontWeight = FontWeight.Bold)
+            Text("Saturating I-V Characteristic (Graph D)", Modifier.align(Alignment.TopCenter), fontWeight = FontWeight.Bold, color = PrimaryGreenDark, fontSize = 11.sp)
+        }
+    }
+}
+
+@Composable
+fun PhysicsTelescopeLensesDiagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(14.dp)) {
+            val midY = size.height / 2f
+            val w = size.width
+
+            // Optical Axis
+            drawLine(Color.Gray, Offset(15f, midY), Offset(w - 15f, midY), strokeWidth = 2f)
+
+            // Large objective lens on left
+            drawLine(PrimaryGreenDark, Offset(w * 0.25f, 20f), Offset(w * 0.25f, size.height - 20f), strokeWidth = 4f)
+            // Smaller eyepiece lens on right
+            drawLine(BlueAccent, Offset(w * 0.75f, 40f), Offset(w * 0.75f, size.height - 40f), strokeWidth = 3f)
+
+            // Rays converging
+            drawLine(IncorrectRed, Offset(15f, midY - 30f), Offset(w * 0.25f, midY - 30f), strokeWidth = 2f)
+            drawLine(IncorrectRed, Offset(w * 0.25f, midY - 30f), Offset(w * 0.55f, midY), strokeWidth = 2f)
+            drawLine(IncorrectRed, Offset(w * 0.55f, midY), Offset(w * 0.75f, midY + 15f), strokeWidth = 2f)
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+            Text("Objective (fo)", Modifier.align(Alignment.TopStart).padding(start = 40.dp), fontWeight = FontWeight.Bold, color = PrimaryGreenDark, fontSize = 10.sp)
+            Text("Eyepiece (fe)", Modifier.align(Alignment.TopEnd).padding(end = 40.dp), fontWeight = FontWeight.Bold, color = BlueAccent, fontSize = 10.sp)
+            Text("Astronomical Telescope in Normal Adjustment", Modifier.align(Alignment.BottomCenter), fontWeight = FontWeight.Bold, color = TextPrimary, fontSize = 10.sp)
+        }
+    }
+}
+
+@Composable
+fun PhysicsElectricFieldDeflectionDiagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(14.dp)) {
+            val w = size.width
+            val h = size.height
+
+            // Upper (+) plate and lower (-) plate
+            drawLine(IncorrectRed, Offset(w * 0.2f, h * 0.2f), Offset(w * 0.8f, h * 0.2f), strokeWidth = 4f)
+            drawLine(BlueAccent, Offset(w * 0.2f, h * 0.8f), Offset(w * 0.8f, h * 0.8f), strokeWidth = 4f)
+
+            // Field arrows upward
+            for (i in 1..4) {
+                val ax = w * (0.25f + i * 0.1f)
+                drawLine(Color.Gray, Offset(ax, h * 0.75f), Offset(ax, h * 0.25f), strokeWidth = 1.5f)
+            }
+
+            // Electron beam curving downward toward (+) or (-) according to diagram
+            val beam = Path().apply {
+                moveTo(w * 0.1f, h * 0.45f)
+                quadraticTo(w * 0.45f, h * 0.45f, w * 0.8f, h * 0.75f)
+            }
+            drawPath(beam, color = PrimaryGreenDark, style = Stroke(width = 3.5f))
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+            Text("(+) Plate", Modifier.align(Alignment.TopCenter).padding(top = 4.dp), fontWeight = FontWeight.Bold, color = IncorrectRed, fontSize = 10.sp)
+            Text("Beam: Electron (Negative charge)", Modifier.align(Alignment.CenterStart).padding(start = 10.dp), fontWeight = FontWeight.Bold, color = PrimaryGreenDark, fontSize = 10.sp)
+            Text("(-) Plate", Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp), fontWeight = FontWeight.Bold, color = BlueAccent, fontSize = 10.sp)
+        }
+    }
+}
+
+@Composable
+fun PhysicsMaxMinThermometerDiagram(height: androidx.compose.ui.unit.Dp) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(height)
+            .clip(RoundedCornerShape(10.dp))
+            .background(SurfaceWhite),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize().padding(14.dp)) {
+            val midX = size.width / 2f
+            val h = size.height
+
+            // U-tube
+            val uPath = Path().apply {
+                moveTo(midX - 45f, 30f)
+                lineTo(midX - 45f, h - 35f)
+                quadraticTo(midX, h - 15f, midX + 45f, h - 35f)
+                lineTo(midX + 45f, 30f)
+            }
+            drawPath(uPath, color = Color(0xFF0284C7).copy(alpha = 0.2f), style = Stroke(width = 16f))
+            drawPath(uPath, color = Color.DarkGray, style = Stroke(width = 2.5f))
+
+            // Bulb P left, bulb R right
+            drawCircle(Color(0xFF38BDF8), 16f, Offset(midX - 45f, 25f))
+            drawCircle(Color(0xFF38BDF8), 16f, Offset(midX + 45f, 25f))
+        }
+        Box(modifier = Modifier.fillMaxSize().padding(8.dp)) {
+            Text("P: Alcohol", Modifier.align(Alignment.TopStart).padding(start = 45.dp), fontWeight = FontWeight.Bold, color = BlueAccent, fontSize = 10.sp)
+            Text("Q: Mercury (Bend)", Modifier.align(Alignment.BottomCenter), fontWeight = FontWeight.Bold, color = TextPrimary, fontSize = 10.sp)
+            Text("R: Alcohol", Modifier.align(Alignment.TopEnd).padding(end = 45.dp), fontWeight = FontWeight.Bold, color = BlueAccent, fontSize = 10.sp)
+            Text("Six's Max/Min Thermometer", Modifier.align(Alignment.Center), fontWeight = FontWeight.Bold, color = PrimaryGreenDark, fontSize = 10.sp)
         }
     }
 }

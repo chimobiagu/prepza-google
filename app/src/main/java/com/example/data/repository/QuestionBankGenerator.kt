@@ -322,6 +322,7 @@ object QuestionBankGenerator {
         questions.addAll(JambMathematics2014ExamBank.getQuestions())
         questions.addAll(JambHistory2012ExamBank.getQuestions())
         questions.addAll(JambIrs2011ExamBank.getQuestions())
+        questions.addAll(JambLiterature2015CompleteBank.getQuestions())
 
         // Authentic Verified 20,000+ Master Series Question Banks (2000 - 2024 Exam Series)
         questions.addAll(JambEnglishComprehensionClozeMasterBank.getQuestions())
