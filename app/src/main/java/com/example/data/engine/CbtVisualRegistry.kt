@@ -808,6 +808,176 @@ object CbtVisualRegistry {
                 verified = true
             )
         )
+
+        // --- 4. CHEMISTRY 2010 - 2018 EXAM DIAGRAMS & EXPERIMENTS ---
+        registerAsset(
+            VisualAsset(
+                assetId = "chem_vis_rate_marble_powder",
+                questionId = "jamb_chem_2010_29",
+                type = VisualType.GRAPH_REQUIRED,
+                width = 380,
+                height = 240,
+                contentHash = computeHash("chem_rate_marble_powder_vs_chips"),
+                caption = "Figure: Rate Curve of Mass of CO₂ Produced vs Time for Powdered Marble vs Marble Chips",
+                altText = "Two reaction curves showing powdered marble reaching end point faster at t1 compared to marble chips at t2 with same final CO2 yield.",
+                diagramKey = "chem_vis_rate_surface_area_2010",
+                verified = true
+            )
+        )
+        registerAsset(
+            VisualAsset(
+                assetId = "chem_vis_prep_nitrogen_monoxide",
+                questionId = "jamb_chem_2010_32",
+                type = VisualType.DIAGRAM_REQUIRED,
+                width = 380,
+                height = 260,
+                contentHash = computeHash("chem_prep_no_gas_over_water"),
+                caption = "Figure: Laboratory Preparation of Nitrogen(II) Oxide (NO) from Copper Turnings and 50% Dilute HNO₃",
+                altText = "Flask with copper turnings reacting with 50% trioxonitrate(V) acid, delivery tube leading to gas jar collecting colorless NO gas over water.",
+                diagramKey = "chem_vis_gas_prep_no_2010",
+                verified = true
+            )
+        )
+        registerAsset(
+            VisualAsset(
+                assetId = "chem_vis_contact_process_asbestos",
+                questionId = "jamb_chem_2010_34",
+                type = VisualType.DIAGRAM_REQUIRED,
+                width = 400,
+                height = 250,
+                contentHash = computeHash("chem_contact_process_asbestos_catalyst"),
+                caption = "Figure: Contact Process Catalytic Conversion of SO₂ and O₂ over Platinized Asbestos",
+                altText = "Apparatus showing sulfur(IV) oxide and oxygen passed through drying wash bottle into strongly heated platinized asbestos catalyst tube to form SO3 in freezing mixture.",
+                diagramKey = "chem_vis_contact_process_asbestos_2010",
+                verified = true
+            )
+        )
+        registerAsset(
+            VisualAsset(
+                assetId = "chem_vis_solubility_curve_2011",
+                questionId = "jamb_chem_2011_11",
+                type = VisualType.GRAPH_REQUIRED,
+                width = 380,
+                height = 240,
+                contentHash = computeHash("chem_solubility_curve_cooling_55_to_40"),
+                caption = "Figure: Solubility Curve (Moles of Solute vs Temperature °C)",
+                altText = "Linear solubility curve showing solubility of 7 mol/dm3 at 55°C decreasing to 6 mol/dm3 at 40°C.",
+                diagramKey = "chem_vis_solubility_curve_2011",
+                verified = true
+            )
+        )
+        registerAsset(
+            VisualAsset(
+                assetId = "chem_vis_ideal_gas_pv_p",
+                questionId = "jamb_chem_2011_05",
+                type = VisualType.GRAPH_REQUIRED,
+                width = 380,
+                height = 240,
+                contentHash = computeHash("chem_ideal_gas_pv_vs_p_isotherm"),
+                caption = "Figure: Plot of PV against P for Real Gases vs Ideal Gas Line N",
+                altText = "Horizontal straight line N represents an ideal gas obeying Boyle's law where PV remains constant as pressure changes.",
+                diagramKey = "chem_vis_ideal_gas_pv_p_2011",
+                verified = true
+            )
+        )
+        registerAsset(
+            VisualAsset(
+                assetId = "chem_vis_activation_energy_x",
+                questionId = "jamb_chem_2011_27",
+                type = VisualType.GRAPH_REQUIRED,
+                width = 380,
+                height = 240,
+                contentHash = computeHash("chem_energy_profile_activation_x"),
+                caption = "Figure: Potential Energy Profile showing Activation Energy X for Forward Reaction",
+                altText = "Energy profile showing initial reactants, peak activated complex, and products, with X denoting activation energy from reactant level to transition state peak.",
+                diagramKey = "chem_vis_activation_energy_x_2011",
+                verified = true
+            )
+        )
+        registerAsset(
+            VisualAsset(
+                assetId = "chem_vis_rate_vs_time",
+                questionId = "jamb_chem_2011_28",
+                type = VisualType.GRAPH_REQUIRED,
+                width = 360,
+                height = 230,
+                contentHash = computeHash("chem_rate_of_reaction_vs_time_curve"),
+                caption = "Figure: Graph of Rate of Reaction vs Reaction Time",
+                altText = "Graph illustrating the exponential decrease in reaction rate over time as reactant concentration decreases.",
+                diagramKey = "chem_vis_rate_vs_time_2011",
+                verified = true
+            )
+        )
+        registerAsset(
+            VisualAsset(
+                assetId = "chem_vis_lactic_acid_chiral",
+                questionId = "jamb_chem_2011_42",
+                type = VisualType.DIAGRAM_REQUIRED,
+                width = 360,
+                height = 240,
+                contentHash = computeHash("chem_lactic_acid_chiral_carbon"),
+                caption = "Figure: Structural Formula of 2-hydroxypropanoic acid (Lactic Acid)",
+                altText = "Central carbon bonded to four distinct groups: -H, -CH3, -OH, and -COOH, exhibiting optical isomerism.",
+                diagramKey = "chem_vis_optical_isomer_2011",
+                verified = true
+            )
+        )
+        registerAsset(
+            VisualAsset(
+                assetId = "chem_vis_chlorine_prep_apparatus",
+                questionId = "jamb_chem_2014_32",
+                type = VisualType.DIAGRAM_REQUIRED,
+                width = 400,
+                height = 260,
+                contentHash = computeHash("chem_chlorine_lab_prep_apparatus"),
+                caption = "Figure: Laboratory Preparation of Chlorine Gas with Water and Conc. H₂SO₄ Wash Bottles",
+                altText = "Reaction flask with KMnO4 and conc. HCl; first wash bottle containing water to absorb HCl fumes; second wash bottle containing conc. H2SO4 to dry chlorine.",
+                diagramKey = "chem_vis_chlorine_prep_apparatus_2014",
+                verified = true
+            )
+        )
+        registerAsset(
+            VisualAsset(
+                assetId = "chem_vis_bohr_atom_chlorine",
+                questionId = "jamb_chem_2016_04",
+                type = VisualType.DIAGRAM_REQUIRED,
+                width = 360,
+                height = 250,
+                contentHash = computeHash("chem_bohr_atom_model_17_electrons"),
+                caption = "Figure: Bohr Atomic Model with Electron Shells (2, 8, 7)",
+                altText = "Central nucleus surrounded by 3 concentric electron shells containing 2, 8, and 7 electrons representing a chlorine atom.",
+                diagramKey = "chem_vis_bohr_atom_chlorine_2016",
+                verified = true
+            )
+        )
+        registerAsset(
+            VisualAsset(
+                assetId = "chem_vis_solubility_curves_2017",
+                questionId = "jamb_chem_2017_02",
+                type = VisualType.GRAPH_REQUIRED,
+                width = 380,
+                height = 250,
+                contentHash = computeHash("chem_solubility_curves_salts_x_y"),
+                caption = "Figure: Solubility Curves of Salts X and Y vs Temperature (K)",
+                altText = "Plot of solubility (g/100g H2O) versus temperature in Kelvin comparing solubilities of salts X and Y at 300K.",
+                diagramKey = "chem_vis_solubility_curves_2017",
+                verified = true
+            )
+        )
+        registerAsset(
+            VisualAsset(
+                assetId = "chem_vis_nh4cl_dissociation",
+                questionId = "jamb_chem_2018_03",
+                type = VisualType.DIAGRAM_REQUIRED,
+                width = 390,
+                height = 240,
+                contentHash = computeHash("chem_nh4cl_sublimation_litmus_tube"),
+                caption = "Figure: Thermal Dissociation of NH₄Cl with Porous Plug and Damp Litmus Paper",
+                altText = "Horizontal glass tube containing solid ammonium chloride heated at 350°C, porous asbestos plug, and damp neutral litmus paper at open end.",
+                diagramKey = "chem_vis_nh4cl_dissociation_2018",
+                verified = true
+            )
+        )
     }
 
     private fun computeHash(input: String): String {
